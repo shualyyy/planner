@@ -45,7 +45,7 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
   return (
     <div style={{
       width: '100vw',
-      height: '100vh',
+      height: 'var(--app-h, 100dvh)',
       background: 'var(--bg)',
       display: 'flex',
       flexDirection: 'column',

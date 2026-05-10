@@ -116,12 +116,181 @@ function MiniCalendar() {
   )
 }
 
+// ─── Mobile Login ─────────────────────────────────────────────────────────────
+function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!email.includes('@')) { setError('Please enter a valid email address.'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+    setLoading(true)
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+      }
+      onLogin()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+  }
+
+  return (
+    <div style={{
+      width: '100vw',
+      height: 'var(--app-h, 100dvh)',
+      background: 'var(--bg)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowY: 'auto',
+      padding: '0 24px',
+      paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+    }}>
+      {/* Glow */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '280px', background: 'radial-gradient(circle at 50% 0%, rgba(217,119,87,0.18), transparent 60%)', pointerEvents: 'none', zIndex: 0 }} />
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '52px' }}>
+          <div style={{
+            width: '60px', height: '60px', borderRadius: '18px',
+            background: 'linear-gradient(135deg, var(--accent), #b85a3d)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.18) inset, 0 0 0 1px rgba(217,119,87,0.4), 0 14px 36px rgba(217,119,87,0.4)',
+          }}>
+            <SparkleIcon />
+          </div>
+        </div>
+
+        {/* Heading */}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.022em', margin: '0 0 8px', color: 'var(--text)' }}>
+            {mode === 'signin' ? 'Welcome back' : 'Create account'}
+          </h1>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            {mode === 'signin' ? 'Sign in to pick up where you left off.' : 'Start planning smarter today.'}
+          </p>
+        </div>
+
+        {/* SSO */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '28px' }}>
+          <button onClick={handleGoogle} style={mobileSSOBtn}><GoogleIcon /> Google</button>
+          <button onClick={() => {}} style={mobileSSOBtn}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16.4 1.5c0 1.2-.5 2.4-1.3 3.3-.9.9-2.2 1.6-3.4 1.5-.1-1.2.5-2.4 1.3-3.2.9-.9 2.3-1.6 3.4-1.6zm4 16.6c-.6 1.4-1 2-1.7 3.2-1 1.7-2.5 3.7-4.3 3.7-1.6 0-2.1-1.1-4.3-1-2.2 0-2.7 1-4.4 1-1.8 0-3.2-1.9-4.2-3.5C-1 17.6-1.5 11 1.6 7.4c1.6-1.7 3.7-2.7 5.6-2.7 1.9 0 3.1 1 4.7 1 1.5 0 2.4-1 4.6-1 1.7 0 3.5.9 4.7 2.5-4.2 2.3-3.5 8.3.2 9.9z"/>
+            </svg>
+            Apple
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0 16px', color: 'var(--text-faint)', fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 500 }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-soft)' }} />
+          or email
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-soft)' }} />
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {error && (
+            <div style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: '#fca5a5', fontSize: '12.5px', padding: '9px 12px', borderRadius: '10px', display: 'flex', gap: '8px' }}>
+              ⚠ {error}
+            </div>
+          )}
+
+          {/* Email */}
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-2)', marginBottom: '7px', fontWeight: 500 }}>Email</div>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}><MailIcon /></span>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" style={mobileInput} />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '7px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-2)', fontWeight: 500 }}>Password</span>
+              {mode === 'signin' && <span style={{ fontSize: '11.5px', color: 'var(--accent-2)', cursor: 'pointer' }}>Forgot?</span>}
+            </div>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}><LockIcon /></span>
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} style={{ ...mobileInput, paddingRight: '44px' }} />
+              <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '30px', height: '30px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '7px' }}>
+                {showPw ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading} style={{
+            marginTop: '6px', height: '50px', borderRadius: '13px', border: 'none',
+            background: 'var(--accent)', color: '#fff', fontFamily: 'inherit',
+            fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.18) inset, 0 6px 20px rgba(217,119,87,0.35)',
+            WebkitTapHighlightColor: 'transparent',
+          }}>
+            {loading
+              ? <span style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+              : <>{mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowIcon /></>
+            }
+          </button>
+        </form>
+
+        <div style={{ marginTop: 'auto', textAlign: 'center', paddingTop: '24px', paddingBottom: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          {mode === 'signin' ? 'New here?' : 'Already have an account?'}
+          {' '}
+          <span onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError('') }} style={{ color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}>
+            {mode === 'signin' ? 'Create account' : 'Sign in'}
+          </span>
+        </div>
+      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
+const mobileSSOBtn: React.CSSProperties = {
+  height: '46px', borderRadius: '12px', background: '#1a1a1a',
+  border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'inherit',
+  fontSize: '13.5px', fontWeight: 500, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+  WebkitTapHighlightColor: 'transparent',
+}
+
+const mobileInput: React.CSSProperties = {
+  width: '100%', height: '48px', borderRadius: '12px', background: '#1a1a1a',
+  border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'inherit',
+  fontSize: '15px', padding: '0 14px 0 40px', outline: 'none', boxSizing: 'border-box',
+}
+
 // ─── Main Login Page ──────────────────────────────────────────────────────────
 interface LoginPageProps {
   onLogin: () => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const isMobile = window.innerWidth < 768
+  if (isMobile) return <MobileLoginPage onLogin={onLogin} />
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
