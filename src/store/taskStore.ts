@@ -7,6 +7,7 @@ interface TaskStore {
   donIds: Set<string>           // local-only done state
   fetchTasks: () => Promise<void>
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>
+  deleteTask: (id: string) => Promise<void>
   toggleDone: (id: string) => void
 }
 
@@ -34,6 +35,19 @@ export const useTaskStore = create<TaskStore>((set) => ({
       .select('*')
       .order('task_date', { ascending: true })
     if (data) set({ tasks: data as Task[] })
+  },
+
+  deleteTask: async (id: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id)
+    if (error) throw error
+    set((state) => {
+      const nextDone = new Set(state.donIds)
+      nextDone.delete(id)
+      return {
+        tasks: state.tasks.filter(t => t.id !== id),
+        donIds: nextDone,
+      }
+    })
   },
 
   toggleDone: (id: string) => {
