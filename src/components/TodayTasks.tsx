@@ -37,7 +37,7 @@ export default function TodayTasks({ selectedDate }: TodayTasksProps) {
   const subLabel = format(selectedDate, isToday ? 'EEEE, MMMM d, yyyy' : 'MMMM d, yyyy')
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--panel)', height: '100%', borderLeft: '1px solid var(--border-soft)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--panel)', flex: 1, minHeight: 0 }}>
       {/* Header */}
       <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--border-soft)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>

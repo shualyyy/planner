@@ -26,7 +26,8 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 
   addTask: async (task) => {
-    const { error } = await supabase.from('tasks').insert([task])
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('tasks').insert([{ ...task, user_id: user?.id }])
     if (error) throw error
     const { data } = await supabase
       .from('tasks')

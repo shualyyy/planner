@@ -58,8 +58,7 @@ export default function Calendar({ selectedDate, onSelectDate }: CalendarProps) 
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--panel)',
-      borderLeft: '1px solid var(--border-soft)',
-      borderRight: '1px solid var(--border-soft)',
+      flex: 1,
       minHeight: 0,
     }}>
       {/* Header */}

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { sendMessage, type ChatMessage } from '../services/aiService'
 import { useTaskStore } from '../store/taskStore'
 
@@ -6,6 +6,33 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
 }
+
+// Web Speech API types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+  resultIndex: number
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+}
+interface SpeechRecognitionInstance extends EventTarget {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  start(): void
+  stop(): void
+  onresult: ((e: SpeechRecognitionEvent) => void) | null
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionInstance
+    webkitSpeechRecognition?: new () => SpeechRecognitionInstance
+  }
+}
+
+const hasSpeechAPI = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 
 const SparkleIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E89372" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -20,6 +47,15 @@ const SendIcon = () => (
   </svg>
 )
 
+const MicIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
+  </svg>
+)
+
 const SUGGESTIONS = ['Plan my day', "What's urgent today?", 'Add a task']
 
 export default function ChatPanel() {
@@ -29,7 +65,10 @@ export default function ChatPanel() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [listening, setListening] = useState(false)
   const streamRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+  const interimRef = useRef('')   // interim transcript accumulator
 
   useEffect(() => {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight
@@ -76,6 +115,52 @@ export default function ChatPanel() {
       handleSend()
     }
   }
+
+  const toggleListening = useCallback(() => {
+    if (!hasSpeechAPI) return
+
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+
+    const SpeechRecognition = window.SpeechRecognition ?? window.webkitSpeechRecognition!
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'ru-RU'
+    recognition.continuous = true
+    recognition.interimResults = true
+    interimRef.current = ''
+
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
+      let interim = ''
+      let final = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript
+        if (e.results[i].isFinal) final += t
+        else interim += t
+      }
+      interimRef.current = interim
+      setInput(prev => {
+        // Replace any previous interim with new interim/final
+        const base = prev.replace(interimRef.current, '').trimEnd()
+        const appended = final || interim
+        return appended ? (base ? base + ' ' + appended : appended) : base
+      })
+      if (final) interimRef.current = ''
+    }
+
+    recognition.onerror = () => {
+      setListening(false)
+    }
+
+    recognition.onend = () => {
+      setListening(false)
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setListening(true)
+  }, [listening])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', background: '#131313', height: '100%', borderRight: '1px solid var(--border-soft)' }}>
@@ -182,6 +267,23 @@ export default function ChatPanel() {
               fontSize: '13px', lineHeight: 1.5, padding: '6px 0', maxHeight: '80px',
             }}
           />
+          {hasSpeechAPI && (
+            <button
+              onClick={toggleListening}
+              title={listening ? 'Остановить запись' : 'Голосовой ввод'}
+              style={{
+                width: '28px', height: '28px', borderRadius: '8px', border: 'none',
+                background: listening ? 'rgba(239,68,68,0.15)' : '#2a2a2a',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', flexShrink: 0, marginRight: '4px',
+                color: listening ? '#ef4444' : 'var(--text-muted)',
+                transition: 'all 0.15s',
+                animation: listening ? 'micPulse 1.4s ease-in-out infinite' : 'none',
+              }}
+            >
+              <MicIcon />
+            </button>
+          )}
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || loading}
@@ -203,6 +305,10 @@ export default function ChatPanel() {
         @keyframes blink {
           0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
           40% { opacity: 1; transform: translateY(-2px); }
+        }
+        @keyframes micPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+          50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
         }
       `}</style>
     </div>

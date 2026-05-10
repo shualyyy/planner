@@ -3,21 +3,30 @@ import Calendar from './components/Calendar'
 import ChatPanel from './components/ChatPanel'
 import TodayTasks from './components/TodayTasks'
 import LoginPage from './components/LoginPage'
+import MobileApp from './components/MobileApp'
 import { useTaskStore } from './store/taskStore'
 import { supabase } from './services/supabase'
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
 
 export default function App() {
   const { fetchTasks } = useTaskStore()
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [session, setSession] = useState<boolean | null>(null) // null = loading
+  const [session, setSession] = useState<boolean | null>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
-    // Check existing session
     supabase.auth.getSession().then(({ data }) => {
       setSession(!!data.session)
     })
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(!!sess)
     })
@@ -28,7 +37,7 @@ export default function App() {
     if (session) fetchTasks()
   }, [session, fetchTasks])
 
-  // Still checking session
+  // Loading spinner
   if (session === null) {
     return (
       <div style={{ width: '100vw', height: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -42,6 +51,12 @@ export default function App() {
     return <LoginPage onLogin={() => setSession(true)} />
   }
 
+  // Mobile layout — bottom tabs
+  if (isMobile) {
+    return <MobileApp selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
+  }
+
+  // Desktop layout — 3-column grid
   return (
     <div style={{
       width: '100vw',
@@ -52,7 +67,9 @@ export default function App() {
       gridTemplateColumns: '300px 1fr 320px',
     }}>
       <ChatPanel />
-      <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--border-soft)', borderRight: '1px solid var(--border-soft)' }}>
+        <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+      </div>
       <TodayTasks selectedDate={selectedDate} />
     </div>
   )
