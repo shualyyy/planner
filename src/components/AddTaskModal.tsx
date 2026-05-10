@@ -17,6 +17,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [error, setError] = useState('')
 
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -60,6 +61,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
     e.preventDefault()
     if (!title.trim()) return
     setSaving(true)
+    setError('')
     try {
       await addTask({
         title: title.trim(),
@@ -69,7 +71,9 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
       })
       await fetchTasks()
       onClose()
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(msg)
       setSaving(false)
     }
   }
@@ -123,6 +127,15 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {error && (
+            <div style={{
+              background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
+              color: '#fca5a5', fontSize: '12px', padding: '8px 12px',
+              borderRadius: '8px', lineHeight: 1.4,
+            }}>
+              ⚠ {error}
+            </div>
+          )}
           {/* Task name */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={labelStyle}>Title <span style={{ color: 'var(--accent-2)' }}>*</span></label>
