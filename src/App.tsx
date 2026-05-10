@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Calendar from './components/Calendar'
 import ChatPanel from './components/ChatPanel'
 import TodayTasks from './components/TodayTasks'
-import LoginPage from './components/LoginPage'
+import LoginPage, { MobileLoginPage } from './components/LoginPage'
 import MobileApp from './components/MobileApp'
 import { useTaskStore } from './store/taskStore'
 import { supabase } from './services/supabase'
@@ -48,7 +48,9 @@ export default function App() {
   }
 
   if (!session) {
-    return <LoginPage onLogin={() => setSession(true)} />
+    return isMobile
+      ? <MobileLoginPage onLogin={() => setSession(true)} />
+      : <LoginPage onLogin={() => setSession(true)} />
   }
 
   // Mobile layout — bottom tabs

@@ -56,7 +56,11 @@ const MicIcon = () => (
   </svg>
 )
 
-const SUGGESTIONS = ['Plan my day', "What's urgent today?", 'Add a task']
+const SUGGESTIONS = [
+  'Встреча завтра в 10:00',
+  'Позвонить маме в пятницу',
+  'Тренировка сегодня в 19:00',
+]
 
 export default function ChatPanel() {
   const { addTask, fetchTasks } = useTaskStore()

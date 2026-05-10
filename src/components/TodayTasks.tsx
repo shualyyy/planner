@@ -55,7 +55,13 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
   async function triggerDelete() {
     setDeleting(true)
     await new Promise(r => setTimeout(r, 200))
-    await onDelete()
+    try {
+      await onDelete()
+    } catch (err) {
+      setDeleting(false)
+      setConfirming(false)
+      alert('Failed to delete: ' + (err instanceof Error ? err.message : 'unknown error'))
+    }
   }
 
   /* Touch handlers (mobile) */

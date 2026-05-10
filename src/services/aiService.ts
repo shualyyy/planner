@@ -12,9 +12,11 @@ export interface ChatMessage {
   content: string
 }
 
-const SYSTEM_PROMPT = `You are a calendar assistant. Your ONLY job is to add tasks to the user's calendar instantly.
+function buildSystemPrompt(): string {
+  const now = new Date()
+  return `You are a calendar assistant. Your ONLY job is to add tasks to the user's calendar instantly.
 
-Today's date is ${format(new Date(), 'EEEE, MMMM d, yyyy')}.
+Today's date is ${format(now, 'EEEE, MMMM d, yyyy')}.
 
 When the user describes a task:
 1. Extract: title, date (YYYY-MM-DD), time (HH:MM 24h format or null), description (null if none)
@@ -25,14 +27,15 @@ PARSED_TASK:{"title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null",
 Added ✓
 
 Rules for relative dates:
-- "today" / "сегодня" = ${format(new Date(), 'yyyy-MM-dd')}
-- "tomorrow" / "завтра" = ${format(addDays(new Date(), 1), 'yyyy-MM-dd')}
+- "today" / "сегодня" = ${format(now, 'yyyy-MM-dd')}
+- "tomorrow" / "завтра" = ${format(addDays(now, 1), 'yyyy-MM-dd')}
 - "next Monday" / "в понедельник" = next Monday
 - Any weekday name = next occurrence of that day
 
 If date is completely missing and cannot be inferred, ask ONLY for the date — nothing else.
 If the message is unrelated to adding tasks, reply briefly and redirect.
 Never ask "shall I add this?" or "confirm?" — just add it.`
+}
 
 function resolveRelativeDate(text: string): string {
   const today = new Date()
@@ -54,7 +57,7 @@ export async function sendMessage(
   userMessage: string
 ): Promise<{ reply: string; parsedTask: ParsedTask | null }> {
   const messages = [
-    { role: 'system' as const, content: SYSTEM_PROMPT },
+    { role: 'system' as const, content: buildSystemPrompt() },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: 'user' as const, content: userMessage },
   ]

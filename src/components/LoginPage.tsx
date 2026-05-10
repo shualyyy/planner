@@ -117,7 +117,7 @@ function MiniCalendar() {
 }
 
 // ─── Mobile Login ─────────────────────────────────────────────────────────────
-function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
+export function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -292,8 +292,6 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
-  const isMobile = window.innerWidth < 768
-  if (isMobile) return <MobileLoginPage onLogin={onLogin} />
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
