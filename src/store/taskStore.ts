@@ -27,8 +27,9 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 
   addTask: async (task) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('tasks').insert([{ ...task, user_id: user?.id }])
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('Not authenticated. Please sign in again.')
+    const { error } = await supabase.from('tasks').insert([{ ...task, user_id: user.id }])
     if (error) throw error
     const { data } = await supabase
       .from('tasks')
