@@ -156,8 +156,11 @@ function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
 
   return (
     <div style={{
-      width: '100vw',
-      height: 'var(--app-h, 100dvh)',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       background: 'var(--bg)',
       display: 'flex',
       flexDirection: 'column',
