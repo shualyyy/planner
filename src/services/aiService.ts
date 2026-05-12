@@ -62,15 +62,21 @@ export async function sendMessage(
     { role: 'user' as const, content: userMessage },
   ]
 
-  const res = await fetch('/api/chat', {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    headers: {
+      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+    }),
   })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.error ?? 'AI request failed')
+    throw new Error(err.error ?? `Groq API error ${res.status}`)
   }
 
   const data = await res.json()
