@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Calendar from './Calendar'
 import ChatPanel from './ChatPanel'
 import TodayTasks from './TodayTasks'
+import SettingsModal from './SettingsModal'
 
 type Tab = 'calendar' | 'today' | 'chat'
 
@@ -28,6 +29,13 @@ const ChatIcon = ({ active }: { active: boolean }) => (
   </svg>
 )
 
+const GearIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+  </svg>
+)
+
 const TABS = [
   { id: 'calendar' as Tab, label: 'Calendar', Icon: CalIcon },
   { id: 'today' as Tab, label: 'Today', Icon: TasksIcon },
@@ -41,6 +49,7 @@ interface MobileAppProps {
 
 export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppProps) {
   const [tab, setTab] = useState<Tab>('today')
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <div style={{
@@ -54,6 +63,32 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
       flexDirection: 'column',
       overflow: 'hidden',
     }}>
+      {/* Gear icon — fixed top-right */}
+      <button
+        onClick={() => setSettingsOpen(true)}
+        style={{
+          position: 'fixed',
+          top: '14px',
+          right: '16px',
+          zIndex: 10,
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-muted)',
+          padding: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '8px',
+          WebkitTapHighlightColor: 'transparent',
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
+      >
+        <GearIcon />
+      </button>
+
       {/* Panels — all mounted, only one visible at a time (keeps state alive) */}
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
 
@@ -127,6 +162,8 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
           )
         })}
       </div>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }
