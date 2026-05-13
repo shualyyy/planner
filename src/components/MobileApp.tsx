@@ -126,12 +126,11 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
       <div style={{
         flexShrink: 0,
         borderTop: '1px solid var(--border-soft)',
-        background: 'rgba(15,15,15,0.92)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        background: '#0f0f0f',
         display: 'flex',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        flexDirection: 'column',
       }}>
+        <div style={{ display: 'flex' }}>
         {TABS.map(({ id, label, Icon }) => {
           const active = tab === id
           return (
@@ -162,6 +161,9 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
             </button>
           )
         })}
+        </div>
+        {/* Safe area fill — extends background under home indicator */}
+        <div style={{ height: 'env(safe-area-inset-bottom, 0px)', background: '#0f0f0f' }} />
       </div>
 
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
