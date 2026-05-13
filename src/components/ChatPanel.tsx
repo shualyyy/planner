@@ -99,6 +99,8 @@ export default function ChatPanel() {
           title: parsedTask.title,
           task_date: parsedTask.task_date,
           task_time: parsedTask.task_time,
+          task_time_end: null,
+          is_all_day: false,
           description: parsedTask.description,
         })
       }

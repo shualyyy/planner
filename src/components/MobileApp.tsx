@@ -94,7 +94,7 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
         }}>
           <Calendar
             selectedDate={selectedDate}
-            onSelectDate={(d) => { setSelectedDate(d); setTab('today') }}
+            onSelectDate={(d) => setSelectedDate(d)}
           />
         </div>
 

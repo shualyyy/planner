@@ -2,43 +2,57 @@ import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
 import type { Task } from '../services/supabase'
-import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   defaultDate: Date
+  defaultTime?: string
   editTask?: Task
 }
 
-export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }: Props) {
-  const { addTask, updateTask } = useTaskStore()
+export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', editTask }: Props) {
+  const { addTask, fetchTasks, updateTask } = useTaskStore()
   const isEditMode = !!editTask
 
-  const [title, setTitle] = useState('')
-  const [date, setDate] = useState(format(defaultDate, 'yyyy-MM-dd'))
-  const [time, setTime] = useState('')
-  const [description, setDescription] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [visible, setVisible] = useState(false)
-  const [error, setError] = useState('')
+  const [title, setTitle]               = useState('')
+  const [date, setDate]                 = useState(format(defaultDate, 'yyyy-MM-dd'))
+  const [time, setTime]                 = useState('')
+  const [timeEnd, setTimeEnd]           = useState('')
+  const [isAllDay, setIsAllDay]         = useState(false)
+  const [description, setDescription]   = useState('')
+  const [saving, setSaving]             = useState(false)
+  const [visible, setVisible]           = useState(false)
+  const [error, setError]               = useState('')
 
   const titleRef = useRef<HTMLInputElement>(null)
 
-  // Populate fields when opening in edit mode
+  // Populate fields in edit mode
   useEffect(() => {
     if (isOpen && editTask) {
       setTitle(editTask.title)
       setDate(editTask.task_date)
       setTime(editTask.task_time ?? '')
+      setTimeEnd(editTask.task_time_end ?? '')
+      setIsAllDay(editTask.is_all_day ?? false)
       setDescription(editTask.description ?? '')
     }
   }, [isOpen, editTask])
 
-  // Sync defaultDate only in add mode
+  // Sync defaultDate + defaultTime only in add mode
   useEffect(() => {
-    if (!editTask) setDate(format(defaultDate, 'yyyy-MM-dd'))
-  }, [defaultDate, editTask])
+    if (!editTask) {
+      setDate(format(defaultDate, 'yyyy-MM-dd'))
+      setTime(defaultTime)
+      if (defaultTime) {
+        const [h, m] = defaultTime.split(':').map(Number)
+        const endH = Math.min(h + 1, 23)
+        setTimeEnd(`${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+      } else {
+        setTimeEnd('')
+      }
+    }
+  }, [defaultDate, defaultTime, editTask])
 
   // Mount / unmount animation
   useEffect(() => {
@@ -58,12 +72,14 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
     return () => window.removeEventListener('keydown', handler)
   }, [isOpen, onClose])
 
-  // Reset form when modal closes
+  // Reset when closes
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
         setTitle('')
         setTime('')
+        setTimeEnd('')
+        setIsAllDay(false)
         setDescription('')
         setSaving(false)
         setError('')
@@ -71,26 +87,34 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
     }
   }, [isOpen])
 
+  function handleTimeChange(val: string) {
+    setTime(val)
+    if (val && !timeEnd) {
+      const [h, m] = val.split(':').map(Number)
+      const endH = Math.min(h + 1, 23)
+      setTimeEnd(`${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
     setSaving(true)
     setError('')
     try {
+      const payload = {
+        title: title.trim(),
+        task_date: date,
+        task_time: isAllDay ? null : (time || null),
+        task_time_end: isAllDay ? null : (timeEnd || null),
+        is_all_day: isAllDay,
+        description: description.trim() || null,
+      }
       if (isEditMode && editTask) {
-        await updateTask(editTask.id, {
-          title: title.trim(),
-          task_date: date,
-          task_time: time || null,
-          description: description.trim() || null,
-        })
+        await updateTask(editTask.id, payload)
       } else {
-        await addTask({
-          title: title.trim(),
-          task_date: date,
-          task_time: time || null,
-          description: description.trim() || null,
-        })
+        await addTask(payload)
+        await fetchTasks()
       }
       onClose()
     } catch (err: unknown) {
@@ -100,10 +124,9 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
     }
   }
 
-  const isMobile = useIsMobile()
-
   if (!isOpen && !visible) return null
 
+  const isMobile = window.innerWidth < 768
   const shown = isOpen && visible
 
   return (
@@ -139,12 +162,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
           transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
-        {/* Handle (mobile only) */}
         {isMobile && (
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#333', margin: '-8px auto 0' }} />
         )}
 
-        {/* Title */}
         <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
           {isEditMode ? 'Edit task' : 'Add task'}
         </div>
@@ -153,14 +174,14 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
           {error && (
             <div style={{
               background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
-              color: 'var(--danger-text-2)', fontSize: '12px', padding: '8px 12px',
+              color: '#fca5a5', fontSize: '12px', padding: '8px 12px',
               borderRadius: '8px', lineHeight: 1.4,
             }}>
               ⚠ {error}
             </div>
           )}
 
-          {/* Task name */}
+          {/* Title */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={labelStyle}>Title <span style={{ color: 'var(--accent-2)' }}>*</span></label>
             <input
@@ -174,28 +195,70 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
             />
           </div>
 
-          {/* Date + Time row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* Date + All-day toggle */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <label style={labelStyle}>Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                required
-                style={inputStyle}
-              />
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isAllDay
+                  setIsAllDay(next)
+                  if (next) { setTime(''); setTimeEnd('') }
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '2px 0', WebkitTapHighlightColor: 'transparent' }}
+              >
+                <span style={{ fontSize: '11px', color: isAllDay ? 'var(--accent-2)' : 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}>
+                  All day
+                </span>
+                <div style={{
+                  width: '28px', height: '16px', borderRadius: '8px',
+                  background: isAllDay ? 'var(--accent)' : '#2a2a2a',
+                  border: `1px solid ${isAllDay ? 'var(--accent)' : '#3a3a3a'}`,
+                  position: 'relative', transition: 'all 0.2s', flexShrink: 0,
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '2px',
+                    left: isAllDay ? '14px' : '2px',
+                    width: '10px', height: '10px', borderRadius: '50%',
+                    background: '#fff', transition: 'left 0.2s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                  }} />
+                </div>
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={labelStyle}>Time <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-              <input
-                type="time"
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              required
+              style={inputStyle}
+            />
           </div>
+
+          {/* Time — hidden when all-day */}
+          {!isAllDay && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={labelStyle}>Start <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={e => handleTimeChange(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={labelStyle}>End <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                <input
+                  type="time"
+                  value={timeEnd}
+                  onChange={e => setTimeEnd(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -220,9 +283,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
                 color: 'var(--text-2)', fontSize: '13px', fontWeight: 500,
                 cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
               }}
-            >
-              Cancel
-            </button>
+            >Cancel</button>
             <button
               type="submit"
               disabled={!title.trim() || saving}
@@ -248,8 +309,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
       <style>{`
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: invert(0.4);
-          cursor: pointer;
+          filter: invert(0.4); cursor: pointer;
         }
       `}</style>
     </div>
@@ -257,23 +317,12 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
 }
 
 const labelStyle: React.CSSProperties = {
-  fontSize: '11.5px',
-  fontWeight: 500,
-  color: 'var(--text-muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.05em',
+  fontSize: '11.5px', fontWeight: 500, color: 'var(--text-muted)',
+  textTransform: 'uppercase', letterSpacing: '0.05em',
 }
-
 const inputStyle: React.CSSProperties = {
-  background: 'var(--panel-2)',
-  border: '1px solid var(--border)',
-  borderRadius: '9px',
-  padding: '9px 12px',
-  color: 'var(--text)',
-  fontSize: '13px',
-  fontFamily: 'inherit',
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
-  colorScheme: 'dark',
+  background: 'var(--panel-2)', border: '1px solid var(--border)',
+  borderRadius: '9px', padding: '9px 12px', color: 'var(--text)',
+  fontSize: '13px', fontFamily: 'inherit', outline: 'none',
+  width: '100%', boxSizing: 'border-box', colorScheme: 'dark',
 }

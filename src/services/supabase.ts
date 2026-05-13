@@ -19,6 +19,8 @@ export interface Task {
   title: string
   task_date: string
   task_time: string | null
+  task_time_end: string | null
+  is_all_day: boolean
   description: string | null
   created_at: string
 }
