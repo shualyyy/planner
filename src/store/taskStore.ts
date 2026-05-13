@@ -7,6 +7,7 @@ interface TaskStore {
   donIds: Set<string>           // local-only done state
   fetchTasks: () => Promise<void>
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>
+  updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   toggleDone: (id: string) => void
 }
@@ -36,6 +37,14 @@ export const useTaskStore = create<TaskStore>((set) => ({
       .select('*')
       .order('task_date', { ascending: true })
     if (data) set({ tasks: data as Task[] })
+  },
+
+  updateTask: async (id, updates) => {
+    const { error } = await supabase.from('tasks').update(updates).eq('id', id)
+    if (error) throw error
+    set((state) => ({
+      tasks: state.tasks.map(t => t.id === id ? { ...t, ...updates } : t),
+    }))
   },
 
   deleteTask: async (id: string) => {

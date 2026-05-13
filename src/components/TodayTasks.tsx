@@ -30,6 +30,13 @@ const TrashIcon = () => (
   </svg>
 )
 
+const PencilIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
+
 /* ─── TaskRow ─────────────────────────────────────────────── */
 
 interface TaskRowProps {
@@ -39,18 +46,19 @@ interface TaskRowProps {
   isMobile: boolean
   onToggle: () => void
   onDelete: () => Promise<void>
+  onEdit: () => void
 }
 
-function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps) {
-  const [hovered, setHovered]       = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const [deleting, setDeleting]     = useState(false)
-  const [swipeX, setSwipeX]         = useState(0)
+function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: TaskRowProps) {
+  const [hovered, setHovered]         = useState(false)
+  const [confirming, setConfirming]   = useState(false)
+  const [deleting, setDeleting]       = useState(false)
+  const [swipeX, setSwipeX]           = useState(0)
   const [swipeLocked, setSwipeLocked] = useState(false)
   const touchStartX = useRef(0)
 
   const SWIPE_THRESHOLD = 60
-  const SWIPE_LOCK_X   = -72
+  const SWIPE_LOCK_X    = -128   // wider to fit two buttons (64px each)
 
   async function triggerDelete() {
     setDeleting(true)
@@ -91,8 +99,8 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
     setConfirming(false)
   }
 
-  /* Inline confirm UI (desktop) */
-  if (confirming) {
+  /* Inline delete confirm UI (desktop) */
+  if (confirming && !isMobile) {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -129,6 +137,9 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
 
   /* Mobile swipe row */
   if (isMobile) {
+    const zoneW = Math.abs(SWIPE_LOCK_X)  // 128px total
+    const halfW = zoneW / 2               // 64px per button
+
     return (
       <div
         style={{
@@ -140,16 +151,35 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
           transition: 'opacity 0.2s, max-height 0.2s',
         }}
       >
-        {/* Red delete zone behind the row */}
+        {/* Action zone: pencil (left) + trash (right) */}
         <div style={{
           position: 'absolute', right: 0, top: 0, bottom: 0,
-          width: `${Math.abs(SWIPE_LOCK_X)}px`,
-          background: '#ef4444',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: `${zoneW}px`,
+          display: 'flex',
         }}>
-          {swipeLocked ? (
-            confirming ? (
-              /* Inline confirm on mobile */
+          {/* Pencil — blue */}
+          <div style={{
+            width: `${halfW}px`, background: '#2563eb',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <button
+              onClick={() => { resetSwipe(); onEdit() }}
+              style={{
+                background: 'none', border: 'none', color: '#fff',
+                cursor: 'pointer', padding: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <PencilIcon />
+            </button>
+          </div>
+
+          {/* Trash — red */}
+          <div style={{
+            width: `${halfW}px`, background: '#ef4444',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {confirming ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                 <button
                   onClick={triggerDelete}
@@ -171,14 +201,16 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
             ) : (
               <button
                 onClick={() => setConfirming(true)}
-                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px' }}
+                style={{
+                  background: 'none', border: 'none', color: '#fff',
+                  cursor: 'pointer', padding: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
               >
                 <TrashIcon />
               </button>
-            )
-          ) : (
-            <TrashIcon />
-          )}
+            )}
+          </div>
         </div>
 
         {/* Swipeable task content */}
@@ -206,7 +238,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
   return (
     <div
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false) }}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: '11px',
         padding: '12px 10px', borderRadius: '9px',
@@ -221,23 +253,44 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete }: TaskRowProps
     >
       <TaskContent task={task} done={done} />
 
-      {/* Trash button — desktop only */}
-      <button
-        onClick={e => { e.stopPropagation(); setConfirming(true) }}
-        title="Delete task"
-        style={{
-          flexShrink: 0, background: 'none', border: 'none',
-          cursor: 'pointer', padding: '2px 4px',
-          color: 'var(--text-muted)',
-          opacity: hovered ? 1 : 0,
-          transition: 'opacity 0.15s, color 0.15s',
-          marginTop: '1px',
-        }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ef4444'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
-      >
-        <TrashIcon />
-      </button>
+      {/* Action buttons — desktop, appear on hover */}
+      <div style={{
+        display: 'flex', gap: '2px', flexShrink: 0, marginTop: '1px',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.15s',
+      }}>
+        {/* Pencil */}
+        <button
+          onClick={e => { e.stopPropagation(); onEdit() }}
+          title="Edit task"
+          style={{
+            background: 'none', border: 'none',
+            cursor: 'pointer', padding: '2px 4px',
+            color: 'var(--text-muted)',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#60a5fa'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
+        >
+          <PencilIcon />
+        </button>
+
+        {/* Trash */}
+        <button
+          onClick={e => { e.stopPropagation(); setConfirming(true) }}
+          title="Delete task"
+          style={{
+            background: 'none', border: 'none',
+            cursor: 'pointer', padding: '2px 4px',
+            color: 'var(--text-muted)',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ef4444'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
+        >
+          <TrashIcon />
+        </button>
+      </div>
     </div>
   )
 }
@@ -299,18 +352,24 @@ interface TodayTasksProps {
 
 export default function TodayTasks({ selectedDate }: TodayTasksProps) {
   const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
-  const [modalOpen, setModalOpen] = useState(false)
+  const [modalOpen, setModalOpen]       = useState(false)
+  const [editingTask, setEditingTask]   = useState<Task | null>(null)
   const today = new Date()
   const isToday = isSameDay(selectedDate, today)
   const isMobile = window.innerWidth < 768
 
-  const dateKey = format(selectedDate, 'yyyy-MM-dd')
+  const dateKey  = format(selectedDate, 'yyyy-MM-dd')
   const dayTasks = tasks.filter(t => t.task_date === dateKey)
   const completed = dayTasks.filter(t => donIds.has(t.id)).length
   const pct = dayTasks.length ? (completed / dayTasks.length) * 100 : 0
 
   const headerLabel = isToday ? 'Today' : format(selectedDate, 'EEEE')
-  const subLabel = format(selectedDate, isToday ? 'EEEE, MMMM d, yyyy' : 'MMMM d, yyyy')
+  const subLabel    = format(selectedDate, isToday ? 'EEEE, MMMM d, yyyy' : 'MMMM d, yyyy')
+
+  function closeModal() {
+    setModalOpen(false)
+    setEditingTask(null)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--panel)', flex: 1, minHeight: 0, position: 'relative' }}>
@@ -401,6 +460,7 @@ export default function TodayTasks({ selectedDate }: TodayTasksProps) {
               isMobile={isMobile}
               onToggle={() => toggleDone(t.id)}
               onDelete={() => deleteTask(t.id)}
+              onEdit={() => setEditingTask(t)}
             />
           ))}
         </div>
@@ -427,9 +487,10 @@ export default function TodayTasks({ selectedDate }: TodayTasksProps) {
       )}
 
       <AddTaskModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        isOpen={modalOpen || editingTask !== null}
+        onClose={closeModal}
         defaultDate={selectedDate}
+        editTask={editingTask ?? undefined}
       />
     </div>
   )

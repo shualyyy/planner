@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
+import type { Task } from '../services/supabase'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   defaultDate: Date
+  editTask?: Task
 }
 
-export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
-  const { addTask, fetchTasks } = useTaskStore()
+export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }: Props) {
+  const { addTask, fetchTasks, updateTask } = useTaskStore()
+  const isEditMode = !!editTask
 
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(format(defaultDate, 'yyyy-MM-dd'))
@@ -21,16 +24,25 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
 
   const titleRef = useRef<HTMLInputElement>(null)
 
-  // Sync defaultDate when it changes while modal is open
+  // Populate fields when opening in edit mode
   useEffect(() => {
-    setDate(format(defaultDate, 'yyyy-MM-dd'))
-  }, [defaultDate])
+    if (isOpen && editTask) {
+      setTitle(editTask.title)
+      setDate(editTask.task_date)
+      setTime(editTask.task_time ?? '')
+      setDescription(editTask.description ?? '')
+    }
+  }, [isOpen, editTask])
+
+  // Sync defaultDate only in add mode
+  useEffect(() => {
+    if (!editTask) setDate(format(defaultDate, 'yyyy-MM-dd'))
+  }, [defaultDate, editTask])
 
   // Mount / unmount animation
   useEffect(() => {
     if (isOpen) {
       setVisible(true)
-      // Focus title after transition starts
       setTimeout(() => titleRef.current?.focus(), 60)
     } else {
       setVisible(false)
@@ -53,6 +65,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
         setTime('')
         setDescription('')
         setSaving(false)
+        setError('')
       }, 200)
     }
   }, [isOpen])
@@ -63,13 +76,22 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
     setSaving(true)
     setError('')
     try {
-      await addTask({
-        title: title.trim(),
-        task_date: date,
-        task_time: time || null,
-        description: description.trim() || null,
-      })
-      await fetchTasks()
+      if (isEditMode && editTask) {
+        await updateTask(editTask.id, {
+          title: title.trim(),
+          task_date: date,
+          task_time: time || null,
+          description: description.trim() || null,
+        })
+      } else {
+        await addTask({
+          title: title.trim(),
+          task_date: date,
+          task_time: time || null,
+          description: description.trim() || null,
+        })
+        await fetchTasks()
+      }
       onClose()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err)
@@ -123,7 +145,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
 
         {/* Title */}
         <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-          Add task
+          {isEditMode ? 'Edit task' : 'Add task'}
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -136,6 +158,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
               ⚠ {error}
             </div>
           )}
+
           {/* Task name */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={labelStyle}>Title <span style={{ color: 'var(--accent-2)' }}>*</span></label>
@@ -212,7 +235,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate }: Props) {
                 boxShadow: title.trim() && !saving ? '0 0 18px var(--accent-glow)' : 'none',
               }}
             >
-              {saving ? 'Adding…' : 'Add task'}
+              {saving
+                ? (isEditMode ? 'Saving…' : 'Adding…')
+                : (isEditMode ? 'Save changes' : 'Add task')
+              }
             </button>
           </div>
         </form>
