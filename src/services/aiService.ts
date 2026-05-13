@@ -62,21 +62,22 @@ export async function sendMessage(
     { role: 'user' as const, content: userMessage },
   ]
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/chat`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+      'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
+      'apikey': supabaseKey,
     },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages,
-    }),
+    body: JSON.stringify({ messages }),
   })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.error ?? `Groq API error ${res.status}`)
+    throw new Error(err.error ?? `API error ${res.status}`)
   }
 
   const data = await res.json()
