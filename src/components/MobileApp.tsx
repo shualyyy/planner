@@ -62,6 +62,7 @@ export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppPr
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
+      paddingTop: 'env(safe-area-inset-top)',
     }}>
       {/* Gear icon — fixed top-right */}
       <button
