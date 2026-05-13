@@ -12,6 +12,10 @@ export interface ChatMessage {
   content: string
 }
 
+interface GroqChatResponse {
+  choices: Array<{ message: { content: string } }>
+}
+
 function buildSystemPrompt(): string {
   const now = new Date()
   return `You are a calendar assistant. Your ONLY job is to add tasks to the user's calendar instantly.
@@ -80,8 +84,8 @@ export async function sendMessage(
     throw new Error(err.error ?? `API error ${res.status}`)
   }
 
-  const data = await res.json()
-  const reply: string = data.choices[0]?.message?.content ?? ''
+  const data = (await res.json()) as GroqChatResponse
+  const reply: string = data.choices?.[0]?.message?.content ?? ''
 
   // Extract PARSED_TASK JSON if present
   const taskMatch = reply.match(/PARSED_TASK:(\{.*?\})/s)

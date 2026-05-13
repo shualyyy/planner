@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
 import type { Task } from '../services/supabase'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Props {
   isOpen: boolean
@@ -11,7 +12,7 @@ interface Props {
 }
 
 export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }: Props) {
-  const { addTask, fetchTasks, updateTask } = useTaskStore()
+  const { addTask, updateTask } = useTaskStore()
   const isEditMode = !!editTask
 
   const [title, setTitle] = useState('')
@@ -90,7 +91,6 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
           task_time: time || null,
           description: description.trim() || null,
         })
-        await fetchTasks()
       }
       onClose()
     } catch (err: unknown) {
@@ -100,9 +100,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
     }
   }
 
+  const isMobile = useIsMobile()
+
   if (!isOpen && !visible) return null
 
-  const isMobile = window.innerWidth < 768
   const shown = isOpen && visible
 
   return (
@@ -152,7 +153,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, editTask }:
           {error && (
             <div style={{
               background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
-              color: '#fca5a5', fontSize: '12px', padding: '8px 12px',
+              color: 'var(--danger-text-2)', fontSize: '12px', padding: '8px 12px',
               borderRadius: '8px', lineHeight: 1.4,
             }}>
               ⚠ {error}

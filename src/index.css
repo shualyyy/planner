@@ -14,6 +14,14 @@
   --accent-2: #E89372;
   --accent-soft: rgba(217, 119, 87, 0.14);
   --accent-glow: rgba(217, 119, 87, 0.38);
+  --danger: #ef4444;
+  --danger-text: #f87171;
+  --danger-text-2: #fca5a5;
+  --danger-soft: rgba(239, 68, 68, 0.07);
+  --danger-soft-2: rgba(239, 68, 68, 0.13);
+  --danger-border: rgba(239, 68, 68, 0.25);
+  --info: #2563eb;
+  --info-hover: #60a5fa;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

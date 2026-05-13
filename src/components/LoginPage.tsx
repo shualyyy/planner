@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { supabase } from '../services/supabase'
+import { CheckIcon } from './icons'
+import { useAuthForm } from '../hooks/useAuthForm'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const MailIcon = () => (
@@ -20,11 +21,6 @@ const EyeIcon = () => (
 const EyeOffIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 3l18 18M10.6 10.6a3 3 0 004.2 4.2M9.4 5.6A10.5 10.5 0 0112 5c6.5 0 10 7 10 7a17.6 17.6 0 01-3.4 4.5M6.6 6.6A17.7 17.7 0 002 12s3.5 7 10 7a10.5 10.5 0 005.4-1.5" />
-  </svg>
-)
-const CheckIcon = () => (
-  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6L9 17l-5-5" />
   </svg>
 )
 const ArrowIcon = () => (
@@ -118,41 +114,13 @@ function MiniCalendar() {
 
 // ─── Mobile Login ─────────────────────────────────────────────────────────────
 export function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    if (!email.includes('@')) { setError('Please enter a valid email address.'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
-    setLoading(true)
-    try {
-      if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-      }
-      onLogin()
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
-  }
+  const {
+    email, setEmail,
+    password, setPassword,
+    showPw, setShowPw,
+    loading, error, mode,
+    toggleMode, handleSubmit, handleGoogle,
+  } = useAuthForm(onLogin)
 
   return (
     <div style={{
@@ -214,7 +182,7 @@ export function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
 
         <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {error && (
-            <div style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: '#fca5a5', fontSize: '12.5px', padding: '9px 12px', borderRadius: '10px', display: 'flex', gap: '8px' }}>
+            <div style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: 'var(--danger-text-2)', fontSize: '12.5px', padding: '9px 12px', borderRadius: '10px', display: 'flex', gap: '8px' }}>
               ⚠ {error}
             </div>
           )}
@@ -261,7 +229,7 @@ export function MobileLoginPage({ onLogin }: { onLogin: () => void }) {
         <div style={{ marginTop: 'auto', textAlign: 'center', paddingTop: '24px', paddingBottom: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
           {mode === 'signin' ? 'New here?' : 'Already have an account?'}
           {' '}
-          <span onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError('') }} style={{ color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}>
+          <span onClick={toggleMode} style={{ color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}>
             {mode === 'signin' ? 'Create account' : 'Sign in'}
           </span>
         </div>
@@ -292,43 +260,14 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
+  const {
+    email, setEmail,
+    password, setPassword,
+    showPw, setShowPw,
+    loading, error, mode,
+    toggleMode, handleSubmit, handleGoogle,
+  } = useAuthForm(onLogin)
   const [remember, setRemember] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    if (!email.includes('@')) { setError('Please enter a valid email address.'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
-
-    setLoading(true)
-    try {
-      if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-      }
-      onLogin()
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
-  }
 
   return (
     <div style={{
@@ -421,7 +360,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <div style={{ padding: '36px 56px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--panel)', position: 'relative' }}>
           <div style={{ position: 'absolute', top: '32px', right: '36px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
             {mode === 'signin' ? 'New here?' : 'Already have an account?'}
-            <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError('') }} style={{
+            <button onClick={toggleMode} style={{
               background: 'none', border: 'none', color: 'var(--text)', fontWeight: 500,
               marginLeft: '4px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px',
               borderBottom: '1px solid transparent', padding: 0,
@@ -473,7 +412,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               {error && (
                 <div style={{
                   background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
-                  color: '#fca5a5', fontSize: '12.5px', padding: '9px 12px',
+                  color: 'var(--danger-text-2)', fontSize: '12.5px', padding: '9px 12px',
                   borderRadius: '8px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px',
                 }}>
                   ⚠ {error}

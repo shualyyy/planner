@@ -38,13 +38,6 @@ export default function Calendar({ selectedDate, onSelectDate }: CalendarProps) 
     })
   }, [viewMonth])
 
-  const taskCountByDate = useMemo(() => {
-    return tasks.reduce<Record<string, number>>((acc, t) => {
-      acc[t.task_date] = (acc[t.task_date] ?? 0) + 1
-      return acc
-    }, {})
-  }, [tasks])
-
   const tasksByDate = useMemo(() => {
     return tasks.reduce<Record<string, typeof tasks>>((acc, t) => {
       if (!acc[t.task_date]) acc[t.task_date] = []
@@ -110,21 +103,14 @@ export default function Calendar({ selectedDate, onSelectDate }: CalendarProps) 
             const isSelected = isSameDay(d, selectedDate)
             const isWeekend = d.getDay() === 0 || d.getDay() === 6
             const dayTasks = tasksByDate[dateKey] || []
-            const count = taskCountByDate[dateKey] || 0
+            const count = dayTasks.length
 
             return (
               <div
                 key={i}
                 onClick={() => onSelectDate(new Date(d))}
                 style={{
-                  position: 'relative',
-                  borderRadius: '10px',
-                  padding: '8px 10px 6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  minHeight: 0,
+                  ...dayCellBaseStyle,
                   border: isToday
                     ? '1px solid rgba(217, 119, 87, 0.55)'
                     : isSelected
@@ -136,7 +122,6 @@ export default function Calendar({ selectedDate, onSelectDate }: CalendarProps) 
                     ? '#1f1f1f'
                     : 'transparent',
                   boxShadow: isToday ? '0 0 0 1px rgba(217,119,87,0.22), 0 0 24px rgba(217,119,87,0.20)' : 'none',
-                  transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (!isToday && !isSelected) (e.currentTarget as HTMLElement).style.background = '#1a1a1a' }}
                 onMouseLeave={e => { if (!isToday && !isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
@@ -191,6 +176,18 @@ export default function Calendar({ selectedDate, onSelectDate }: CalendarProps) 
       </div>
     </div>
   )
+}
+
+const dayCellBaseStyle: React.CSSProperties = {
+  position: 'relative',
+  borderRadius: '10px',
+  padding: '8px 10px 6px',
+  cursor: 'pointer',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  minHeight: 0,
+  transition: 'all 0.15s',
 }
 
 const iconBtnStyle: React.CSSProperties = {

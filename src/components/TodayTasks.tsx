@@ -3,6 +3,8 @@ import { format, isSameDay } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
 import AddTaskModal from './AddTaskModal'
 import type { Task } from '../services/supabase'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { CheckIcon } from './icons'
 
 /* ─── Icons ───────────────────────────────────────────────── */
 
@@ -15,12 +17,6 @@ const ClockIcon = () => (
 const EmptyIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" />
-  </svg>
-)
-
-const CheckIcon = () => (
-  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6L9 17l-5-5" />
   </svg>
 )
 
@@ -126,7 +122,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
             onClick={triggerDelete}
             style={{
               fontSize: '12px', padding: '4px 10px', borderRadius: '7px',
-              background: '#ef4444', border: 'none',
+              background: 'var(--danger)', border: 'none',
               color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
             }}
           >Yes</button>
@@ -159,7 +155,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
         }}>
           {/* Pencil — blue */}
           <div style={{
-            width: `${halfW}px`, background: '#2563eb',
+            width: `${halfW}px`, background: 'var(--info)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <button
@@ -176,7 +172,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
 
           {/* Trash — red */}
           <div style={{
-            width: `${halfW}px`, background: '#ef4444',
+            width: `${halfW}px`, background: 'var(--danger)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {confirming ? (
@@ -185,7 +181,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
                   onClick={triggerDelete}
                   style={{
                     fontSize: '11px', padding: '3px 8px', borderRadius: '6px',
-                    background: '#fff', border: 'none', color: '#ef4444',
+                    background: '#fff', border: 'none', color: 'var(--danger)',
                     cursor: 'pointer', fontWeight: 600,
                   }}
                 >Delete</button>
@@ -269,7 +265,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
             color: 'var(--text-muted)',
             transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#60a5fa'}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--info-hover)'}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
         >
           <PencilIcon />
@@ -285,7 +281,7 @@ function TaskRow({ task, idx, done, isMobile, onToggle, onDelete, onEdit }: Task
             color: 'var(--text-muted)',
             transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ef4444'}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
         >
           <TrashIcon />
@@ -356,7 +352,7 @@ export default function TodayTasks({ selectedDate }: TodayTasksProps) {
   const [editingTask, setEditingTask]   = useState<Task | null>(null)
   const today = new Date()
   const isToday = isSameDay(selectedDate, today)
-  const isMobile = window.innerWidth < 768
+  const isMobile = useIsMobile()
 
   const dateKey  = format(selectedDate, 'yyyy-MM-dd')
   const dayTasks = tasks.filter(t => t.task_date === dateKey)

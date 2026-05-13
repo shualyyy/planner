@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Props {
   isOpen: boolean
@@ -11,7 +12,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
   const [signingOut, setSigningOut] = useState(false)
   const [visible, setVisible] = useState(false)
 
-  const isMobile = window.innerWidth < 768
+  const isMobile = useIsMobile()
   const shown = isOpen && visible
 
   // Fetch user email
@@ -168,7 +169,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
             width: '100%', padding: '11px',
             borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)',
             background: 'rgba(239,68,68,0.07)',
-            color: signingOut ? 'var(--text-muted)' : '#f87171',
+            color: signingOut ? 'var(--text-muted)' : 'var(--danger-text)',
             fontSize: '13px', fontWeight: 600,
             cursor: signingOut ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit',
@@ -185,7 +186,7 @@ export default function SettingsModal({ isOpen, onClose }: Props) {
           {signingOut ? (
             <span style={{
               width: '13px', height: '13px', borderRadius: '50%',
-              border: '2px solid rgba(248,113,113,0.3)', borderTopColor: '#f87171',
+              border: '2px solid rgba(248,113,113,0.3)', borderTopColor: 'var(--danger-text)',
               animation: 'spin 0.7s linear infinite', display: 'inline-block',
             }} />
           ) : (

@@ -63,7 +63,7 @@ const SUGGESTIONS = [
 ]
 
 export default function ChatPanel() {
-  const { addTask, fetchTasks } = useTaskStore()
+  const { addTask } = useTaskStore()
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Hi! Tell me what to add to your calendar — for example: \"Meeting with Alex on Monday at 3pm\" or \"сегодня в 16:00 встреча с Мишей\"." },
   ])
@@ -101,7 +101,6 @@ export default function ChatPanel() {
           task_time: parsedTask.task_time,
           description: parsedTask.description,
         })
-        await fetchTasks()
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
@@ -280,7 +279,7 @@ export default function ChatPanel() {
                 background: listening ? 'rgba(239,68,68,0.15)' : '#2a2a2a',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexShrink: 0, marginRight: '4px',
-                color: listening ? '#ef4444' : 'var(--text-muted)',
+                color: listening ? 'var(--danger)' : 'var(--text-muted)',
                 transition: 'all 0.15s',
                 animation: listening ? 'micPulse 1.4s ease-in-out infinite' : 'none',
               }}

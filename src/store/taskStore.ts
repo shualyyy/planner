@@ -30,13 +30,15 @@ export const useTaskStore = create<TaskStore>((set) => ({
   addTask: async (task) => {
     const { data: { session } } = await supabase.auth.getSession()
     const userId = session?.user?.id
-    const { error } = await supabase.from('tasks').insert([{ ...task, user_id: userId }])
-    if (error) throw error
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('tasks')
-      .select('*')
-      .order('task_date', { ascending: true })
-    if (data) set({ tasks: data as Task[] })
+      .insert([{ ...task, user_id: userId }])
+      .select()
+      .single()
+    if (error) throw error
+    set((state) => ({
+      tasks: [...state.tasks, data as Task].sort((a, b) => a.task_date.localeCompare(b.task_date)),
+    }))
   },
 
   updateTask: async (id, updates) => {
