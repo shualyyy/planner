@@ -26,8 +26,6 @@ const TABS: { id: Tab; Icon: React.FC<{ color: string }> }[] = [
   { id: 'settings', Icon: SettingsTabIcon },
 ]
 
-// Tab bar height + safe area — used for bottom padding in screens
-const TAB_OFFSET = 'calc(env(safe-area-inset-bottom, 0px) + 72px)'
 
 export default function MobileApp() {
   const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
