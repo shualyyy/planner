@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import CalendarScreen from './CalendarScreen'
 import TasksScreen from './TasksScreen'
 import AssistantScreen from './AssistantScreen'
@@ -24,6 +25,9 @@ const TABS: { id: Tab; Icon: React.FC<{ color: string }> }[] = [
   { id: 'wins', Icon: WinsTabIcon },
   { id: 'settings', Icon: SettingsTabIcon },
 ]
+
+// Tab bar height + safe area — used for bottom padding in screens
+const TAB_OFFSET = 'calc(env(safe-area-inset-bottom, 0px) + 72px)'
 
 export default function MobileApp() {
   const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
@@ -52,58 +56,98 @@ export default function MobileApp() {
     setEditTask(null)
   }
 
-  return (
+  // Tab bar rendered via portal directly into body — bypasses iOS fixed-in-fixed bug
+  const tabBar = createPortal(
     <div style={{
-      position: 'fixed', inset: 0,
-      background: 'var(--bg)',
-      display: 'flex', flexDirection: 'column',
-      paddingTop: 'env(safe-area-inset-top)',
+      position: 'fixed',
+      bottom: 'env(safe-area-inset-bottom, 0px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 200,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      background: 'var(--surface)',
+      borderRadius: '999px',
+      padding: '8px 12px',
+      boxShadow: '0 4px 24px var(--shadow), 0 0 0 1px var(--border)',
+      WebkitTapHighlightColor: 'transparent',
     }}>
-      {/* Panels — all mounted, active one visible */}
-      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, display: tab === 'calendar' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <CalendarScreen
-            tasks={grouped}
-            onAdd={(d, t) => handleAdd(d, t)}
-            onToggle={(_dk, id) => toggleDone(id)}
-          />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, display: tab === 'tasks' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <TasksScreen
-            tasks={grouped}
-            onToggle={(_dk, id) => toggleDone(id)}
-            onDelete={(_dk, id) => deleteTask(id)}
-            onEdit={handleEdit}
-            onAdd={() => handleAdd()}
-          />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <AssistantScreen />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, display: tab === 'wins' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <WinsScreen />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <SettingsScreen />
+      {TABS.map(({ id, Icon }) => {
+        const active = tab === id
+        return (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            style={{
+              width: '44px', height: '44px',
+              borderRadius: '50%',
+              border: 'none',
+              background: 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              position: 'relative',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
+            {active && (
+              <span style={{
+                position: 'absolute',
+                bottom: '4px', left: '50%',
+                transform: 'translateX(-50%)',
+                width: '4px', height: '4px',
+                borderRadius: '50%',
+                background: 'var(--accent)',
+              }} />
+            )}
+          </button>
+        )
+      })}
+    </div>,
+    document.body
+  )
+
+  return (
+    <>
+      <div style={{
+        position: 'fixed', inset: 0,
+        background: 'var(--bg)',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: TAB_OFFSET,
+      }}>
+        {/* Panels — all mounted, active one visible */}
+        <div style={{ position: 'absolute', top: 'env(safe-area-inset-top)', left: 0, right: 0, bottom: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'calendar' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <CalendarScreen
+              tasks={grouped}
+              onAdd={(d, t) => handleAdd(d, t)}
+              onToggle={(_dk, id) => toggleDone(id)}
+            />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'tasks' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <TasksScreen
+              tasks={grouped}
+              onToggle={(_dk, id) => toggleDone(id)}
+              onDelete={(_dk, id) => deleteTask(id)}
+              onEdit={handleEdit}
+              onAdd={() => handleAdd()}
+            />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <AssistantScreen />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'wins' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <WinsScreen />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <SettingsScreen />
+          </div>
         </div>
       </div>
 
-      {/* Floating pill tab bar */}
-      <div className="tabbar">
-        {TABS.map(({ id, Icon }) => {
-          const active = tab === id
-          return (
-            <button
-              key={id}
-              className="tab"
-              onClick={() => setTab(id)}
-            >
-              <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
-              {active && <div className="tab-glow" />}
-            </button>
-          )
-        })}
-      </div>
+      {/* Tab bar via portal — not clipped by parent stacking context */}
+      {tabBar}
 
       <AddTaskModal
         isOpen={modalOpen || editTask !== null}
@@ -112,6 +156,6 @@ export default function MobileApp() {
         defaultTime={modalTime}
         editTask={editTask ?? undefined}
       />
-    </div>
+    </>
   )
 }
