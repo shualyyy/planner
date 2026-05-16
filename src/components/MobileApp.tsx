@@ -57,7 +57,6 @@ export default function MobileApp() {
       position: 'fixed', inset: 0,
       background: 'var(--bg)',
       display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
       paddingTop: 'env(safe-area-inset-top)',
     }}>
       {/* Panels — all mounted, active one visible */}
@@ -90,22 +89,20 @@ export default function MobileApp() {
       </div>
 
       {/* Floating pill tab bar */}
-      <div className="tabbar-wrap">
-        <div className="tabbar">
-          {TABS.map(({ id, Icon }) => {
-            const active = tab === id
-            return (
-              <button
-                key={id}
-                className="tab"
-                onClick={() => setTab(id)}
-              >
-                <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
-                {active && <div className="tab-glow" />}
-              </button>
-            )
-          })}
-        </div>
+      <div className="tabbar">
+        {TABS.map(({ id, Icon }) => {
+          const active = tab === id
+          return (
+            <button
+              key={id}
+              className="tab"
+              onClick={() => setTab(id)}
+            >
+              <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
+              {active && <div className="tab-glow" />}
+            </button>
+          )
+        })}
       </div>
 
       <AddTaskModal
