@@ -140,56 +140,61 @@ function Calendar30({ anchor, tasks, onDayTap }: {
   const year = anchor.getFullYear()
   const month = anchor.getMonth()
   const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
   const startDow = (firstDay.getDay() + 6) % 7 // Monday=0
-  const daysInMonth = lastDay.getDate()
+
+  // Full 42-cell grid including adjacent month days
+  const cells: Date[] = []
+  const gridStart = new Date(year, month, 1 - startDow)
+  for (let i = 0; i < 42; i++) {
+    cells.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i))
+  }
 
   const todayKey = dayKey(new Date())
-  const cells: (number | null)[] = []
-  for (let i = 0; i < startDow; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-  while (cells.length < 42) cells.push(null)
 
   return (
-    <div style={{ padding: '8px 12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 10px' }}>
+      {/* Weekday headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '2px' }}>
         {WEEKDAYS.map((d, i) => (
           <div key={i} style={{ textAlign: 'center', fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', padding: '4px 0' }}>{d}</div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-        {cells.map((day, i) => {
-          if (day === null) return <div key={i} />
-          const d = new Date(year, month, day)
+      {/* 6 rows filling remaining height */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)', gap: '2px' }}>
+        {cells.map((d, i) => {
           const dk = dayKey(d)
           const isToday = dk === todayKey
-          const dayTasks = tasks[dk] || []
+          const isOtherMonth = d.getMonth() !== month
+          const dayTasks = isOtherMonth ? [] : (tasks[dk] || [])
           return (
             <div
               key={i}
-              onClick={() => onDayTap(d)}
+              onClick={() => !isOtherMonth && onDayTap(d)}
               style={{
-                aspectRatio: '1', display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: '2px',
-                borderRadius: '10px', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'flex-start', justifyContent: 'flex-start',
+                padding: '3px 3px 2px',
+                borderRadius: '8px', cursor: isOtherMonth ? 'default' : 'pointer',
                 background: isToday ? 'var(--accent-soft)' : 'transparent',
-                transition: 'background 0.15s',
+                overflow: 'hidden',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
               <span style={{
-                fontSize: '13px', fontWeight: isToday ? 600 : 400,
-                color: isToday ? 'var(--accent)' : 'var(--text)',
-              }}>{day}</span>
-              {dayTasks.length > 0 && (
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {dayTasks.slice(0, 2).map(t => (
-                    <div key={t.id} style={{
-                      width: '5px', height: '5px', borderRadius: '50%',
-                      background: evColor(t.id),
-                    }} />
-                  ))}
-                </div>
+                fontSize: '12px', fontWeight: isToday ? 600 : 400, lineHeight: 1.3,
+                color: isToday ? 'var(--accent)' : isOtherMonth ? 'var(--text-muted)' : 'var(--text)',
+                alignSelf: 'center',
+              }}>{d.getDate()}</span>
+              {dayTasks.slice(0, 2).map(t => (
+                <div key={t.id} style={{
+                  width: '100%', fontSize: '9px', fontWeight: 500, lineHeight: 1.2,
+                  padding: '1px 3px', borderRadius: '3px', marginTop: '1px',
+                  background: evColor(t.id), color: '#333',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{t.title}</div>
+              ))}
+              {dayTasks.length > 2 && (
+                <div style={{ fontSize: '8px', color: 'var(--text-muted)', paddingLeft: '2px' }}>+{dayTasks.length - 2}</div>
               )}
             </div>
           )
@@ -381,36 +386,18 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
         padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {view !== '30d' && (
-            <button onClick={() => navigate(-1)} style={navBtnStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-          )}
-          <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)' }}>{title}</span>
-          {view !== '30d' && (
-            <button onClick={() => navigate(1)} style={navBtnStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          )}
-        </div>
-        <SegmentPills view={view} onChange={v => { setView(v); setAnchor(new Date()) }} />
-      </div>
-
-      {/* Month nav for 30d */}
-      {view === '30d' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 16px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button onClick={() => navigate(-1)} style={navBtnStyle}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <button onClick={() => setAnchor(new Date())} style={{ ...navBtnStyle, fontSize: '11px', padding: '4px 10px', borderRadius: '999px' }}>
-            Today
-          </button>
+          <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)' }}>{title}</span>
           <button onClick={() => navigate(1)} style={navBtnStyle}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
-      )}
+        <SegmentPills view={view} onChange={v => { setView(v); setAnchor(new Date()) }} />
+      </div>
+
 
       {/* Calendar body */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
