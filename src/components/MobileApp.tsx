@@ -114,7 +114,6 @@ export default function MobileApp() {
         position: 'fixed', inset: 0,
         background: 'var(--bg)',
         paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: TAB_OFFSET,
       }}>
         {/* Panels — all mounted, active one visible */}
         <div style={{ position: 'absolute', top: 'env(safe-area-inset-top)', left: 0, right: 0, bottom: 0 }}>

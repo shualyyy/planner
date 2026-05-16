@@ -155,7 +155,7 @@ export default function AssistantScreen() {
   }, [listening])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', height: '100%', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', height: '100%' }}>
       {/* Header */}
       <div style={{
         height: '56px', padding: '0 18px',
@@ -242,7 +242,7 @@ export default function AssistantScreen() {
       </div>
 
       {/* Input */}
-      <div style={{ padding: '12px 14px 14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div style={{ padding: '12px 14px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px',
           display: 'flex', alignItems: 'flex-end', padding: '6px 6px 6px 12px',

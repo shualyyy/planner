@@ -254,7 +254,7 @@ function TimeGrid({ days, tasks, onCellTap }: {
       </div>
 
       {/* Scrollable grid */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', position: 'relative', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: `40px repeat(${days.length}, 1fr)`,
@@ -375,7 +375,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
   const oneDay = useMemo(() => [anchor], [anchor])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Topbar */}
       <div style={{
         padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
