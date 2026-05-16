@@ -90,20 +90,22 @@ export default function MobileApp() {
       </div>
 
       {/* Floating pill tab bar */}
-      <div className="tabbar">
-        {TABS.map(({ id, Icon }) => {
-          const active = tab === id
-          return (
-            <button
-              key={id}
-              className="tab"
-              onClick={() => setTab(id)}
-            >
-              <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
-              {active && <div className="tab-glow" />}
-            </button>
-          )
-        })}
+      <div className="tabbar-wrap">
+        <div className="tabbar">
+          {TABS.map(({ id, Icon }) => {
+            const active = tab === id
+            return (
+              <button
+                key={id}
+                className="tab"
+                onClick={() => setTab(id)}
+              >
+                <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
+                {active && <div className="tab-glow" />}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <AddTaskModal
