@@ -4,18 +4,26 @@ import { supabase, type Task } from '../services/supabase'
 interface TaskStore {
   tasks: Task[]
   loading: boolean
-  donIds: Set<string>           // local-only done state
+  donIds: Set<string>
+  theme: 'light' | 'dark'
   fetchTasks: () => Promise<void>
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   toggleDone: (id: string) => void
+  setTheme: (t: 'light' | 'dark') => void
 }
 
 export const useTaskStore = create<TaskStore>((set) => ({
   tasks: [],
   loading: false,
   donIds: new Set(),
+  theme: 'light',
+
+  setTheme: (t) => {
+    document.documentElement.setAttribute('data-theme', t)
+    set({ theme: t })
+  },
 
   fetchTasks: async () => {
     set({ loading: true })
@@ -71,3 +79,15 @@ export const useTaskStore = create<TaskStore>((set) => ({
     })
   },
 }))
+
+/** Groups Task[] into Record<'yyyy-MM-dd', (Task & { done: boolean })[]> */
+export function groupTasksByDay(
+  tasks: Task[],
+  donIds: Set<string>
+): Record<string, (Task & { done: boolean })[]> {
+  return tasks.reduce((acc, t) => {
+    if (!acc[t.task_date]) acc[t.task_date] = []
+    acc[t.task_date].push({ ...t, done: donIds.has(t.id) })
+    return acc
+  }, {} as Record<string, (Task & { done: boolean })[]>)
+}

@@ -1,27 +1,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
-  --bg: #0f0f0f;
-  --panel: #161616;
-  --panel-2: #1a1a1a;
-  --border: #262626;
-  --border-soft: #1f1f1f;
-  --text: #e5e5e5;
-  --text-2: #a3a3a3;
-  --text-muted: #666666;
-  --text-faint: #404040;
-  --accent: #D97757;
-  --accent-2: #E89372;
-  --accent-soft: rgba(217, 119, 87, 0.14);
-  --accent-glow: rgba(217, 119, 87, 0.38);
-  --danger: #ef4444;
-  --danger-text: #f87171;
-  --danger-text-2: #fca5a5;
-  --danger-soft: rgba(239, 68, 68, 0.07);
-  --danger-soft-2: rgba(239, 68, 68, 0.13);
-  --danger-border: rgba(239, 68, 68, 0.25);
-  --info: #2563eb;
-  --info-hover: #60a5fa;
+/* ── Light theme (default) ── */
+[data-theme="light"], :root {
+  --bg:           #F7F4F1;
+  --surface:      #FFFFFF;
+  --surface2:     #F0ECE8;
+  --border:       #E4DED9;
+  --text:         #1C1917;
+  --text-2:       #6B6360;
+  --text-muted:   #A89E9A;
+  --accent:       #E8845A;
+  --accent-2:     #D97757;
+  --accent-soft:  #F5E6DF;
+  --accent-glow:  rgba(232,132,90,0.35);
+  --danger:       #E05C5C;
+  --danger-text:  #dc2626;
+  --danger-soft:  rgba(224,92,92,0.08);
+  --danger-border: rgba(224,92,92,0.25);
+  --info:         #2563eb;
+  --info-hover:   #3b82f6;
+  --shadow:       rgba(0,0,0,0.08);
+
+  --ev-0: #B8D4F2;
+  --ev-1: #F5BDD0;
+  --ev-2: #F5E28A;
+  --ev-3: #8ED4C8;
+  --ev-4: #C8B4E8;
+  --ev-5: #A8D8B0;
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --bg:           #0E0C0B;
+  --surface:      #1B1714;
+  --surface2:     #241F1C;
+  --border:       #2E2824;
+  --text:         #F2EBE6;
+  --text-2:       #A89E9A;
+  --text-muted:   #6B6360;
+  --accent:       #E8845A;
+  --accent-2:     #E89372;
+  --accent-soft:  rgba(232,132,90,0.15);
+  --accent-glow:  rgba(232,132,90,0.38);
+  --danger:       #E05C5C;
+  --danger-text:  #f87171;
+  --danger-soft:  rgba(239,68,68,0.07);
+  --danger-border: rgba(239,68,68,0.25);
+  --info:         #3b82f6;
+  --info-hover:   #60a5fa;
+  --shadow:       rgba(0,0,0,0.30);
+
+  --ev-0: #B8D4F2;
+  --ev-1: #F5BDD0;
+  --ev-2: #F5E28A;
+  --ev-3: #8ED4C8;
+  --ev-4: #C8B4E8;
+  --ev-5: #A8D8B0;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,7 +73,6 @@ body {
   overflow: hidden;
 }
 
-/* Mobile base */
 @media (max-width: 767px) {
   body {
     -webkit-text-size-adjust: 100%;
@@ -47,5 +80,127 @@ body {
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Animations ── */
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,132,90,0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(232,132,90,0); }
+}
+@keyframes ping {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.5); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Calendar segment pills ── */
+.seg {
+  background: var(--surface2);
+  border-radius: 999px;
+  padding: 3px;
+  display: flex;
+  gap: 2px;
+}
+.seg-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.seg-pill.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+/* ── Tab bar ── */
+.tabbar {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 24px var(--shadow), 0 0 0 1px var(--border);
+  z-index: 100;
+}
+.tab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-glow {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ── Settings ── */
+.settings-card {
+  background: var(--surface);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 16px;
+}
+.settings-section-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 16px 4px 6px;
+}
+
+/* ── Date/time input picker icon ── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.4);
+  cursor: pointer;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}

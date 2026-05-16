@@ -11,11 +11,16 @@ import { useIsMobile } from './hooks/useIsMobile'
 import { GearIcon } from './components/icons'
 
 export default function App() {
-  const { fetchTasks } = useTaskStore()
+  const { fetchTasks, theme } = useTaskStore()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [session, setSession] = useState<boolean | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const isMobile = useIsMobile()
+
+  // Sync theme to DOM
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -36,7 +41,6 @@ export default function App() {
     return (
       <div style={{ width: '100vw', height: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)', animation: 'ping 1s ease-in-out infinite' }} />
-        <style>{`@keyframes ping { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.5)} }`}</style>
       </div>
     )
   }
@@ -47,9 +51,9 @@ export default function App() {
       : <LoginPage onLogin={() => setSession(true)} />
   }
 
-  // Mobile layout — bottom tabs
+  // Mobile layout — 5-tab floating pill
   if (isMobile) {
-    return <MobileApp selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
+    return <MobileApp />
   }
 
   // Desktop layout — 3-column grid
@@ -58,13 +62,13 @@ export default function App() {
       <div style={{
         width: '100vw',
         height: '100vh',
-        background: 'var(--panel)',
+        background: 'var(--surface)',
         overflow: 'hidden',
         display: 'grid',
         gridTemplateColumns: '300px 1fr 320px',
       }}>
         <ChatPanel />
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--border-soft)', borderRight: '1px solid var(--border-soft)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
           <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
         </div>
         <TodayTasks selectedDate={selectedDate} />
@@ -83,7 +87,7 @@ export default function App() {
           transition: 'all 0.15s',
         }}
         onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.background = 'var(--panel-2)'
+          (e.currentTarget as HTMLElement).style.background = 'var(--surface2)'
           ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
         }}
         onMouseLeave={e => {

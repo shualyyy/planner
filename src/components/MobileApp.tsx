@@ -1,166 +1,118 @@
 import { useState } from 'react'
-import Calendar from './Calendar'
-import ChatPanel from './ChatPanel'
-import TodayTasks from './TodayTasks'
-import SettingsModal from './SettingsModal'
-import { GearIcon } from './icons'
+import CalendarScreen from './CalendarScreen'
+import TasksScreen from './TasksScreen'
+import AssistantScreen from './AssistantScreen'
+import WinsScreen from './WinsScreen'
+import SettingsScreen from './SettingsScreen'
+import AddTaskModal from './AddTaskModal'
+import { useTaskStore, groupTasksByDay } from '../store/taskStore'
+import {
+  CalendarTabIcon,
+  TasksTabIcon,
+  AssistantTabIcon,
+  WinsTabIcon,
+  SettingsTabIcon,
+} from './icons'
+import type { Task } from '../services/supabase'
 
-type Tab = 'calendar' | 'today' | 'chat'
+type Tab = 'calendar' | 'tasks' | 'assistant' | 'wins' | 'settings'
 
-const CalIcon = ({ active }: { active: boolean }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="5" width="18" height="16" rx="3" />
-    <path d="M3 10h18M8 3v4M16 3v4" />
-  </svg>
-)
-
-const TasksIcon = ({ active }: { active: boolean }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 6l2 2 4-4M9 14l2 2 4-4" />
-    <path d="M3 6h2M3 14h2M3 20h18" />
-  </svg>
-)
-
-const ChatIcon = ({ active }: { active: boolean }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 5h16a2 2 0 012 2v9a2 2 0 01-2 2h-8l-5 4v-4H4a2 2 0 01-2-2V7a2 2 0 012-2z" />
-  </svg>
-)
-
-const TABS = [
-  { id: 'calendar' as Tab, label: 'Calendar', Icon: CalIcon },
-  { id: 'today' as Tab, label: 'Today', Icon: TasksIcon },
-  { id: 'chat' as Tab, label: 'Assistant', Icon: ChatIcon },
+const TABS: { id: Tab; Icon: React.FC<{ color: string }> }[] = [
+  { id: 'calendar', Icon: CalendarTabIcon },
+  { id: 'tasks', Icon: TasksTabIcon },
+  { id: 'assistant', Icon: AssistantTabIcon },
+  { id: 'wins', Icon: WinsTabIcon },
+  { id: 'settings', Icon: SettingsTabIcon },
 ]
 
-interface MobileAppProps {
-  selectedDate: Date
-  setSelectedDate: (d: Date) => void
-}
+export default function MobileApp() {
+  const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
+  const [tab, setTab] = useState<Tab>('tasks')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalDate, setModalDate] = useState<Date>(new Date())
+  const [modalTime, setModalTime] = useState('')
+  const [editTask, setEditTask] = useState<Task | null>(null)
 
-export default function MobileApp({ selectedDate, setSelectedDate }: MobileAppProps) {
-  const [tab, setTab] = useState<Tab>('today')
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const grouped = groupTasksByDay(tasks, donIds)
+
+  function handleAdd(date?: Date, time?: string) {
+    setModalDate(date || new Date())
+    setModalTime(time || '')
+    setEditTask(null)
+    setModalOpen(true)
+  }
+
+  function handleEdit(task: Task) {
+    setEditTask(task)
+    setModalOpen(true)
+  }
+
+  function closeModal() {
+    setModalOpen(false)
+    setEditTask(null)
+  }
 
   return (
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      position: 'fixed', inset: 0,
       background: 'var(--bg)',
-      display: 'flex',
-      flexDirection: 'column',
+      display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
       paddingTop: 'env(safe-area-inset-top)',
     }}>
-      {/* Gear icon — fixed top-right */}
-      <button
-        onClick={() => setSettingsOpen(true)}
-        style={{
-          position: 'fixed',
-          top: '14px',
-          right: '16px',
-          zIndex: 10,
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--text-muted)',
-          padding: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '8px',
-          WebkitTapHighlightColor: 'transparent',
-          transition: 'color 0.15s',
-        }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
-      >
-        <GearIcon />
-      </button>
-
-      {/* Panels — all mounted, only one visible at a time (keeps state alive) */}
+      {/* Panels — all mounted, active one visible */}
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: tab === 'calendar' ? 'flex' : 'none',
-          flexDirection: 'column',
-        }}>
-          <Calendar
-            selectedDate={selectedDate}
-            onSelectDate={(d) => setSelectedDate(d)}
+        <div style={{ position: 'absolute', inset: 0, display: tab === 'calendar' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <CalendarScreen
+            tasks={grouped}
+            onAdd={(d, t) => handleAdd(d, t)}
+            onToggle={(_dk, id) => toggleDone(id)}
           />
         </div>
-
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: tab === 'today' ? 'flex' : 'none',
-          flexDirection: 'column',
-        }}>
-          <TodayTasks selectedDate={selectedDate} />
+        <div style={{ position: 'absolute', inset: 0, display: tab === 'tasks' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <TasksScreen
+            tasks={grouped}
+            onToggle={(_dk, id) => toggleDone(id)}
+            onDelete={(_dk, id) => deleteTask(id)}
+            onEdit={handleEdit}
+            onAdd={() => handleAdd()}
+          />
         </div>
-
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: tab === 'chat' ? 'flex' : 'none',
-          flexDirection: 'column',
-        }}>
-          <ChatPanel />
+        <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <AssistantScreen />
         </div>
-
+        <div style={{ position: 'absolute', inset: 0, display: tab === 'wins' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <WinsScreen />
+        </div>
+        <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <SettingsScreen />
+        </div>
       </div>
 
-      {/* Bottom tab bar */}
-      <div style={{
-        flexShrink: 0,
-        borderTop: '1px solid var(--border-soft)',
-        background: '#0f0f0f',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{ display: 'flex' }}>
-        {TABS.map(({ id, label, Icon }) => {
+      {/* Floating pill tab bar */}
+      <div className="tabbar">
+        {TABS.map(({ id, Icon }) => {
           const active = tab === id
           return (
             <button
               key={id}
+              className="tab"
               onClick={() => setTab(id)}
-              style={{
-                flex: 1,
-                background: 'transparent',
-                border: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                padding: '10px 0 10px',
-                cursor: 'pointer',
-                color: active ? 'var(--accent-2)' : 'var(--text-muted)',
-                fontFamily: 'inherit',
-                fontSize: 10.5,
-                fontWeight: active ? 600 : 500,
-                letterSpacing: '0.01em',
-                transition: 'color 0.15s',
-                WebkitTapHighlightColor: 'transparent',
-              }}
             >
-              <Icon active={active} />
-              {label}
+              <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
+              {active && <div className="tab-glow" />}
             </button>
           )
         })}
-        </div>
-        {/* Safe area fill — extends background under home indicator */}
-        <div style={{ height: 'env(safe-area-inset-bottom, 0px)', background: '#0f0f0f' }} />
       </div>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AddTaskModal
+        isOpen={modalOpen || editTask !== null}
+        onClose={closeModal}
+        defaultDate={modalDate}
+        defaultTime={modalTime}
+        editTask={editTask ?? undefined}
+      />
     </div>
   )
 }
