@@ -164,7 +164,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit, onAdd }
           >Add task</button>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 150px)' }}>
           {sortedDays.map(dk => {
             const dayTasks = tasks[dk]
             if (dayTasks.length === 0) return null
@@ -202,7 +202,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit, onAdd }
         onClick={onAdd}
         style={{
           position: 'absolute',
-          bottom: '88px',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 82px)',
           right: '20px',
           width: '52px', height: '52px', borderRadius: '50%', border: 'none',
           background: 'var(--accent)', color: '#fff',

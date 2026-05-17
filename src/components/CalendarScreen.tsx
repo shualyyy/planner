@@ -6,6 +6,7 @@ interface CalendarScreenProps {
   tasks: Record<string, (Task & { done: boolean })[]>
   onAdd: (date: Date, time?: string) => void
   onToggle: (dateKey: string, taskId: string) => void
+  onPopupChange?: (open: boolean) => void
 }
 
 type View = '30d' | '3d' | '1d'
@@ -330,13 +331,23 @@ function TimeGrid({ days, tasks, onCellTap }: {
 }
 
 /* ─── Main CalendarScreen ─── */
-export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScreenProps) {
+export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }: CalendarScreenProps) {
   const [view, setView] = useState<View>('30d')
   const [anchor, setAnchor] = useState(new Date())
   const [popupDate, setPopupDate] = useState<Date | null>(null)
 
   const popupKey = popupDate ? dayKey(popupDate) : ''
   const popupTasks = popupDate ? (tasks[popupKey] || []) : []
+
+  function openPopup(date: Date) {
+    setPopupDate(date)
+    onPopupChange?.(true)
+  }
+
+  function closePopup() {
+    setPopupDate(null)
+    onPopupChange?.(false)
+  }
 
   const title = useMemo(() => {
     if (view === '30d') return MONTHS[anchor.getMonth()] + ' ' + anchor.getFullYear()
@@ -366,7 +377,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
   const oneDay = useMemo(() => [anchor], [anchor])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 74px)' }}>
       {/* Topbar */}
       <div style={{
         padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -388,7 +399,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
       {/* Calendar body */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {view === '30d' && (
-          <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => setPopupDate(d)} />
+          <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
         )}
         {view === '3d' && (
           <TimeGrid days={threeDays} tasks={tasks} onCellTap={(d, time) => onAdd(d, time)} />
@@ -403,9 +414,9 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
         <DayPopup
           date={popupDate}
           tasks={popupTasks}
-          onClose={() => setPopupDate(null)}
+          onClose={closePopup}
           onToggle={id => onToggle(popupKey, id)}
-          onAdd={() => { onAdd(popupDate); setPopupDate(null) }}
+          onAdd={() => { onAdd(popupDate); closePopup() }}
         />
       )}
     </div>

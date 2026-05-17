@@ -286,7 +286,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   width: 320px;
   height: 58px;
   border-radius: 29px;
@@ -330,7 +330,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* ── Calendar 30d (exact values from design) ── */
 .cal-body {
   flex: 1; min-height: 0;
-  padding: 0 12px 100px;
+  padding: 0 12px 8px;
   display: flex; flex-direction: column;
   overflow: hidden;
 }

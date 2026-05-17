@@ -34,6 +34,7 @@ export default function MobileApp() {
   const [modalDate, setModalDate] = useState<Date>(new Date())
   const [modalTime, setModalTime] = useState('')
   const [editTask, setEditTask] = useState<Task | null>(null)
+  const [calPopupOpen, setCalPopupOpen] = useState(false)
 
   const grouped = groupTasksByDay(tasks, donIds)
 
@@ -84,6 +85,7 @@ export default function MobileApp() {
               tasks={grouped}
               onAdd={(d, t) => handleAdd(d, t)}
               onToggle={(_dk, id) => toggleDone(id)}
+              onPopupChange={setCalPopupOpen}
             />
           </div>
           <div style={{ position: 'absolute', inset: 0, display: tab === 'tasks' ? 'flex' : 'none', flexDirection: 'column' }}>
@@ -107,8 +109,8 @@ export default function MobileApp() {
         </div>
       </div>
 
-      {/* Tab bar via portal — not clipped by parent stacking context */}
-      {tabBar}
+      {/* Tab bar via portal — hidden when calendar day popup is open */}
+      {!calPopupOpen && tabBar}
 
       <AddTaskModal
         isOpen={modalOpen}
