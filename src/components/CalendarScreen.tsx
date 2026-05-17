@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import type { Task } from '../services/supabase'
 import { ChevronLeft, ChevronRight } from './icons'
 
@@ -173,13 +174,13 @@ function Calendar30({ anchor, tasks, onDayTap }: {
               <div className="d-num">{d.getDate()}</div>
               {dayTasks.length > 0 && (
                 <div className="d-chips">
-                  {dayTasks.slice(0, 2).map(t => (
+                  {dayTasks.slice(0, 4).map(t => (
                     <div key={t.id} className="d-chip" style={{ background: evColor(t.id) }}>
                       {t.title}
                     </div>
                   ))}
-                  {dayTasks.length > 2 && (
-                    <div className="d-more">+{dayTasks.length - 2}</div>
+                  {dayTasks.length > 4 && (
+                    <div className="d-more">+{dayTasks.length - 4}</div>
                   )}
                 </div>
               )}
@@ -409,15 +410,16 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
         )}
       </div>
 
-      {/* DayPopup */}
-      {popupDate && (
+      {/* DayPopup — rendered via portal into body to avoid iOS fixed-in-fixed issues */}
+      {popupDate && createPortal(
         <DayPopup
           date={popupDate}
           tasks={popupTasks}
           onClose={closePopup}
           onToggle={id => onToggle(popupKey, id)}
           onAdd={() => { onAdd(popupDate); closePopup() }}
-        />
+        />,
+        document.body
       )}
     </div>
   )
