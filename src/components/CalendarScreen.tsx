@@ -152,15 +152,11 @@ function Calendar30({ anchor, tasks, onDayTap }: {
   const todayKey = dayKey(new Date())
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 10px' }}>
-      {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '2px' }}>
-        {WEEKDAYS.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', padding: '4px 0' }}>{d}</div>
-        ))}
+    <div className="cal-body">
+      <div className="weekdays">
+        {WEEKDAYS.map((d, i) => <div key={i} className="wd">{d}</div>)}
       </div>
-      {/* 6 rows filling remaining height */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)', gap: '2px' }}>
+      <div className="days30">
         {cells.map((d, i) => {
           const dk = dayKey(d)
           const isToday = dk === todayKey
@@ -169,32 +165,21 @@ function Calendar30({ anchor, tasks, onDayTap }: {
           return (
             <div
               key={i}
+              className={`d30${isToday ? ' today' : ''}${isOtherMonth ? ' other' : ''}`}
               onClick={() => !isOtherMonth && onDayTap(d)}
-              style={{
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'flex-start', justifyContent: 'flex-start',
-                padding: '3px 3px 2px',
-                borderRadius: '8px', cursor: isOtherMonth ? 'default' : 'pointer',
-                background: isToday ? 'var(--accent-soft)' : 'transparent',
-                overflow: 'hidden',
-                WebkitTapHighlightColor: 'transparent',
-              }}
             >
-              <span style={{
-                fontSize: '12px', fontWeight: isToday ? 600 : 400, lineHeight: 1.3,
-                color: isToday ? 'var(--accent)' : isOtherMonth ? 'var(--text-muted)' : 'var(--text)',
-                alignSelf: 'center',
-              }}>{d.getDate()}</span>
-              {dayTasks.slice(0, 2).map(t => (
-                <div key={t.id} style={{
-                  width: '100%', fontSize: '9px', fontWeight: 500, lineHeight: 1.2,
-                  padding: '1px 3px', borderRadius: '3px', marginTop: '1px',
-                  background: evColor(t.id), color: '#333',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>{t.title}</div>
-              ))}
-              {dayTasks.length > 2 && (
-                <div style={{ fontSize: '8px', color: 'var(--text-muted)', paddingLeft: '2px' }}>+{dayTasks.length - 2}</div>
+              <div className="d-num">{d.getDate()}</div>
+              {dayTasks.length > 0 && (
+                <div className="d-chips">
+                  {dayTasks.slice(0, 2).map(t => (
+                    <div key={t.id} className="d-chip" style={{ background: evColor(t.id) }}>
+                      {t.title}
+                    </div>
+                  ))}
+                  {dayTasks.length > 2 && (
+                    <div className="d-more">+{dayTasks.length - 2}</div>
+                  )}
+                </div>
               )}
             </div>
           )

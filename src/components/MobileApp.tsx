@@ -56,49 +56,13 @@ export default function MobileApp() {
 
   // Tab bar rendered via portal directly into body — bypasses iOS fixed-in-fixed bug
   const tabBar = createPortal(
-    <div style={{
-      position: 'fixed',
-      bottom: '2px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 200,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      background: 'var(--surface)',
-      borderRadius: '999px',
-      padding: '8px 12px',
-      boxShadow: '0 4px 24px var(--shadow), 0 0 0 1px var(--border)',
-      WebkitTapHighlightColor: 'transparent',
-    }}>
+    <div className="tabbar">
       {TABS.map(({ id, Icon }) => {
         const active = tab === id
         return (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            style={{
-              width: '44px', height: '44px',
-              borderRadius: '50%',
-              border: 'none',
-              background: 'transparent',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              position: 'relative',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
+          <button key={id} className="tab" onClick={() => setTab(id)}>
             <Icon color={active ? 'var(--accent)' : 'var(--text-muted)'} />
-            {active && (
-              <span style={{
-                position: 'absolute',
-                bottom: '4px', left: '50%',
-                transform: 'translateX(-50%)',
-                width: '4px', height: '4px',
-                borderRadius: '50%',
-                background: 'var(--accent)',
-              }} />
-            )}
+            {active && <span className="tab-glow" />}
           </button>
         )
       })}

@@ -2,6 +2,9 @@
 
 /* ── Light theme (default) ── */
 [data-theme="light"], :root {
+  --tabbar-bg: rgba(255,255,255,0.85);
+  --tabbar-shadow: 0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.04) inset;
+  --hover-overlay: rgba(0,0,0,0.04);
   --bg:           #F7F4F1;
   --surface:      #FFFFFF;
   --surface2:     #F0ECE8;
@@ -39,6 +42,9 @@
 
 /* ── Dark theme ── */
 [data-theme="dark"] {
+  --tabbar-bg: rgba(27,23,20,0.82);
+  --tabbar-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.30), 0 0 0 0.5px rgba(255,255,255,0.06) inset;
+  --hover-overlay: rgba(255,255,255,0.04);
   --bg:           #0E0C0B;
   --surface:      #1B1714;
   --surface2:     #241F1C;
@@ -182,3 +188,95 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 [data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator {
   filter: none;
 }
+
+/* ── Tab bar (exact values from design) ── */
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: 320px;
+  height: 58px;
+  border-radius: 29px;
+  background: var(--tabbar-bg);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: var(--tabbar-shadow);
+  display: flex;
+  align-items: stretch;
+  padding: 0 4px;
+  z-index: 400;
+}
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab:active { transform: scale(0.92); }
+.tab-glow {
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.9;
+  box-shadow: 0 0 6px 2px rgba(232,132,90,0.4);
+}
+
+/* ── Calendar 30d (exact values from design) ── */
+.cal-body {
+  flex: 1; min-height: 0;
+  padding: 0 12px 100px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  padding: 4px 4px 8px; gap: 4px;
+}
+.wd {
+  text-align: center; color: var(--text-muted);
+  font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+}
+.days30 {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 4px; min-height: 0;
+}
+.d30 {
+  border-radius: 8px; padding: 6px 5px 4px;
+  border: 0.5px solid transparent; cursor: pointer;
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  background: transparent; -webkit-tap-highlight-color: transparent;
+}
+.d30:active { transform: scale(0.97); }
+.d30.today { background: var(--accent-soft); border-color: rgba(232,132,90,0.35); }
+.d30.other { pointer-events: none; }
+.d-num {
+  font-size: 13px; font-weight: 400; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 4px;
+}
+.d30.today .d-num { color: var(--accent); font-weight: 600; }
+.d30.other .d-num { color: var(--text-muted); opacity: 0.45; }
+.d-chips { display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-height: 0; }
+.d-chip {
+  font-size: 9.5px; line-height: 12px; padding: 2px 4px 2px 5px;
+  border-radius: 4px; color: #2a2520; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+}
+.d-more { font-size: 9px; color: var(--text-muted); font-weight: 500; padding-left: 4px; }
