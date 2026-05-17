@@ -136,7 +136,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit, onAdd }
   const hasAny = sortedDays.some(dk => tasks[dk].length > 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative' }}>
       {/* Header */}
       <div style={{ padding: '18px 20px 14px', flexShrink: 0 }}>
         <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>Tasks</h1>
@@ -201,8 +201,8 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit, onAdd }
       <button
         onClick={onAdd}
         style={{
-          position: 'fixed',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+          position: 'absolute',
+          bottom: '88px',
           right: '20px',
           width: '52px', height: '52px', borderRadius: '50%', border: 'none',
           background: 'var(--accent)', color: '#fff',

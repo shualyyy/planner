@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Task } from '../services/supabase'
+import { ChevronLeft, ChevronRight } from './icons'
 
 interface CalendarScreenProps {
   tasks: Record<string, (Task & { done: boolean })[]>
@@ -373,11 +374,11 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button onClick={() => navigate(-1)} style={navBtnStyle}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <ChevronLeft size={16} />
           </button>
           <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)' }}>{title}</span>
           <button onClick={() => navigate(1)} style={navBtnStyle}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <ChevronRight size={16} />
           </button>
         </div>
         <SegmentPills view={view} onChange={v => { setView(v); setAnchor(new Date()) }} />

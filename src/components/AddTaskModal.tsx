@@ -163,7 +163,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         }}
       >
         {isMobile && (
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#333', margin: '-8px auto 0' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '-8px auto 0' }} />
         )}
 
         <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
@@ -213,8 +213,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
                 </span>
                 <div style={{
                   width: '28px', height: '16px', borderRadius: '8px',
-                  background: isAllDay ? 'var(--accent)' : '#2a2a2a',
-                  border: `1px solid ${isAllDay ? 'var(--accent)' : '#3a3a3a'}`,
+                  background: isAllDay ? 'var(--accent)' : 'var(--surface2)',
+                  border: `1px solid ${isAllDay ? 'var(--accent)' : 'var(--border)'}`,
                   position: 'relative', transition: 'all 0.2s', flexShrink: 0,
                 }}>
                   <div style={{
@@ -289,7 +289,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               disabled={!title.trim() || saving}
               style={{
                 flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
-                background: title.trim() && !saving ? 'var(--accent)' : '#2a2a2a',
+                background: title.trim() && !saving ? 'var(--accent)' : 'var(--surface2)',
                 color: title.trim() && !saving ? '#fff' : 'var(--text-muted)',
                 fontSize: '13px', fontWeight: 600,
                 cursor: title.trim() && !saving ? 'pointer' : 'not-allowed',
@@ -321,8 +321,8 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '0.05em',
 }
 const inputStyle: React.CSSProperties = {
-  background: 'var(--panel-2)', border: '1px solid var(--border)',
+  background: 'var(--surface2)', border: '1px solid var(--border)',
   borderRadius: '9px', padding: '9px 12px', color: 'var(--text)',
   fontSize: '13px', fontFamily: 'inherit', outline: 'none',
-  width: '100%', boxSizing: 'border-box', colorScheme: 'dark',
+  width: '100%', boxSizing: 'border-box',
 }
