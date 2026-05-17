@@ -26,7 +26,7 @@ const PencilIcon = () => (
 )
 
 /* ─── TaskRow ─── */
-function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
+function TaskRow({ task, onToggle, onDelete, onEdit }: {
   task: Task & { done: boolean }
   dateKey: string
   onToggle: () => void
@@ -127,9 +127,6 @@ function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
       </div>
     </div>
   )
-
-  // dateKey used for external identification
-  void dateKey
 }
 
 /* ─── Main TasksScreen ─── */

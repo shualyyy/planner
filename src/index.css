@@ -27,6 +27,14 @@
   --ev-3: #8ED4C8;
   --ev-4: #C8B4E8;
   --ev-5: #A8D8B0;
+
+  /* Compat aliases for desktop components */
+  --panel:        var(--surface);
+  --panel-2:      var(--surface2);
+  --border-soft:  var(--border);
+  --text-faint:   #C8C0BC;
+  --danger-text-2: #fca5a5;
+  --danger-soft-2: rgba(224,92,92,0.13);
 }
 
 /* ── Dark theme ── */
@@ -56,6 +64,14 @@
   --ev-3: #8ED4C8;
   --ev-4: #C8B4E8;
   --ev-5: #A8D8B0;
+
+  /* Compat aliases for desktop components */
+  --panel:        var(--surface);
+  --panel-2:      var(--surface2);
+  --border-soft:  var(--border);
+  --text-faint:   #404040;
+  --danger-text-2: #fca5a5;
+  --danger-soft-2: rgba(239,68,68,0.13);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -127,30 +143,6 @@ body {
   box-shadow: 0 1px 3px var(--shadow);
 }
 
-/* tab bar is rendered via React portal with inline styles — no CSS class needed */
-.tab {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-.tab-glow {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-}
 
 /* ── Settings ── */
 .settings-card {

@@ -147,7 +147,7 @@ export default function MobileApp() {
       {tabBar}
 
       <AddTaskModal
-        isOpen={modalOpen || editTask !== null}
+        isOpen={modalOpen}
         onClose={closeModal}
         defaultDate={modalDate}
         defaultTime={modalTime}

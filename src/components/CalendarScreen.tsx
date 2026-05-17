@@ -380,7 +380,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
   const oneDay = useMemo(() => [anchor], [anchor])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
       {/* Topbar */}
       <div style={{
         padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
