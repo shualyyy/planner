@@ -1,0 +1,2011 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Planer · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap"/>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   TOKENS
+   ═══════════════════════════════════════════════════════════════ */
+:root, [data-theme="light"] {
+  --bg:           #F5F1EC;
+  --bg-2:         #EDE7DF;
+  --surface:      #FFFFFF;
+  --surface-2:    #F5F1EC;
+  --border:       #E4DED5;
+  --hairline:     rgba(28,25,23,0.06);
+  --text:         #1C1917;
+  --text-2:       #6B6360;
+  --text-muted:   #A89E9A;
+  --text-faint:   #C8C0BC;
+  --accent:       #E8845A;
+  --accent-2:     #D97757;
+  --accent-soft:  #F5E6DF;
+  --accent-ink:   #4A2418;
+  --accent-glow:  rgba(232,132,90,0.32);
+  --success:      #4F9E7E;
+  --success-soft: #DDEDE3;
+  --danger:       #DA5454;
+  --danger-soft:  rgba(218,84,84,0.10);
+  --ev-blue:      #B8D4F2;
+  --ev-pink:      #F5BDD0;
+  --ev-yellow:    #F5E28A;
+  --ev-mint:      #8ED4C8;
+  --ev-lav:       #C8B4E8;
+  --ev-sage:      #A8D8B0;
+  --ev-ink:       #1C1917;
+  --tabbar-bg:    rgba(255,255,255,0.78);
+  --tabbar-stroke: rgba(28,25,23,0.06);
+  --tabbar-shadow: 0 12px 36px rgba(74,36,24,0.10), 0 1px 0 rgba(255,255,255,0.9) inset;
+  --sheet-shadow: 0 -8px 40px rgba(0,0,0,0.16);
+  --card-shadow:  0 0 0 0.5px var(--hairline);
+}
+[data-theme="dark"] {
+  --bg:           #0F0D0B;
+  --bg-2:         #16130F;
+  --surface:      #1B1714;
+  --surface-2:    #221D19;
+  --border:       #2A231F;
+  --hairline:     rgba(255,255,255,0.06);
+  --text:         #F2EBE6;
+  --text-2:       #A89E9A;
+  --text-muted:   #6B6360;
+  --text-faint:   #3A3431;
+  --accent:       #E8845A;
+  --accent-2:     #F0976F;
+  --accent-soft:  rgba(232,132,90,0.16);
+  --accent-ink:   #FFE5D6;
+  --accent-glow:  rgba(232,132,90,0.40);
+  --success:      #6DBF9A;
+  --success-soft: rgba(109,191,154,0.14);
+  --danger:       #E47474;
+  --danger-soft:  rgba(228,116,116,0.12);
+  --ev-blue:      #6E94BD;
+  --ev-pink:      #B98599;
+  --ev-yellow:    #BFA958;
+  --ev-mint:      #5BA294;
+  --ev-lav:       #9783BD;
+  --ev-sage:      #6FA579;
+  --ev-ink:       #0F0D0B;
+  --tabbar-bg:    rgba(27,23,20,0.78);
+  --tabbar-stroke: rgba(255,255,255,0.08);
+  --tabbar-shadow: 0 12px 36px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --sheet-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  --card-shadow:  0 0 0 0.5px var(--hairline);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: #2A2522;
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
+input, textarea { font-family: inherit; color: inherit; }
+
+/* ════════════════════════════════════════════════════════════════
+   PHONE FRAME (only visible on desktop)
+   ═══════════════════════════════════════════════════════════════ */
+.phone {
+  width: 390px;
+  height: 844px;
+  border-radius: 54px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 12px #15110F,
+    0 0 0 13px rgba(255,255,255,0.04),
+    0 40px 100px rgba(0,0,0,0.4);
+  isolation: isolate;
+}
+.phone::before {
+  content: '';
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 34px; border-radius: 22px;
+  background: #000; z-index: 1000;
+}
+.status {
+  position: absolute; top: 0; left: 0; right: 0; height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px 0;
+  font: 600 15px 'Inter', sans-serif;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 500;
+}
+.status .right { display: flex; gap: 6px; align-items: center; }
+@media (max-width: 430px) {
+  body { padding: 0; background: var(--bg); }
+  .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+  .phone::before { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SCREENS — all mounted, one visible
+   ═══════════════════════════════════════════════════════════════ */
+.app {
+  position: absolute;
+  top: 54px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.screen.on { display: flex; }
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 120px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ════════════════════════════════════════════════════════════════
+   COMMON ELEMENTS
+   ═══════════════════════════════════════════════════════════════ */
+.h-display {
+  font-family: 'Fraunces', 'Inter', serif;
+  font-weight: 500;
+  font-size: 48px;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  font-variation-settings: 'opsz' 144;
+}
+.h-eyebrow {
+  font: 550 11px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+.h-section {
+  font: 600 16px 'Inter', sans-serif;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.body-1 { font: 400 15px/1.5 'Inter', sans-serif; color: var(--text); letter-spacing: -0.005em; }
+.body-2 { font: 400 13.5px/1.55 'Inter', sans-serif; color: var(--text-2); }
+.mono   { font-variant-numeric: tabular-nums; }
+
+/* ── Tab bar — slimmer, no full pill outline, just soft glass ── */
+.tabbar {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 312px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--tabbar-bg);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: var(--tabbar-shadow), 0 0 0 0.5px var(--tabbar-stroke);
+  display: flex;
+  z-index: 600;
+  padding: 0 6px;
+}
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--text-muted);
+  transition: color 0.2s, transform 0.15s;
+}
+.tab.on { color: var(--accent); }
+.tab:active { transform: scale(0.88); }
+.tab .label {
+  font: 550 9.5px 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.tab.on .label { opacity: 1; transform: translateY(0); }
+.tab.on .icon { transform: translateY(-1px); }
+
+/* ── FAB ── */
+.fab {
+  position: absolute;
+  bottom: 92px;
+  right: 22px;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.25) inset,
+    0 8px 24px var(--accent-glow);
+  z-index: 550;
+  transition: transform 0.15s;
+}
+.fab:active { transform: scale(0.92); }
+.fab svg { stroke-width: 2.2; }
+
+/* ── App-wide background hint ── */
+.app::before {
+  content: '';
+  position: absolute;
+  top: -120px; left: 50%; transform: translateX(-50%);
+  width: 480px; height: 320px;
+  background: radial-gradient(ellipse at center, var(--accent-soft), transparent 65%);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════════════════════════ */
+.cal-header {
+  padding: 20px 24px 18px;
+  position: relative;
+  z-index: 1;
+}
+.cal-header .eyebrow-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.cal-month {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.cal-month .month {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 34px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+}
+.cal-month .year {
+  font: 500 14px 'Inter', sans-serif;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.view-seg {
+  display: inline-flex;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--card-shadow);
+}
+.view-seg button {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font: 550 11.5px 'Inter', sans-serif;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+}
+.view-seg button.on {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.cal-nav {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.cal-nav button {
+  background: transparent;
+  border: none;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  border-radius: 8px;
+}
+.cal-nav button:active { background: var(--surface-2); }
+
+/* 30d grid */
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 14px 8px;
+  gap: 2px;
+}
+.wd {
+  text-align: center;
+  font: 600 10px 'Inter', sans-serif;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.days30 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 14px;
+  gap: 2px;
+}
+.d30 {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 6px 5px;
+  background: transparent;
+  position: relative;
+  transition: background 0.15s, transform 0.15s;
+}
+.d30:active { transform: scale(0.92); }
+.d30 .n {
+  font: 500 13px 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+}
+.d30.other .n { color: var(--text-faint); }
+.d30.today {
+  background: var(--text);
+}
+.d30.today .n { color: var(--bg); font-weight: 600; }
+.d30 .dots {
+  display: flex;
+  gap: 2px;
+  margin-top: auto;
+  justify-content: center;
+}
+.d30 .dot { width: 4px; height: 4px; border-radius: 50%; }
+.d30.today .dot { background: var(--bg) !important; opacity: 0.7; }
+
+/* Upcoming preview under the grid */
+.upcoming {
+  padding: 20px 24px 0;
+}
+.upcoming .header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+.upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.up-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+}
+.up-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 38px;
+  flex-shrink: 0;
+}
+.up-date .num {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.up-date .dow {
+  font: 600 9.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.up-body { flex: 1; min-width: 0; }
+.up-body .title {
+  font: 500 14px 'Inter', sans-serif;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.up-body .meta {
+  font: 450 12px 'Inter', sans-serif;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.up-body .meta .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ════════════════════════════════════════════════════════════════
+   TASKS
+   ═══════════════════════════════════════════════════════════════ */
+.tasks-hero {
+  padding: 24px 24px 10px;
+  position: relative;
+  z-index: 1;
+}
+.tasks-hero .eyebrow {
+  font: 600 10.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.tasks-hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.progress-bar {
+  height: 6px;
+  background: var(--surface);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 6px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-text {
+  font: 450 12.5px 'Inter', sans-serif;
+  color: var(--text-2);
+}
+.progress-text b { color: var(--text); font-weight: 600; }
+
+.tasks-section {
+  padding: 22px 24px 0;
+}
+.tasks-section .heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.tasks-section .day-title {
+  font: 600 15px 'Inter', sans-serif;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.tasks-section .day-meta {
+  font: 450 12px 'Inter', sans-serif;
+  color: var(--text-muted);
+}
+.task-card {
+  background: var(--surface);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  position: relative;
+  transition: background 0.15s;
+}
+.task-row + .task-row {
+  border-top: 1px solid var(--hairline);
+}
+.task-row:active { background: var(--surface-2); }
+
+.check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.check.done {
+  border-color: transparent;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.check svg { opacity: 0; transition: opacity 0.15s; }
+.check.done svg { opacity: 1; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title {
+  font: 500 14.5px 'Inter', sans-serif;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+  margin-bottom: 3px;
+}
+.task-title.done { color: var(--text-muted); text-decoration: line-through; text-decoration-thickness: 1.2px; }
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 450 11.5px 'Inter', sans-serif;
+  color: var(--text-muted);
+}
+.task-meta .label-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.time-chip {
+  font: 550 11.5px 'Inter', sans-serif;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  letter-spacing: -0.005em;
+  flex-shrink: 0;
+}
+.time-chip.near {
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ASSISTANT
+   ═══════════════════════════════════════════════════════════════ */
+.asst {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: 92px; /* clears the floating tab bar */
+}
+.asst-hero {
+  padding: 28px 24px 12px;
+  position: relative;
+  z-index: 1;
+}
+.asst-greeting {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.asst-greeting em {
+  font-style: italic;
+  color: var(--accent);
+}
+.asst-sub {
+  font: 450 14px 'Inter', sans-serif;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.asst-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: none;
+}
+.asst-stream::-webkit-scrollbar { display: none; }
+
+.bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  font: 400 14px/1.5 'Inter', sans-serif;
+  letter-spacing: -0.005em;
+  word-break: break-word;
+}
+.bubble.user {
+  align-self: flex-end;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 20px 20px 6px 20px;
+}
+.bubble.ai {
+  align-self: flex-start;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 20px 20px 20px 6px;
+  box-shadow: var(--card-shadow);
+}
+.bubble.ai.action {
+  border: 1.5px solid var(--accent-soft);
+  background: var(--bg-2);
+}
+.action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.action-card .ack {
+  font: 450 13px 'Inter', sans-serif;
+  color: var(--text-2);
+}
+.action-card .added {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: 12px;
+  margin-top: 6px;
+}
+.action-card .added .pulse {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.action-card .added .title-line {
+  font: 550 13px 'Inter', sans-serif;
+  color: var(--text);
+}
+.action-card .added .meta {
+  font: 450 11.5px 'Inter', sans-serif;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.dots span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text-muted);
+  animation: blink 1.2s infinite ease-in-out;
+}
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+
+.chips-row {
+  display: flex;
+  gap: 8px;
+  padding: 4px 18px 10px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.chips-row::-webkit-scrollbar { display: none; }
+.chip-sug {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: var(--surface);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font: 500 12.5px 'Inter', sans-serif;
+  color: var(--text-2);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.composer {
+  margin: 6px 14px 16px;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 6px 6px 6px 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  box-shadow: var(--card-shadow);
+}
+.composer textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 12px 0;
+  font: 400 14px 'Inter', sans-serif;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  min-height: 24px;
+  max-height: 80px;
+  line-height: 1.4;
+}
+.composer textarea::placeholder { color: var(--text-muted); }
+.composer button.mic, .composer button.send {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.composer button.mic { background: var(--surface-2); color: var(--text-2); }
+.composer button.send { background: var(--text); color: var(--bg); }
+.composer button.send:disabled { background: var(--surface-2); color: var(--text-muted); }
+.composer button:active:not(:disabled) { transform: scale(0.9); }
+
+/* ════════════════════════════════════════════════════════════════
+   WINS
+   ═══════════════════════════════════════════════════════════════ */
+.wins {
+  padding: 28px 24px 0;
+  position: relative;
+  z-index: 1;
+}
+.wins-eyebrow {
+  font: 600 10.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.wins-headline {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.wins-headline em { font-style: italic; color: var(--accent); }
+.wins-sub {
+  font: 450 14px/1.5 'Inter', sans-serif;
+  color: var(--text-2);
+  margin-bottom: 24px;
+}
+
+.streak-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 24px;
+  margin-bottom: 14px;
+  box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+}
+.streak-card::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, var(--accent-soft), transparent 60%);
+  border-radius: 50%;
+}
+.streak-num {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  position: relative;
+  z-index: 1;
+}
+.streak-num span { font-size: 30px; vertical-align: top; line-height: 1; color: var(--accent); margin-left: 4px; }
+.streak-label {
+  font: 600 11px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-2);
+  margin-top: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.week-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 22px 22px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--card-shadow);
+}
+.week-card .label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+.week-card .week-label {
+  font: 600 11px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+.week-card .week-completed {
+  font: 600 13px 'Inter', sans-serif;
+  color: var(--text);
+}
+.week-card .week-completed b { color: var(--accent); }
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.week-day .bar-track {
+  width: 100%;
+  height: 60px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.week-day .bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  border-radius: 8px;
+}
+.week-day .bar-fill.today {
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.week-day .bar-fill.empty {
+  background: var(--border);
+  height: 4px !important;
+  align-self: flex-end;
+}
+.week-day .day-lbl {
+  font: 600 10px 'Inter', sans-serif;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+.week-day.is-today .day-lbl { color: var(--accent); }
+
+.recent-wins {
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.recent-wins .item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+.recent-wins .item + .item { border-top: 1px solid var(--hairline); }
+.recent-wins .item .badge {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.recent-wins .item .badge.orange { background: var(--accent-soft); }
+.recent-wins .item .badge.green { background: var(--success-soft); }
+.recent-wins .item .body { flex: 1; min-width: 0; }
+.recent-wins .item .title {
+  font: 550 13.5px 'Inter', sans-serif;
+  color: var(--text);
+}
+.recent-wins .item .meta {
+  font: 450 12px 'Inter', sans-serif;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS
+   ═══════════════════════════════════════════════════════════════ */
+.settings { padding: 28px 24px 0; position: relative; z-index: 1; }
+.set-header {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 22px;
+}
+
+.profile-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 600 18px 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.profile-card .info { flex: 1; min-width: 0; }
+.profile-card .name {
+  font: 600 16px 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.profile-card .email {
+  font: 450 12.5px 'Inter', sans-serif;
+  color: var(--text-muted);
+}
+.profile-card .plan {
+  font: 600 10.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.set-section-label {
+  font: 600 10.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  padding: 0 6px 8px;
+}
+.set-card {
+  background: var(--surface);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  box-shadow: var(--card-shadow);
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+}
+.set-row + .set-row { border-top: 1px solid var(--hairline); }
+.set-row .set-icon {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+.set-row .label {
+  flex: 1;
+  font: 550 14px 'Inter', sans-serif;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+.set-row .value {
+  font: 450 13px 'Inter', sans-serif;
+  color: var(--text-muted);
+}
+.set-row svg.arrow { color: var(--text-faint); }
+
+.theme-pills {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 3px;
+}
+.theme-pills button {
+  border: none;
+  background: transparent;
+  width: 38px; height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.theme-pills button.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ADD TASK SHEET
+   ═══════════════════════════════════════════════════════════════ */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 700;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.sheet-backdrop.on { opacity: 1; pointer-events: auto; }
+.sheet {
+  width: 100%;
+  background: var(--bg);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 24px 28px;
+  box-shadow: var(--sheet-shadow);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.sheet-backdrop.on .sheet { transform: translateY(0); }
+.sheet-handle {
+  width: 40px; height: 5px;
+  background: var(--border);
+  border-radius: 999px;
+  margin: 0 auto 18px;
+}
+.sheet h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+.sheet input.title-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: 500 22px 'Fraunces', 'Inter', serif;
+  font-variation-settings: 'opsz' 24;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sheet input.title-input::placeholder { color: var(--text-faint); font-style: italic; }
+.sheet-meta-row {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sheet-meta-row::-webkit-scrollbar { display: none; }
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--surface);
+  border-radius: 999px;
+  border: none;
+  font: 500 13px 'Inter', sans-serif;
+  color: var(--text-2);
+  flex-shrink: 0;
+  box-shadow: var(--card-shadow);
+}
+.meta-pill.on { background: var(--text); color: var(--bg); }
+.meta-pill.on svg { stroke: var(--bg); }
+.sheet button.save {
+  width: 100%;
+  padding: 16px;
+  border-radius: 18px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font: 600 15px 'Inter', sans-serif;
+  letter-spacing: -0.005em;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DAY POPUP
+   ═══════════════════════════════════════════════════════════════ */
+.day-sheet h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.day-sheet h2 .num {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 36px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+}
+.day-sheet h2 .label {
+  font: 600 11px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANIMATIONS / TRANSITIONS
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-up { animation: slideUp 0.25s ease both; }
+</style>
+</head>
+<body>
+
+<div class="phone" data-screen-label="Planer v2">
+  <!-- iOS status bar -->
+  <div class="status">
+    <span class="mono">9:41</span>
+    <span class="right">
+      <svg width="17" height="11" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="currentColor"/><rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill="currentColor"/><rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill="currentColor"/><rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill="currentColor"/></svg>
+      <svg width="15" height="11" viewBox="0 0 17 12"><path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill="currentColor"/><path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill="currentColor"/><circle cx="8.5" cy="10.5" r="1.5" fill="currentColor"/></svg>
+      <svg width="24" height="11" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" stroke-opacity="0.4" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill="currentColor"/></svg>
+    </span>
+  </div>
+  <div class="app" id="root"></div>
+</div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ════════════════════════════════════════════════════════════════
+   ICONS — Lucide-style strokes
+   ═══════════════════════════════════════════════════════════════ */
+const Icon = ({ size = 22, stroke = 1.7, children, fill = 'none' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+       strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+);
+const IcoCal      = (p) => <Icon {...p}><rect x="3" y="5" width="18" height="16" rx="3.5"/><path d="M3 10h18M8 3v4M16 3v4"/></Icon>;
+const IcoCheck    = (p) => <Icon {...p}><path d="M4 12l5 5L20 6"/></Icon>;
+const IcoSparkle  = (p) => <Icon {...p}><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></Icon>;
+const IcoTrophy   = (p) => <Icon {...p}><path d="M8 21h8M12 17v4M17 3H7l2 7H9a4 4 0 004 4 4 4 0 004-4h-2l2-7z"/></Icon>;
+const IcoSettings = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></Icon>;
+const IcoPlus     = (p) => <Icon {...p}><path d="M12 5v14M5 12h14"/></Icon>;
+const IcoChevL    = (p) => <Icon {...p}><path d="M15 18l-6-6 6-6"/></Icon>;
+const IcoChevR    = (p) => <Icon {...p}><path d="M9 18l6-6-6-6"/></Icon>;
+const IcoChevDown = (p) => <Icon {...p}><path d="M6 9l6 6 6-6"/></Icon>;
+const IcoMic      = (p) => <Icon {...p}><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3"/></Icon>;
+const IcoSend     = (p) => <Icon {...p}><path d="M5 12l14-7-7 14-2-5-5-2z"/></Icon>;
+const IcoSun      = (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M19.07 19.07l-1.41-1.41M6.34 6.34L4.93 4.93"/></Icon>;
+const IcoMoon     = (p) => <Icon {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></Icon>;
+const IcoBell     = (p) => <Icon {...p}><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.73 21a2 2 0 01-3.46 0"/></Icon>;
+const IcoLock     = (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/></Icon>;
+const IcoHelp     = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></Icon>;
+const IcoExit     = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
+const IcoFire     = (p) => <Icon {...p} stroke={1.6}><path d="M8 14s1.5-3 4-3c0 0-1-2 0-4 1-2 4-3 4-3s0 2 1.5 3.5S20 11 20 14a8 8 0 11-16 0c0-2 2-3 2-5 0 0 1 1 2 1.5"/></Icon>;
+const IcoClock    = (p) => <Icon {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></Icon>;
+const IcoTag      = (p) => <Icon {...p}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></Icon>;
+const IcoAllDay   = (p) => <Icon {...p}><path d="M4 12h16M12 4v16"/></Icon>;
+
+/* ════════════════════════════════════════════════════════════════
+   SAMPLE DATA
+   ═══════════════════════════════════════════════════════════════ */
+const today = new Date(); today.setHours(0,0,0,0);
+const addD = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+const LABELS = {
+  work:     { name: 'Work',     color: '#B8D4F2' },
+  personal: { name: 'Personal', color: '#F5BDD0' },
+  health:   { name: 'Health',   color: '#8ED4C8' },
+  family:   { name: 'Family',   color: '#F5E28A' },
+  travel:   { name: 'Travel',   color: '#C8B4E8' },
+};
+
+const INITIAL_TASKS = [
+  { id: 't1', title: 'Standup with the team',        date: dayKey(today),        time: '09:30', label: 'work',     done: true  },
+  { id: 't2', title: 'Coffee with Alex',             date: dayKey(today),        time: '11:00', label: 'personal', done: true  },
+  { id: 't3', title: 'Design review · v2',           date: dayKey(today),        time: '14:00', label: 'work',     done: false },
+  { id: 't4', title: 'Yoga at the studio',           date: dayKey(today),        time: '18:30', label: 'health',   done: false },
+  { id: 't5', title: 'Pick up groceries',            date: dayKey(today),        time: null,    label: 'personal', done: false },
+  { id: 't6', title: 'Call Mom',                     date: dayKey(addD(today, 1)), time: '19:00', label: 'family',   done: false },
+  { id: 't7', title: '1:1 with Ana',                 date: dayKey(addD(today, 1)), time: '10:30', label: 'work',     done: false },
+  { id: 't8', title: 'Birthday · Ana',               date: dayKey(addD(today, 3)), time: null,    label: 'family',   done: false, allDay: true },
+  { id: 't9', title: 'Flight to Lisbon',             date: dayKey(addD(today, 5)), time: '07:15', label: 'travel',   done: false },
+  { id: 't10', title: 'Hike Castelo dos Mouros',     date: dayKey(addD(today, 7)), time: '09:00', label: 'travel',   done: false },
+  { id: 't11', title: 'Run · 5K',                    date: dayKey(addD(today, -1)), time: '07:00', label: 'health',   done: true },
+  { id: 't12', title: 'Code review',                 date: dayKey(addD(today, -1)), time: '15:00', label: 'work',     done: true },
+];
+
+/* ════════════════════════════════════════════════════════════════
+   TAB BAR
+   Principles applied:
+   - QUIET AUTHORITY: only the active tab shows its label + color.
+   - DIRECT MANIPULATION: tap targets are 56px tall.
+   ═══════════════════════════════════════════════════════════════ */
+const TABS = [
+  { id: 'cal',  icon: IcoCal,      label: 'Today' },
+  { id: 'task', icon: IcoCheck,    label: 'Tasks' },
+  { id: 'ai',   icon: IcoSparkle,  label: 'Ask' },
+  { id: 'win',  icon: IcoTrophy,   label: 'Wins' },
+  { id: 'set',  icon: IcoSettings, label: 'You'   },
+];
+function TabBar({ tab, onChange }) {
+  return (
+    <div className="tabbar">
+      {TABS.map(({ id, icon: Ic, label }) => (
+        <button key={id} className={`tab ${tab === id ? 'on' : ''}`} onClick={() => onChange(id)}>
+          <Ic size={22} />
+          <span className="label">{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CALENDAR SCREEN
+   Principles applied:
+   - SPATIAL GENEROSITY: oversized month name, breathing weekly grid.
+   - ONE-SCREEN FOCUS: the question is "what's the month shape?" — the
+     grid is the hero. Upcoming list lives BELOW as a secondary answer.
+   - QUIET AUTHORITY: only `today` carries the dark fill — every other
+     cell is just the number, no boxes or borders.
+   ═══════════════════════════════════════════════════════════════ */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function CalendarScreen({ tasks, onAdd, onDayTap }) {
+  const [view, setView] = useState('30d');
+  const [anchor, setAnchor] = useState(today);
+  const year = anchor.getFullYear(), month = anchor.getMonth();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const cells = useMemo(() => {
+    const gridStart = new Date(year, month, 1 - firstDow);
+    return Array.from({ length: 35 }, (_, i) =>
+      new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i)
+    );
+  }, [year, month, firstDow]);
+
+  const todayKey = dayKey(today);
+  const tasksByDay = useMemo(() => {
+    const m = {};
+    tasks.forEach(t => { (m[t.date] = m[t.date] || []).push(t); });
+    return m;
+  }, [tasks]);
+
+  // Next 3 upcoming events (any future or today)
+  const upcoming = useMemo(() => {
+    return tasks
+      .filter(t => t.date >= todayKey && !t.done && t.time)
+      .sort((a, b) => (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')))
+      .slice(0, 4);
+  }, [tasks, todayKey]);
+
+  return (
+    <div className="screen on">
+      <div className="scroll">
+        <div className="cal-header">
+          <div className="eyebrow-row">
+            <span className="h-eyebrow">{view === '30d' ? 'This month' : 'Calendar'}</span>
+            <div className="view-seg">
+              {['30d','3d','1d'].map(v => (
+                <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{v}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div className="cal-month">
+              <span className="month">{MONTHS[month]}</span>
+              <span className="year">{year}</span>
+            </div>
+            <div className="cal-nav">
+              <button onClick={() => setAnchor(new Date(year, month - 1, 1))}><IcoChevL size={18} /></button>
+              <button onClick={() => setAnchor(new Date(year, month + 1, 1))}><IcoChevR size={18} /></button>
+            </div>
+          </div>
+        </div>
+
+        <div className="weekdays">
+          {['M','T','W','T','F','S','S'].map((d, i) => <div key={i} className="wd">{d}</div>)}
+        </div>
+        <div className="days30">
+          {cells.map((d, i) => {
+            const dk = dayKey(d);
+            const isToday = dk === todayKey;
+            const isOther = d.getMonth() !== month;
+            const dayTasks = tasksByDay[dk] || [];
+            const labels = [...new Set(dayTasks.map(t => t.label))].slice(0, 3);
+            return (
+              <button key={i}
+                      className={`d30 ${isToday ? 'today' : ''} ${isOther ? 'other' : ''}`}
+                      onClick={() => !isOther && onDayTap(d)}>
+                <span className="n">{d.getDate()}</span>
+                {dayTasks.length > 0 && (
+                  <div className="dots">
+                    {labels.map((lbl, j) => (
+                      <span key={j} className="dot" style={{ background: LABELS[lbl].color }} />
+                    ))}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="upcoming">
+          <div className="header-row">
+            <span className="h-section">Up next</span>
+            <span className="h-eyebrow" style={{ letterSpacing: '0.1em' }}>{upcoming.length} events</span>
+          </div>
+          <div className="upcoming-list">
+            {upcoming.map((t, i) => {
+              const d = new Date(t.date + 'T00:00:00');
+              return (
+                <div key={t.id} className="up-row slide-up" style={{ animationDelay: (i * 0.04) + 's' }}>
+                  <div className="up-date">
+                    <span className="num">{d.getDate()}</span>
+                    <span className="dow">{DOW[d.getDay()].slice(0, 3)}</span>
+                  </div>
+                  <div className="up-body">
+                    <div className="title">{t.title}</div>
+                    <div className="meta">
+                      <span className="dot" style={{ background: LABELS[t.label].color }} />
+                      <span>{LABELS[t.label].name}</span>
+                      <span>·</span>
+                      <span className="mono">{t.time}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TASKS SCREEN
+   Principles applied:
+   - SPATIAL GENEROSITY: oversized "Today" hero with progress.
+   - EMOTIONAL MICRO-MOMENTS: completing a task pops the checkbox with
+     a ring of soft accent — small, earned.
+   - ONE-SCREEN FOCUS: today first, tomorrow next; everything else is
+     scrolled to.
+   - DIRECT MANIPULATION: tap the row anywhere to toggle (no tiny
+     checkbox-only hit zone).
+   ═══════════════════════════════════════════════════════════════ */
+function TasksScreen({ tasks, onToggle, onAdd }) {
+  const grouped = useMemo(() => {
+    const g = {};
+    tasks.forEach(t => { (g[t.date] = g[t.date] || []).push(t); });
+    return g;
+  }, [tasks]);
+  const todayKey = dayKey(today);
+  const todayTasks = grouped[todayKey] || [];
+  const totalToday = todayTasks.length;
+  const doneToday = todayTasks.filter(t => t.done).length;
+  const pct = totalToday ? Math.round((doneToday / totalToday) * 100) : 0;
+
+  const upcomingDays = Object.keys(grouped)
+    .filter(dk => dk > todayKey)
+    .sort()
+    .slice(0, 4);
+
+  function formatHero() {
+    const hr = new Date().getHours();
+    return hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+  }
+
+  return (
+    <div className="screen on">
+      <div className="scroll">
+        <div className="tasks-hero">
+          <div className="eyebrow">{formatHero()}</div>
+          <h1>{doneToday === totalToday && totalToday > 0
+            ? <>You did <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>everything</em>.</>
+            : <>{totalToday - doneToday} left for <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>today</em></>
+          }</h1>
+          <div className="progress-bar"><div className="progress-fill" style={{ width: pct + '%' }} /></div>
+          <div className="progress-text"><b>{doneToday}</b> of <b>{totalToday}</b> done · {pct}%</div>
+        </div>
+
+        <div className="tasks-section">
+          <div className="heading-row">
+            <span className="day-title">Today</span>
+            <span className="day-meta">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+          </div>
+          <div className="task-card">
+            {todayTasks.map(t => <TaskRow key={t.id} task={t} onToggle={onToggle} />)}
+            {todayTasks.length === 0 && (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', font: '450 13.5px Inter, sans-serif' }}>
+                Nothing scheduled. Enjoy the quiet.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {upcomingDays.map(dk => {
+          const d = new Date(dk + 'T00:00:00');
+          const dayDelta = Math.round((d - today) / 86400000);
+          const label = dayDelta === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'long' });
+          return (
+            <div className="tasks-section" key={dk}>
+              <div className="heading-row">
+                <span className="day-title">{label}</span>
+                <span className="day-meta">{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
+              <div className="task-card">
+                {grouped[dk].map(t => <TaskRow key={t.id} task={t} onToggle={onToggle} />)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TaskRow({ task, onToggle }) {
+  const [popping, setPopping] = useState(false);
+  function handleClick() {
+    if (!task.done) {
+      setPopping(true);
+      setTimeout(() => setPopping(false), 350);
+    }
+    onToggle(task.id);
+  }
+  const now = new Date();
+  const isNear = task.time && task.date === dayKey(today) && (() => {
+    const [h, m] = task.time.split(':').map(Number);
+    const mins = (h * 60 + m) - (now.getHours() * 60 + now.getMinutes());
+    return mins > 0 && mins < 90;
+  })();
+  return (
+    <div className="task-row" onClick={handleClick}>
+      <div className={`check ${task.done ? 'done' : ''} ${popping ? 'pop' : ''}`}>
+        <IcoCheck size={14} stroke={2.6} />
+      </div>
+      <div className="task-body">
+        <div className={`task-title ${task.done ? 'done' : ''}`}>{task.title}</div>
+        <div className="task-meta">
+          <span className="label-dot" style={{ background: LABELS[task.label].color }} />
+          <span>{LABELS[task.label].name}</span>
+          {task.allDay && <><span>·</span><span>All day</span></>}
+        </div>
+      </div>
+      {task.time && (
+        <span className={`time-chip ${isNear ? 'near' : ''} mono`}>{task.time}</span>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ASSISTANT SCREEN
+   Principles applied:
+   - EMOTIONAL MICRO-MOMENTS: hero greeting personalizes the screen,
+     the "Added" card pulses when a task is created.
+   - QUIET AUTHORITY: the user bubble is *text-color black*, not the
+     accent — the accent is reserved for *action* (the added card).
+   - DIRECT MANIPULATION: scroll horizontally through prompt chips.
+   ═══════════════════════════════════════════════════════════════ */
+const SUG = [
+  'Coffee with Alex tomorrow at 10am',
+  'Встреча в пятницу в 16:00',
+  'Block 2 hours for design Friday morning',
+  'Call mom on Sunday',
+  'Gym at 7 every weekday',
+];
+
+function AssistantScreen({ onAddTask }) {
+  const [msgs, setMsgs] = useState([
+    { role: 'ai', kind: 'text', text: "What would you like to add to your week?" },
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const streamRef = useRef(null);
+
+  useEffect(() => {
+    if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight;
+  }, [msgs, loading]);
+
+  function send(text) {
+    const msg = (text ?? input).trim();
+    if (!msg || loading) return;
+    setMsgs(m => [...m, { role: 'user', kind: 'text', text: msg }]);
+    setInput('');
+    setLoading(true);
+
+    setTimeout(() => {
+      // Pretend to parse a time + add a task
+      const timeMatch = msg.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+      const dayMatch = msg.match(/tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|пятниц|воскресен|сегодня|завтра/i);
+      let title = msg;
+      let time = null;
+      let date = dayKey(today);
+      if (timeMatch) {
+        let h = parseInt(timeMatch[1]);
+        const min = timeMatch[2] || '00';
+        if (timeMatch[3]?.toLowerCase() === 'pm' && h < 12) h += 12;
+        time = `${String(h).padStart(2,'0')}:${min}`;
+      }
+      if (dayMatch) {
+        const lc = dayMatch[0].toLowerCase();
+        if (lc === 'tomorrow' || lc.startsWith('завтра')) date = dayKey(addD(today, 1));
+        else if (lc === 'friday' || lc.startsWith('пятниц')) {
+          let d = today, i = 0;
+          while (d.getDay() !== 5 && i++ < 7) d = addD(d, 1);
+          date = dayKey(d);
+        }
+      }
+      if (title.length > 60) title = title.slice(0, 60) + '…';
+
+      const newTask = { id: 'ai-' + Date.now(), title, date, time, label: 'work', done: false };
+      onAddTask(newTask);
+      setMsgs(m => [...m, { role: 'ai', kind: 'action', task: newTask }]);
+      setLoading(false);
+    }, 850);
+  }
+
+  const greeting = (() => {
+    const hr = new Date().getHours();
+    return hr < 12 ? 'morning' : hr < 18 ? 'afternoon' : 'evening';
+  })();
+
+  return (
+    <div className="screen on asst">
+      <div className="asst-hero">
+        <div className="asst-greeting">Good {greeting}.<br/>What's <em>on your mind</em>?</div>
+      </div>
+
+      <div className="asst-stream" ref={streamRef}>
+        {msgs.map((m, i) => {
+          if (m.kind === 'text') {
+            return <div key={i} className={`bubble ${m.role} slide-up`}>{m.text}</div>;
+          }
+          // action bubble
+          const t = m.task;
+          const d = new Date(t.date + 'T00:00:00');
+          const label = t.date === dayKey(today)
+            ? 'Today'
+            : t.date === dayKey(addD(today, 1))
+              ? 'Tomorrow'
+              : d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+          return (
+            <div key={i} className="bubble ai action slide-up">
+              <div className="action-card">
+                <div className="ack">Added to your calendar.</div>
+                <div className="added">
+                  <div className="pulse"></div>
+                  <div>
+                    <div className="title-line">{t.title}</div>
+                    <div className="meta">{label}{t.time ? ' · ' + t.time : ''}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {loading && (
+          <div className="bubble ai slide-up">
+            <div className="dots"><span/><span/><span/></div>
+          </div>
+        )}
+      </div>
+
+      <div className="chips-row">
+        {SUG.map(s => (
+          <button key={s} className="chip-sug" onClick={() => send(s)} disabled={loading}>{s}</button>
+        ))}
+      </div>
+
+      <div className="composer">
+        <textarea
+          rows={1}
+          placeholder="Type or tap a suggestion..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          disabled={loading}
+        />
+        <button className="mic"><IcoMic size={18} /></button>
+        <button className="send" onClick={() => send()} disabled={!input.trim() || loading}>
+          <IcoSend size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   WINS SCREEN
+   Principles applied:
+   - EMOTIONAL MICRO-MOMENTS: the streak number is THE hero, set in
+     Fraunces serif at 64px. Earning a streak feels like earning
+     something.
+   - SPATIAL GENEROSITY: only 3 components on the screen (streak,
+     week chart, recent wins). Nothing else competes.
+   - ONE-SCREEN FOCUS: this screen answers "am I on track?" — that's
+     it. No habits, no goals, no journal entries.
+   ═══════════════════════════════════════════════════════════════ */
+function WinsScreen({ tasks }) {
+  // Build a 7-day completion chart, ending today
+  const week = useMemo(() => {
+    const arr = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = addD(today, -i);
+      const dk = dayKey(d);
+      const dayTasks = tasks.filter(t => t.date === dk);
+      const done = dayTasks.filter(t => t.done).length;
+      const total = dayTasks.length;
+      arr.push({ d, done, total, pct: total ? done / total : 0 });
+    }
+    return arr;
+  }, [tasks]);
+  const todayKey = dayKey(today);
+  const weekDone = week.reduce((a, b) => a + b.done, 0);
+  const weekTotal = week.reduce((a, b) => a + b.total, 0);
+
+  return (
+    <div className="screen on">
+      <div className="scroll">
+        <div className="wins">
+          <div className="wins-eyebrow">Your week</div>
+          <div className="wins-headline">A quiet kind of <em>winning</em>.</div>
+          <div className="wins-sub">{weekDone} tasks done, {weekTotal - weekDone} still in the pipeline. You're trending up.</div>
+
+          <div className="streak-card">
+            <div className="streak-num">7<span>days</span></div>
+            <div className="streak-label">Current streak</div>
+          </div>
+
+          <div className="week-card">
+            <div className="label-row">
+              <span className="week-label">Last 7 days</span>
+              <span className="week-completed"><b>{weekDone}/{weekTotal}</b> done</span>
+            </div>
+            <div className="weekly-grid">
+              {week.map((d, i) => {
+                const isToday = dayKey(d.d) === todayKey;
+                const h = d.total === 0 ? 0 : Math.max(d.pct * 60, 6);
+                return (
+                  <div key={i} className={`week-day ${isToday ? 'is-today' : ''}`}>
+                    <div className="bar-track">
+                      <div className={`bar-fill ${isToday ? 'today' : ''} ${d.total === 0 ? 'empty' : ''}`}
+                           style={{ height: d.total === 0 ? 4 : h + 'px' }} />
+                    </div>
+                    <div className="day-lbl">{['S','M','T','W','T','F','S'][d.d.getDay()]}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="set-section-label" style={{ marginTop: 22 }}>Recent wins</div>
+          <div className="recent-wins">
+            <div className="item">
+              <div className="badge orange"><IcoFire size={18} /></div>
+              <div className="body">
+                <div className="title">Best week so far</div>
+                <div className="meta">Highest completion rate in 30 days</div>
+              </div>
+            </div>
+            <div className="item">
+              <div className="badge green"><IcoCheck size={18} /></div>
+              <div className="body">
+                <div className="title">Morning routine kept</div>
+                <div className="meta">5 days in a row</div>
+              </div>
+            </div>
+            <div className="item">
+              <div className="badge orange"><IcoSparkle size={18} /></div>
+              <div className="body">
+                <div className="title">Inbox zero on Tuesday</div>
+                <div className="meta">All tasks closed before 6pm</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS SCREEN
+   Principles applied:
+   - QUIET AUTHORITY: profile card sets the tone; everything else is
+     gentle rows. No marketing copy, no "upgrade" badges screaming.
+   - ONE-SCREEN FOCUS: 4 cards, that's it. If you need more — it goes
+     to a sub-page (out of scope for the prototype).
+   ═══════════════════════════════════════════════════════════════ */
+function SettingsScreen({ theme, setTheme }) {
+  return (
+    <div className="screen on">
+      <div className="scroll">
+        <div className="settings">
+          <div className="set-header">You</div>
+
+          <div className="profile-card">
+            <div className="avatar">A</div>
+            <div className="info">
+              <div className="name">Anna Volkova</div>
+              <div className="email">anna@planer.app</div>
+            </div>
+            <span className="plan">Free</span>
+          </div>
+
+          <div className="set-section-label">Appearance</div>
+          <div className="set-card">
+            <div className="set-row">
+              <div className="set-icon">{theme === 'light' ? <IcoSun size={18} /> : <IcoMoon size={18} />}</div>
+              <span className="label">Theme</span>
+              <div className="theme-pills">
+                <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}><IcoSun size={15} /></button>
+                <button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')}><IcoMoon size={15} /></button>
+              </div>
+            </div>
+          </div>
+
+          <div className="set-section-label">Notifications</div>
+          <div className="set-card">
+            <button className="set-row">
+              <div className="set-icon"><IcoBell size={18} /></div>
+              <span className="label">Reminders</span>
+              <span className="value">15 min before</span>
+              <IcoChevR size={16} className="arrow" />
+            </button>
+            <button className="set-row">
+              <div className="set-icon"><IcoSparkle size={18} /></div>
+              <span className="label">Daily brief</span>
+              <span className="value">8:00 AM</span>
+              <IcoChevR size={16} className="arrow" />
+            </button>
+          </div>
+
+          <div className="set-section-label">Account</div>
+          <div className="set-card">
+            <button className="set-row">
+              <div className="set-icon"><IcoLock size={18} /></div>
+              <span className="label">Privacy</span>
+              <IcoChevR size={16} className="arrow" />
+            </button>
+            <button className="set-row">
+              <div className="set-icon"><IcoHelp size={18} /></div>
+              <span className="label">Help & feedback</span>
+              <IcoChevR size={16} className="arrow" />
+            </button>
+            <button className="set-row" style={{ color: 'var(--danger)' }}>
+              <div className="set-icon" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}><IcoExit size={18} /></div>
+              <span className="label" style={{ color: 'var(--danger)' }}>Sign out</span>
+            </button>
+          </div>
+
+          <div style={{ textAlign: 'center', font: '450 11px Inter, sans-serif', color: 'var(--text-muted)', padding: '16px 0 28px', letterSpacing: '0.02em' }}>
+            Planer · v2.0
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ADD TASK SHEET
+   Principles applied:
+   - SPATIAL GENEROSITY: the title input is HUGE, 22px serif italic
+     placeholder. Writing the title feels like writing.
+   - DIRECT MANIPULATION: every option is a pill, not a form field.
+     Tap to toggle.
+   ═══════════════════════════════════════════════════════════════ */
+function AddTaskSheet({ open, onClose, onSave, defaultDate }) {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('today');
+  const [time, setTime] = useState('14:00');
+  const [allDay, setAllDay] = useState(false);
+  const [label, setLabel] = useState('work');
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(''); setDate('today'); setTime('14:00'); setAllDay(false); setLabel('work');
+      setTimeout(() => ref.current?.focus(), 350);
+    }
+  }, [open]);
+
+  function save() {
+    if (!title.trim()) return;
+    const d = date === 'today' ? today : date === 'tomorrow' ? addD(today, 1) : addD(today, 7);
+    onSave({
+      id: 'new-' + Date.now(),
+      title: title.trim(),
+      date: dayKey(d),
+      time: allDay ? null : time,
+      allDay,
+      label,
+      done: false,
+    });
+    onClose();
+  }
+
+  return (
+    <div className={`sheet-backdrop ${open ? 'on' : ''}`} onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle"></div>
+        <h2>New task</h2>
+        <input
+          ref={ref}
+          className="title-input"
+          placeholder="What needs doing?"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') save(); }}
+        />
+        <div className="sheet-meta-row">
+          <button className={`meta-pill ${date === 'today' ? 'on' : ''}`} onClick={() => setDate('today')}>
+            <IcoCal size={14} /> Today
+          </button>
+          <button className={`meta-pill ${date === 'tomorrow' ? 'on' : ''}`} onClick={() => setDate('tomorrow')}>
+            Tomorrow
+          </button>
+          <button className={`meta-pill ${date === 'next' ? 'on' : ''}`} onClick={() => setDate('next')}>
+            Next week
+          </button>
+        </div>
+        <div className="sheet-meta-row">
+          <button className={`meta-pill ${allDay ? 'on' : ''}`} onClick={() => setAllDay(v => !v)}>
+            <IcoAllDay size={14} /> All day
+          </button>
+          {!allDay && (
+            <button className="meta-pill on">
+              <IcoClock size={14} /> {time}
+            </button>
+          )}
+        </div>
+        <div className="sheet-meta-row">
+          {Object.entries(LABELS).map(([k, v]) => (
+            <button key={k} className={`meta-pill ${label === k ? 'on' : ''}`} onClick={() => setLabel(k)}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: v.color, display: 'inline-block' }} />
+              {v.name}
+            </button>
+          ))}
+        </div>
+        <button className="save" onClick={save}>Add to calendar</button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DAY POPUP (from calendar tap)
+   ═══════════════════════════════════════════════════════════════ */
+function DaySheet({ date, tasks, onClose, onToggle, onAdd }) {
+  if (!date) return null;
+  return (
+    <div className="sheet-backdrop on" onClick={onClose}>
+      <div className="sheet day-sheet" onClick={e => e.stopPropagation()}>
+        <div className="sheet-handle"></div>
+        <h2>
+          <span className="num">{date.getDate()}</span>
+          <span className="label">{date.toLocaleDateString('en-US', { weekday: 'long', month: 'long' })}</span>
+        </h2>
+        {tasks.length === 0 ? (
+          <div style={{ padding: '14px 0 28px', color: 'var(--text-muted)', font: '450 14px Inter, sans-serif' }}>
+            Nothing here yet.
+          </div>
+        ) : (
+          <div className="task-card" style={{ marginBottom: 16 }}>
+            {tasks.map(t => <TaskRow key={t.id} task={t} onToggle={onToggle} />)}
+          </div>
+        )}
+        <button className="save" onClick={onAdd}>+ Add to this day</button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   APP SHELL
+   ═══════════════════════════════════════════════════════════════ */
+function App() {
+  const [tab, setTab] = useState('task');
+  const [theme, setTheme] = useState('light');
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [popupDate, setPopupDate] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  function toggle(id) {
+    setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  }
+  function addTask(t) { setTasks(ts => [...ts, t]); }
+
+  const popupTasks = popupDate ? tasks.filter(t => t.date === dayKey(popupDate)) : [];
+
+  return (
+    <>
+      {tab === 'cal'  && <CalendarScreen tasks={tasks} onAdd={() => setSheetOpen(true)} onDayTap={setPopupDate} />}
+      {tab === 'task' && <TasksScreen tasks={tasks} onToggle={toggle} onAdd={() => setSheetOpen(true)} />}
+      {tab === 'ai'   && <AssistantScreen onAddTask={addTask} />}
+      {tab === 'win'  && <WinsScreen tasks={tasks} />}
+      {tab === 'set'  && <SettingsScreen theme={theme} setTheme={setTheme} />}
+
+      <TabBar tab={tab} onChange={setTab} />
+
+      {(tab === 'task' || tab === 'cal') && (
+        <button className="fab" onClick={() => setSheetOpen(true)}>
+          <IcoPlus size={22} />
+        </button>
+      )}
+
+      <AddTaskSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onSave={addTask} />
+      <DaySheet date={popupDate} tasks={popupTasks}
+                onClose={() => setPopupDate(null)} onToggle={toggle}
+                onAdd={() => { setPopupDate(null); setSheetOpen(true); }} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

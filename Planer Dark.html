@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planer · Dark Spatial Ink</title>
+<style>
+  /* ──────────────────────────────────────────────────────────────
+     TOKENS
+     ────────────────────────────────────────────────────────────── */
+  :root {
+    --bg:           #0C0C0E;
+    --bg-page:      #06060A;
+    --surface-0:    #111114;
+    --surface-1:    rgba(255,255,255,0.04);
+    --surface-2:    rgba(255,255,255,0.07);
+    --border:       rgba(255,255,255,0.07);
+    --border-soft:  rgba(255,255,255,0.04);
+
+    --text-0:       #F0EEF5;
+    --text-1:       rgba(240,238,245,0.55);
+    --text-2:       rgba(240,238,245,0.28);
+
+    --accent:       #8B6FFF;
+    --accent-text:  #A98BFF;
+    --accent-soft:  rgba(139,111,255,0.10);
+    --accent-glow:  rgba(139,111,255,0.20);
+    --accent-ring:  rgba(139,111,255,0.20);
+
+    --destructive:  #FF4E4E;
+    --success:      #3DDB8A;
+
+    --r-card:       14px;
+    --r-chip:       6px;
+    --r-sheet:      20px;
+
+    --ease:         cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --d-fast:       200ms;
+
+    --font:         -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     RESET
+     ────────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg-page);
+    color: var(--text-0);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    overflow: hidden;
+  }
+  button {
+    font-family: inherit;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  input, textarea {
+    font-family: inherit;
+    color: inherit;
+    border: none;
+    background: none;
+    outline: none;
+  }
+  ul, ol { list-style: none; }
+  svg { display: block; }
+
+  /* ──────────────────────────────────────────────────────────────
+     FRAME — 390px viewport, centered on desktop
+     ────────────────────────────────────────────────────────────── */
+  .frame {
+    width: 100%;
+    max-width: 390px;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+  }
+  /* Soft luminous wash behind everything — gives glass something to refract */
+  .frame::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 480px;
+    height: 380px;
+    background: radial-gradient(ellipse at center, rgba(139,111,255,0.18), transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .frame::after {
+    content: "";
+    position: absolute;
+    bottom: -160px;
+    right: -60px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(139,111,255,0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  @media (max-width: 390px) {
+    body { background: var(--bg); }
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     SCREEN SYSTEM
+     ────────────────────────────────────────────────────────────── */
+  .screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .screen.on { display: flex; animation: mount var(--d-fast) var(--ease); }
+  @keyframes mount {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 80px; /* clear the tab bar (56) + breathing room */
+  }
+  .scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* ──────────────────────────────────────────────────────────────
+     HEADER
+     ────────────────────────────────────────────────────────────── */
+  .header {
+    position: relative;
+    padding: 24px 16px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text-0);
+  }
+  .header .nav-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header .nav-row .nav-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-1);
+    border-radius: 8px;
+    transition: background var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
+  }
+  .header .nav-row .nav-btn:hover { background: var(--surface-2); color: var(--text-0); }
+  .header .nav-row .nav-btn:active { transform: scale(0.985); opacity: 0.85; }
+
+  /* Square FAB in header (Tasks, Calendar) */
+  .fab-header {
+    width: 44px; height: 44px;
+    border-radius: var(--r-card);
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(139,111,255,0.35);
+    transition: transform 100ms var(--ease), opacity 100ms var(--ease);
+  }
+  .fab-header:active { transform: scale(0.985); opacity: 0.92; }
+
+  /* ──────────────────────────────────────────────────────────────
+     SECTION LABEL
+     ────────────────────────────────────────────────────────────── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text-2);
+    text-transform: uppercase;
+    padding: 20px 16px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-label .count {
+    color: var(--text-2);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+  .section-label.collapsible {
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-label .chev {
+    display: inline-block;
+    transform: rotate(0deg);
+    transition: transform var(--d-fast) var(--ease);
+    margin-left: 6px;
+    color: var(--text-2);
+  }
+  .section-label.collapsed .chev { transform: rotate(-90deg); }
+
+  /* ──────────────────────────────────────────────────────────────
+     GLASS CARD
+     ────────────────────────────────────────────────────────────── */
+  .glass-card {
+    margin: 0 16px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     TASK ROW
+     ────────────────────────────────────────────────────────────── */
+  .task-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+  .task-wrap + .task-wrap .task::before {
+    content: "";
+    position: absolute;
+    left: 50px;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--border-soft);
+    pointer-events: none;
+  }
+  .task {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 48px;
+    padding: 0 16px;
+    /* Opaque so the swipe-action strip behind us stays hidden until the
+       row is translated. Matches the rendered look of the glass-card. */
+    background: var(--surface-0);
+    transition: background var(--d-fast) var(--ease), transform var(--d-fast) var(--ease);
+    cursor: pointer;
+    z-index: 1;
+  }
+  .task:hover { background: var(--surface-2); }
+  .task.dragging { transition: none; }
+  .task.swiped { transform: translateX(-96px); }
+
+  .checkbox {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: transparent;
+    transition: background var(--d-fast) var(--ease), border-color var(--d-fast) var(--ease);
+  }
+  .checkbox.done {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .checkbox svg { opacity: 0; transition: opacity var(--d-fast) var(--ease); }
+  .checkbox.done svg { opacity: 1; }
+
+  .task .title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .task.done .title {
+    color: var(--text-2);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--text-2);
+  }
+
+  .time-chip {
+    background: var(--accent-soft);
+    border: 1px solid rgba(139,111,255,0.2);
+    color: var(--accent-text);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: var(--r-chip);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  /* swipe action strip */
+  .actions {
+    position: absolute;
+    top: 0; right: 0;
+    height: 48px;
+    width: 96px;
+    display: flex;
+  }
+  .actions button {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-0);
+  }
+  .actions .edit   { background: rgba(139,111,255,0.15); }
+  .actions .edit:hover { background: rgba(139,111,255,0.22); }
+  .actions .delete { background: rgba(255,78,78,0.15); color: #FF8B8B; }
+  .actions .delete:hover { background: rgba(255,78,78,0.22); }
+
+  /* ──────────────────────────────────────────────────────────────
+     EMPTY STATE
+     ────────────────────────────────────────────────────────────── */
+  .empty {
+    text-align: center;
+    color: var(--text-1);
+    font-size: 13px;
+    padding: 80px 32px 32px;
+    letter-spacing: -0.005em;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     CALENDAR
+     ────────────────────────────────────────────────────────────── */
+  .cal-month {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cal-month .title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text-0);
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 4px 16px 12px;
+  }
+  .cal-weekdays div {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-2);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 16px;
+    row-gap: 4px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 10px;
+    gap: 6px;
+    position: relative;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background var(--d-fast) var(--ease);
+  }
+  .cal-day:hover:not(.other) { background: var(--surface-2); }
+  .cal-day .num {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--d-fast) var(--ease);
+  }
+  .cal-day.other .num { color: var(--text-2); opacity: 0.5; }
+  .cal-day.today .num {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 0 8px 2px var(--accent-glow);
+  }
+  .cal-day .dots {
+    display: flex;
+    gap: 3px;
+    height: 4px;
+  }
+  .cal-day .dots span {
+    width: 4px;
+    height: 4px;
+    background: rgba(139,111,255,0.4);
+    border-radius: 50%;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     BOTTOM SHEET (day popup)
+     ────────────────────────────────────────────────────────────── */
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 40;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms var(--ease);
+  }
+  .sheet-backdrop.on {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sheet {
+    width: 100%;
+    height: 75%;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+    transform: translateY(100%);
+    transition: transform 300ms var(--ease);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet-backdrop.on .sheet { transform: translateY(0); }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text-2);
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+  .sheet-header {
+    padding: 16px 20px 12px;
+    flex-shrink: 0;
+  }
+  .sheet-header .weekday {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+  }
+  .sheet-header .meta-row {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .sheet-header .meta-row .count {
+    font-size: 11px;
+    color: var(--text-1);
+  }
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 24px;
+  }
+  .sheet-body::-webkit-scrollbar { width: 0; }
+
+  /* ──────────────────────────────────────────────────────────────
+     ASSISTANT
+     ────────────────────────────────────────────────────────────── */
+  .asst {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 56px; /* tab bar */
+  }
+  .asst-stream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .asst-stream::-webkit-scrollbar { width: 0; }
+  .bubble {
+    max-width: 78%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+  }
+  .bubble.user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px 8px 2px 8px;
+  }
+  .bubble.ai {
+    align-self: flex-start;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 8px 8px 8px 2px;
+  }
+  .bubble.ai .ai-action {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(139,111,255,0.08);
+    border: 1px solid rgba(139,111,255,0.18);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bubble.ai .ai-action .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  .bubble.ai .ai-action .label-line {
+    font-size: 12px;
+    color: var(--accent-text);
+    font-weight: 500;
+  }
+  .bubble.ai .ai-action .meta-line {
+    font-size: 11px;
+    color: var(--text-1);
+  }
+
+  .composer {
+    background: rgba(12,12,14,0.85);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    padding: 10px 12px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .composer .field {
+    flex: 1;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .composer textarea {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-0);
+    resize: none;
+    padding: 4px 0;
+    min-height: 22px;
+    max-height: 96px;
+    letter-spacing: -0.005em;
+  }
+  .composer textarea::placeholder { color: var(--text-2); }
+  .composer .send {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    letter-spacing: -0.01em;
+    transition: opacity var(--d-fast) var(--ease);
+  }
+  .composer .send:disabled { color: var(--text-2); cursor: default; }
+
+  /* ──────────────────────────────────────────────────────────────
+     WINS
+     ────────────────────────────────────────────────────────────── */
+  .streak-card {
+    margin: 4px 16px 0;
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+  }
+  .streak-card::before {
+    content: "";
+    position: absolute;
+    top: -40px; left: 50%;
+    transform: translateX(-50%);
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--accent-glow), transparent 60%);
+    pointer-events: none;
+  }
+  .streak-card .num {
+    position: relative;
+    font-size: 56px;
+    font-weight: 600;
+    color: var(--text-0);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .streak-card .num span {
+    font-size: 20px;
+    color: var(--accent-text);
+    margin-left: 4px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .streak-card .lbl {
+    position: relative;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-1);
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+  }
+
+  .win-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    cursor: default;
+  }
+  .win-row + .win-row { border-top: 1px solid var(--border-soft); }
+  .win-row .icon-wrap {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(139,111,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-text);
+    flex-shrink: 0;
+  }
+  .win-row .body { flex: 1; min-width: 0; }
+  .win-row .title-l {
+    font-size: 14px;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+  }
+  .win-row .meta-l {
+    font-size: 11px;
+    color: var(--text-1);
+    margin-top: 2px;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     SETTINGS
+     ────────────────────────────────────────────────────────────── */
+  .set-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--d-fast) var(--ease);
+  }
+  .set-row:hover { background: var(--surface-2); }
+  .set-row + .set-row { border-top: 1px solid var(--border-soft); }
+  .set-row .icon-wrap {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-1);
+    flex-shrink: 0;
+  }
+  .set-row .label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+  }
+  .set-row .value {
+    font-size: 13px;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+  }
+  .set-row.danger .label { color: var(--destructive); }
+  .set-row.danger .icon-wrap {
+    color: var(--destructive);
+    background: rgba(255,78,78,0.08);
+    border-color: rgba(255,78,78,0.18);
+  }
+  .set-row .chev { color: var(--text-2); }
+
+  .toggle {
+    width: 36px;
+    height: 22px;
+    border-radius: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: background var(--d-fast) var(--ease), border-color var(--d-fast) var(--ease);
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    transition: left var(--d-fast) var(--ease), background var(--d-fast) var(--ease);
+  }
+  .toggle.on {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .toggle.on::after {
+    left: 16px;
+    background: #fff;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     TAB BAR — flush, full-width, icons + active dot
+     ────────────────────────────────────────────────────────────── */
+  .tabbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: rgba(12,12,14,0.85);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    display: flex;
+    z-index: 30;
+  }
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-2);
+    transition: color var(--d-fast) var(--ease), transform 100ms var(--ease);
+    position: relative;
+  }
+  .tab:active { transform: scale(0.985); opacity: 0.85; }
+  .tab.on { color: var(--accent); }
+  .tab .dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: var(--accent);
+    box-shadow: 0 0 4px var(--accent);
+    opacity: 0;
+    transition: opacity var(--d-fast) var(--ease);
+  }
+  .tab.on .dot { opacity: 1; }
+
+  /* ──────────────────────────────────────────────────────────────
+     COLLAPSE animation for completed group
+     ────────────────────────────────────────────────────────────── */
+  .collapse-wrap {
+    overflow: hidden;
+    transition: max-height var(--d-fast) var(--ease), opacity var(--d-fast) var(--ease);
+  }
+  .collapse-wrap.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     FOCUS
+     ────────────────────────────────────────────────────────────── */
+  button:focus-visible,
+  textarea:focus-visible,
+  .task:focus-visible,
+  .cal-day:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="frame" id="frame">
+
+  <!-- ─────────────────────────────────────────────────────────────
+       TASKS SCREEN (default)
+       ───────────────────────────────────────────────────────────── -->
+  <section class="screen on" id="screen-tasks">
+    <header class="header">
+      <h1>Tasks</h1>
+      <button class="fab-header" data-action="new" aria-label="New task">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </header>
+    <div class="scroll" id="tasks-scroll"></div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       CALENDAR SCREEN
+       ───────────────────────────────────────────────────────────── -->
+  <section class="screen" id="screen-cal">
+    <header class="header">
+      <div class="nav-row">
+        <button class="nav-btn" id="cal-prev" aria-label="Previous month">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="cal-month"><span class="title" id="cal-title">—</span></div>
+        <button class="nav-btn" id="cal-next" aria-label="Next month">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+      <button class="fab-header" data-action="new" aria-label="New task">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </header>
+    <div class="scroll">
+      <div class="cal-weekdays">
+        <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       ASSISTANT SCREEN
+       ───────────────────────────────────────────────────────────── -->
+  <section class="screen" id="screen-asst">
+    <header class="header">
+      <h1>Assistant</h1>
+    </header>
+    <div class="asst">
+      <div class="asst-stream" id="asst-stream"></div>
+      <div class="composer">
+        <div class="field">
+          <textarea id="asst-input" rows="1" placeholder="Add a task or ask…"></textarea>
+        </div>
+        <button class="send" id="asst-send" disabled>Send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       WINS SCREEN
+       ───────────────────────────────────────────────────────────── -->
+  <section class="screen" id="screen-wins">
+    <header class="header">
+      <h1>Wins</h1>
+    </header>
+    <div class="scroll" id="wins-scroll"></div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SETTINGS SCREEN
+       ───────────────────────────────────────────────────────────── -->
+  <section class="screen" id="screen-set">
+    <header class="header">
+      <h1>Settings</h1>
+    </header>
+    <div class="scroll" id="set-scroll"></div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       BOTTOM SHEET
+       ───────────────────────────────────────────────────────────── -->
+  <div class="sheet-backdrop" id="sheet-backdrop">
+    <div class="sheet" id="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header" id="sheet-header"></div>
+      <div class="sheet-body" id="sheet-body"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       TAB BAR
+       ───────────────────────────────────────────────────────────── -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-tab="tasks" aria-label="Tasks">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h2M3 12h2M3 18h2M9 6h12M9 12h12M9 18h12"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+    <button class="tab" data-tab="cal" aria-label="Calendar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+    <button class="tab" data-tab="asst" aria-label="Assistant">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+    <button class="tab" data-tab="wins" aria-label="Wins">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 21h8M12 17v4M17 3H7l2 7H9a4 4 0 004 4 4 4 0 004-4h-2l2-7z"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+    <button class="tab" data-tab="set" aria-label="Settings">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+  </nav>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   ICONS / SVG strings
+   ═══════════════════════════════════════════════════════════════ */
+const SVG_CHECK = '<svg width="10" height="7" viewBox="0 0 10 7" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.5l3 3 5-5"/></svg>';
+const SVG_EDIT  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
+const SVG_TROPHY  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M17 3H7l2 7H9a4 4 0 004 4 4 4 0 004-4h-2l2-7z"/></svg>';
+const SVG_FIRE    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14s1.5-3 4-3c0 0-1-2 0-4 1-2 4-3 4-3s0 2 1.5 3.5S20 11 20 14a8 8 0 11-16 0c0-2 2-3 2-5 0 0 1 1 2 1.5"/></svg>';
+const SVG_TICK    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>';
+
+/* ════════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════ */
+const today = new Date(); today.setHours(0,0,0,0);
+const addD = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+const dk = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const state = {
+  tab: 'tasks',
+  calAnchor: new Date(today),
+  collapsedCompleted: false,
+  tasks: [
+    // Today (3 pending)
+    { id: 't1', title: 'Design review with Ana',    date: dk(today),         time: '10:30', done: false },
+    { id: 't2', title: 'Push v2.1 to staging',      date: dk(today),         time: '14:00', done: false },
+    { id: 't3', title: 'Pick up dry cleaning',      date: dk(today),         time: null,    done: false },
+    // Today (2 completed)
+    { id: 't4', title: 'Morning standup',           date: dk(today),         time: '09:00', done: true  },
+    { id: 't5', title: 'Reply to investor email',   date: dk(today),         time: null,    done: true  },
+    // Tomorrow
+    { id: 't6', title: '1:1 with Mira',             date: dk(addD(today,1)), time: '11:00', done: false },
+    { id: 't7', title: 'Gym · upper body',          date: dk(addD(today,1)), time: '18:30', done: false },
+    // +2 days
+    { id: 't8', title: 'Quarterly planning',        date: dk(addD(today,2)), time: '13:00', done: false },
+    // Earlier — for Wins
+    { id: 't9',  title: 'Ship onboarding revamp',   date: dk(addD(today,-1)), time: null,    done: true  },
+    { id: 't10', title: 'Run · 6K',                 date: dk(addD(today,-1)), time: '07:00', done: true  },
+    { id: 't11', title: 'Pay rent',                 date: dk(addD(today,-2)), time: null,    done: true  },
+    { id: 't12', title: 'Inbox zero',               date: dk(addD(today,-3)), time: null,    done: true  },
+  ],
+  asstMessages: [
+    { role: 'user', text: 'Add design review with Ana tomorrow at 11' },
+    { role: 'ai',   text: 'Got it.', action: { title: 'Design review with Ana', date: 'Tomorrow', time: '11:00' } },
+    { role: 'user', text: 'What does my Friday look like?' },
+    { role: 'ai',   text: 'You have quarterly planning at 13:00 and nothing else booked. Want me to block focus time in the morning?' },
+  ],
+  settings: {
+    notifications: true,
+    dailyBrief: true,
+    sounds: false,
+    syncIcloud: true,
+  },
+};
+
+/* ════════════════════════════════════════════════════════════════
+   TAB SWITCHING
+   ═══════════════════════════════════════════════════════════════ */
+const screens = {
+  tasks: document.getElementById('screen-tasks'),
+  cal:   document.getElementById('screen-cal'),
+  asst:  document.getElementById('screen-asst'),
+  wins:  document.getElementById('screen-wins'),
+  set:   document.getElementById('screen-set'),
+};
+const tabs = document.querySelectorAll('#tabbar .tab');
+
+function setTab(id) {
+  state.tab = id;
+  for (const k in screens) screens[k].classList.toggle('on', k === id);
+  tabs.forEach(t => t.classList.toggle('on', t.dataset.tab === id));
+  closeSheet();
+  document.querySelectorAll('.task').forEach(el => el.classList.remove('swiped'));
+}
+tabs.forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+/* ════════════════════════════════════════════════════════════════
+   TASK RENDER
+   ═══════════════════════════════════════════════════════════════ */
+function formatDayLabel(dateStr) {
+  const tk = dk(today), tom = dk(addD(today, 1));
+  if (dateStr === tk)  return 'Today';
+  if (dateStr === tom) return 'Tomorrow';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function renderTasks() {
+  const scroll = document.getElementById('tasks-scroll');
+  const tk = dk(today);
+
+  const groupsActive = {};
+  let completedToday = [];
+
+  state.tasks.forEach(t => {
+    if (t.date === tk && t.done) {
+      completedToday.push(t);
+    } else if (t.date >= tk) {
+      (groupsActive[t.date] = groupsActive[t.date] || []).push(t);
+    }
+  });
+
+  const futureDates = Object.keys(groupsActive).sort();
+
+  let html = '';
+  if (futureDates.length === 0 && completedToday.length === 0) {
+    html = '<div class="empty">Nothing scheduled.</div>';
+    scroll.innerHTML = html;
+    return;
+  }
+
+  for (const d of futureDates) {
+    const list = groupsActive[d];
+    html += `
+      <div class="section-label">
+        <span>${formatDayLabel(d)}</span>
+        <span class="count">${list.length}</span>
+      </div>
+      <div class="glass-card">
+        ${list.map(taskRowHtml).join('')}
+      </div>`;
+  }
+
+  if (completedToday.length > 0) {
+    const cls = state.collapsedCompleted ? 'collapsed' : '';
+    html += `
+      <div class="section-label collapsible ${cls}" data-collapse="completed">
+        <span>Completed today
+          <span class="chev">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </span>
+        <span class="count">${completedToday.length}</span>
+      </div>
+      <div class="collapse-wrap ${cls}" id="completed-wrap" style="max-height: 1000px;">
+        <div class="glass-card">
+          ${completedToday.map(taskRowHtml).join('')}
+        </div>
+      </div>`;
+  }
+
+  scroll.innerHTML = html;
+  wireTaskHandlers(scroll);
+
+  const collapseLabel = scroll.querySelector('[data-collapse="completed"]');
+  if (collapseLabel) {
+    collapseLabel.addEventListener('click', () => {
+      state.collapsedCompleted = !state.collapsedCompleted;
+      const wrap = document.getElementById('completed-wrap');
+      collapseLabel.classList.toggle('collapsed', state.collapsedCompleted);
+      wrap.classList.toggle('collapsed', state.collapsedCompleted);
+    });
+  }
+}
+
+function taskRowHtml(t) {
+  return `
+    <div class="task-wrap" data-id="${t.id}">
+      <div class="actions">
+        <button class="edit" data-act="edit" aria-label="Edit">${SVG_EDIT}</button>
+        <button class="delete" data-act="delete" aria-label="Delete">${SVG_TRASH}</button>
+      </div>
+      <div class="task ${t.done ? 'done' : ''}" data-id="${t.id}" tabindex="0">
+        <div class="checkbox ${t.done ? 'done' : ''}" data-act="toggle">${SVG_CHECK}</div>
+        <div class="title">${escapeHtml(t.title)}</div>
+        ${t.time ? `<div class="time-chip">${t.time}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function wireTaskHandlers(root) {
+  root.querySelectorAll('.task-wrap').forEach(wrap => {
+    const row = wrap.querySelector('.task');
+    const id = wrap.dataset.id;
+    let startX = 0, dx = 0, dragging = false, swiping = false;
+
+    function down(x) { startX = x; dx = 0; dragging = true; swiping = false; row.classList.add('dragging'); }
+    function move(x) {
+      if (!dragging) return;
+      dx = x - startX;
+      if (Math.abs(dx) > 6) swiping = true;
+      if (dx < 0) row.style.transform = `translateX(${Math.max(dx, -120)}px)`;
+      else if (row.classList.contains('swiped') && dx > 0) row.style.transform = `translateX(${Math.min(dx - 96, 0)}px)`;
+    }
+    function up() {
+      if (!dragging) return;
+      dragging = false;
+      row.style.transform = '';
+      row.classList.remove('dragging');
+      if (dx < -40) row.classList.add('swiped');
+      else if (dx > 30) row.classList.remove('swiped');
+    }
+
+    row.addEventListener('touchstart', e => down(e.touches[0].clientX), { passive: true });
+    row.addEventListener('touchmove',  e => move(e.touches[0].clientX), { passive: true });
+    row.addEventListener('touchend',   up);
+    row.addEventListener('touchcancel', up);
+
+    let mouseDown = false;
+    row.addEventListener('mousedown', e => { mouseDown = true; down(e.clientX); });
+    window.addEventListener('mousemove', e => { if (mouseDown) move(e.clientX); });
+    window.addEventListener('mouseup',   () => { if (mouseDown) { mouseDown = false; up(); } });
+
+    row.addEventListener('click', () => {
+      if (swiping) { swiping = false; return; }
+      if (row.classList.contains('swiped')) { row.classList.remove('swiped'); return; }
+      toggleTask(id);
+    });
+
+    wrap.querySelector('[data-act="delete"]').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteTask(id);
+    });
+    wrap.querySelector('[data-act="edit"]').addEventListener('click', e => {
+      e.stopPropagation();
+      row.classList.remove('swiped');
+    });
+  });
+}
+
+function toggleTask(id) {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  renderTasks();
+  renderWins();
+  renderCal();
+}
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(x => x.id !== id);
+  renderTasks();
+  renderWins();
+  renderCal();
+}
+function addTask(title, dateStr, time) {
+  state.tasks.push({
+    id: 'n' + Date.now(),
+    title, date: dateStr || dk(today), time: time || null, done: false,
+  });
+  renderTasks();
+  renderCal();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════════════════════════ */
+function renderCal() {
+  const a = state.calAnchor;
+  document.getElementById('cal-title').textContent = `${MONTHS[a.getMonth()]} ${a.getFullYear()}`;
+  const year = a.getFullYear(), month = a.getMonth();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - firstDow);
+  const days = Array.from({ length: 42 }, (_, i) =>
+    new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i)
+  );
+  const useDays = days[35].getMonth() === month ? days : days.slice(0, 35);
+
+  const counts = {};
+  for (const t of state.tasks) counts[t.date] = (counts[t.date] || 0) + 1;
+  const tk = dk(today);
+
+  const grid = document.getElementById('cal-grid');
+  let html = '';
+  for (const d of useDays) {
+    const dkey = dk(d);
+    const isToday = dkey === tk;
+    const isOther = d.getMonth() !== month;
+    const c = Math.min(counts[dkey] || 0, 3);
+    let dotsHtml = '';
+    for (let i = 0; i < c; i++) dotsHtml += '<span></span>';
+    html += `
+      <div class="cal-day ${isOther ? 'other' : ''} ${isToday ? 'today' : ''}" data-date="${dkey}" tabindex="0">
+        <div class="num">${d.getDate()}</div>
+        <div class="dots">${dotsHtml}</div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-day').forEach(el => {
+    el.addEventListener('click', () => openDaySheet(el.dataset.date));
+  });
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  state.calAnchor = new Date(state.calAnchor.getFullYear(), state.calAnchor.getMonth() - 1, 1);
+  renderCal();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  state.calAnchor = new Date(state.calAnchor.getFullYear(), state.calAnchor.getMonth() + 1, 1);
+  renderCal();
+});
+
+/* ════════════════════════════════════════════════════════════════
+   DAY SHEET
+   ═══════════════════════════════════════════════════════════════ */
+const sheetBackdrop = document.getElementById('sheet-backdrop');
+
+function openDaySheet(dateStr) {
+  const tasksHere = state.tasks.filter(t => t.date === dateStr);
+  const d = new Date(dateStr + 'T00:00:00');
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateLine = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+  document.getElementById('sheet-header').innerHTML = `
+    <div class="weekday">${weekday}</div>
+    <div class="meta-row">
+      <span class="count" style="font-size: 12px; color: var(--text-1);">${dateLine}</span>
+      <span class="count">${tasksHere.length} task${tasksHere.length === 1 ? '' : 's'}</span>
+    </div>
+  `;
+  const body = document.getElementById('sheet-body');
+  if (tasksHere.length === 0) {
+    body.innerHTML = '<div class="empty" style="padding: 40px;">Nothing on this day.</div>';
+  } else {
+    body.innerHTML = `
+      <div class="glass-card" style="margin-top: 4px;">
+        ${tasksHere.map(taskRowHtml).join('')}
+      </div>`;
+    wireTaskHandlers(body);
+  }
+  sheetBackdrop.classList.add('on');
+}
+function closeSheet() { sheetBackdrop.classList.remove('on'); }
+sheetBackdrop.addEventListener('click', e => { if (e.target === sheetBackdrop) closeSheet(); });
+
+/* ════════════════════════════════════════════════════════════════
+   ASSISTANT
+   ═══════════════════════════════════════════════════════════════ */
+const asstStream = document.getElementById('asst-stream');
+const asstInput  = document.getElementById('asst-input');
+const asstSend   = document.getElementById('asst-send');
+
+function renderAsst() {
+  asstStream.innerHTML = state.asstMessages.map(m => {
+    if (m.role === 'user') {
+      return `<div class="bubble user">${escapeHtml(m.text)}</div>`;
+    }
+    let actionHtml = '';
+    if (m.action) {
+      actionHtml = `
+        <div class="ai-action">
+          <span class="dot"></span>
+          <div>
+            <div class="label-line">${escapeHtml(m.action.title)}</div>
+            <div class="meta-line">${escapeHtml(m.action.date)}${m.action.time ? ' · ' + m.action.time : ''}</div>
+          </div>
+        </div>`;
+    }
+    return `<div class="bubble ai">${escapeHtml(m.text)}${actionHtml}</div>`;
+  }).join('');
+  asstStream.scrollTop = asstStream.scrollHeight;
+}
+
+asstInput.addEventListener('input', () => {
+  asstSend.disabled = !asstInput.value.trim();
+  asstInput.style.height = 'auto';
+  asstInput.style.height = Math.min(asstInput.scrollHeight, 96) + 'px';
+});
+
+function sendAsstMessage() {
+  const text = asstInput.value.trim();
+  if (!text) return;
+  state.asstMessages.push({ role: 'user', text });
+  asstInput.value = '';
+  asstInput.style.height = '';
+  asstSend.disabled = true;
+  renderAsst();
+
+  setTimeout(() => {
+    const timeMatch = text.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+    let time = null;
+    if (timeMatch) {
+      let h = parseInt(timeMatch[1]);
+      const m = timeMatch[2] || '00';
+      if (timeMatch[3]?.toLowerCase() === 'pm' && h < 12) h += 12;
+      time = `${String(h).padStart(2,'0')}:${m}`;
+    }
+    let date = dk(today), dateLabel = 'Today';
+    if (/tomorrow|завтра/i.test(text)) { date = dk(addD(today, 1)); dateLabel = 'Tomorrow'; }
+
+    const title = text.length > 50 ? text.slice(0, 50) + '…' : text;
+    addTask(title, date, time);
+    state.asstMessages.push({
+      role: 'ai',
+      text: 'Added.',
+      action: { title, date: dateLabel, time },
+    });
+    renderAsst();
+  }, 400);
+}
+
+asstSend.addEventListener('click', sendAsstMessage);
+asstInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAsstMessage(); }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   WINS
+   ═══════════════════════════════════════════════════════════════ */
+function renderWins() {
+  const scroll = document.getElementById('wins-scroll');
+  const wins = state.tasks
+    .filter(t => t.done)
+    .sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
+
+  const tk = dk(today);
+  const doneToday = state.tasks.filter(t => t.date === tk && t.done).length;
+  const pendingToday = state.tasks.filter(t => t.date === tk && !t.done).length;
+
+  let html = '';
+
+  // Streak / progress card — calm, single hero
+  if (pendingToday > 0) {
+    html += `
+      <div class="streak-card">
+        <div class="num">${doneToday}<span>/ ${doneToday + pendingToday}</span></div>
+        <div class="lbl">7-day streak coming.<br/>Complete today's tasks.</div>
+      </div>`;
+  } else {
+    html += `
+      <div class="streak-card">
+        <div class="num">7<span>days</span></div>
+        <div class="lbl">Streak unlocked. You've shipped every day this week.</div>
+      </div>`;
+  }
+
+  if (wins.length === 0) {
+    html += '<div class="empty">Complete tasks to see them here.</div>';
+    scroll.innerHTML = html;
+    return;
+  }
+
+  html += `
+    <div class="section-label"><span>Recent</span><span class="count">${wins.length}</span></div>
+    <div class="glass-card">
+      ${wins.map(t => {
+        const d = new Date(t.date + 'T00:00:00');
+        let label;
+        if (t.date === tk) label = 'Today';
+        else if (t.date === dk(addD(today, -1))) label = 'Yesterday';
+        else label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `
+          <div class="win-row">
+            <div class="icon-wrap">${SVG_TICK}</div>
+            <div class="body">
+              <div class="title-l">${escapeHtml(t.title)}</div>
+              <div class="meta-l">${label}${t.time ? ' · ' + t.time : ''}</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+
+  scroll.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS
+   ═══════════════════════════════════════════════════════════════ */
+const SVG_BELL  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.73 21a2 2 0 01-3.46 0"/></svg>';
+const SVG_SPARK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>';
+const SVG_WAVE  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h2l2-7 4 14 2-7h8"/></svg>';
+const SVG_CLOUD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10a6 6 0 00-11.5-2A4 4 0 006 16h12a4 4 0 000-8z"/></svg>';
+const SVG_LOCK  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+const SVG_HELP  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>';
+const SVG_EXIT  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+const SVG_CHEV  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+
+function renderSettings() {
+  const s = state.settings;
+  const scroll = document.getElementById('set-scroll');
+  scroll.innerHTML = `
+    <div class="section-label"><span>Notifications</span></div>
+    <div class="glass-card">
+      <button class="set-row" data-toggle="notifications">
+        <div class="icon-wrap">${SVG_BELL}</div>
+        <div class="label">Push notifications</div>
+        <div class="toggle ${s.notifications ? 'on' : ''}"></div>
+      </button>
+      <button class="set-row" data-toggle="dailyBrief">
+        <div class="icon-wrap">${SVG_SPARK}</div>
+        <div class="label">Daily brief at 8:00</div>
+        <div class="toggle ${s.dailyBrief ? 'on' : ''}"></div>
+      </button>
+      <button class="set-row" data-toggle="sounds">
+        <div class="icon-wrap">${SVG_WAVE}</div>
+        <div class="label">Sounds &amp; haptics</div>
+        <div class="toggle ${s.sounds ? 'on' : ''}"></div>
+      </button>
+    </div>
+
+    <div class="section-label"><span>Account</span></div>
+    <div class="glass-card">
+      <button class="set-row">
+        <div class="icon-wrap">${SVG_CLOUD}</div>
+        <div class="label">iCloud sync</div>
+        <div class="toggle ${s.syncIcloud ? 'on' : ''}" data-toggle="syncIcloud"></div>
+      </button>
+      <button class="set-row">
+        <div class="icon-wrap">${SVG_LOCK}</div>
+        <div class="label">Privacy</div>
+        <div class="chev">${SVG_CHEV}</div>
+      </button>
+      <button class="set-row">
+        <div class="icon-wrap">${SVG_HELP}</div>
+        <div class="label">Help &amp; feedback</div>
+        <div class="chev">${SVG_CHEV}</div>
+      </button>
+    </div>
+
+    <div class="section-label"><span>About</span></div>
+    <div class="glass-card">
+      <div class="set-row" style="cursor: default;">
+        <div class="label">Version</div>
+        <div class="value">2.0.0</div>
+      </div>
+      <div class="set-row" style="cursor: default;">
+        <div class="label">Plan</div>
+        <div class="value">Pro</div>
+      </div>
+    </div>
+
+    <div class="glass-card" style="margin-top: 24px;">
+      <button class="set-row danger">
+        <div class="icon-wrap">${SVG_EXIT}</div>
+        <div class="label">Sign out</div>
+      </button>
+    </div>
+
+    <div style="height: 40px;"></div>
+  `;
+
+  scroll.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const k = el.dataset.toggle;
+      state.settings[k] = !state.settings[k];
+      renderSettings();
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   "+ New" handler
+   ═══════════════════════════════════════════════════════════════ */
+document.querySelectorAll('[data-action="new"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const title = prompt('New task');
+    if (title && title.trim()) {
+      addTask(title.trim(), dk(today), null);
+      renderWins();
+    }
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════
+   INITIAL RENDER
+   ═══════════════════════════════════════════════════════════════ */
+renderTasks();
+renderCal();
+renderAsst();
+renderWins();
+renderSettings();
+</script>
+
+</body>
+</html>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
-import type { Task } from '../services/supabase'
+import type { Task, TaskLabel } from '../services/supabase'
+import { TASK_LABELS, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
+import { IcoChevronDown } from './icons'
 
 interface Props {
   isOpen: boolean
@@ -11,21 +13,30 @@ interface Props {
   editTask?: Task
 }
 
+function fmtDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', editTask }: Props) {
   const { addTask, fetchTasks, updateTask } = useTaskStore()
   const isEditMode = !!editTask
 
-  const [title, setTitle]               = useState('')
-  const [date, setDate]                 = useState(format(defaultDate, 'yyyy-MM-dd'))
-  const [time, setTime]                 = useState('')
-  const [timeEnd, setTimeEnd]           = useState('')
-  const [isAllDay, setIsAllDay]         = useState(false)
-  const [description, setDescription]   = useState('')
-  const [saving, setSaving]             = useState(false)
-  const [visible, setVisible]           = useState(false)
-  const [error, setError]               = useState('')
+  const [title, setTitle]         = useState('')
+  const [date, setDate]           = useState(fmtDate(defaultDate))
+  const [time, setTime]           = useState('')
+  const [timeEnd, setTimeEnd]     = useState('')
+  const [isAllDay, setIsAllDay]   = useState(false)
+  const [label, setLabel]         = useState<TaskLabel>('personal')
+  const [description, setDescription] = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [visible, setVisible]     = useState(false)
+  const [error, setError]         = useState('')
 
   const titleRef = useRef<HTMLInputElement>(null)
+
+  const todayStr    = fmtDate(new Date())
+  const tomorrowStr = fmtDate(addDays(new Date(), 1))
+  const nextWeekStr = fmtDate(addDays(new Date(), 7))
 
   // Populate fields in edit mode
   useEffect(() => {
@@ -35,19 +46,20 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       setTime(editTask.task_time ?? '')
       setTimeEnd(editTask.task_time_end ?? '')
       setIsAllDay(editTask.is_all_day ?? false)
-      setDescription(editTask.description ?? '')
+      setLabel(parseLabelFromDescription(editTask.description))
+      setDescription(stripLabelFromDescription(editTask.description))
     }
   }, [isOpen, editTask])
 
   // Sync defaultDate + defaultTime only in add mode
   useEffect(() => {
     if (!editTask) {
-      setDate(format(defaultDate, 'yyyy-MM-dd'))
+      setDate(fmtDate(defaultDate))
       setTime(defaultTime)
       if (defaultTime) {
         const [h, m] = defaultTime.split(':').map(Number)
         const endH = Math.min(h + 1, 23)
-        setTimeEnd(`${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+        setTimeEnd(`${String(endH).padStart(2,'0')}:${String(m).padStart(2,'0')}`)
       } else {
         setTimeEnd('')
       }
@@ -58,7 +70,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   useEffect(() => {
     if (isOpen) {
       setVisible(true)
-      setTimeout(() => titleRef.current?.focus(), 60)
+      setTimeout(() => titleRef.current?.focus(), 80)
     } else {
       setVisible(false)
     }
@@ -76,14 +88,9 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
-        setTitle('')
-        setTime('')
-        setTimeEnd('')
-        setIsAllDay(false)
-        setDescription('')
-        setSaving(false)
-        setError('')
-      }, 200)
+        setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
+        setLabel('personal'); setDescription(''); setSaving(false); setError('')
+      }, 300)
     }
   }, [isOpen])
 
@@ -92,23 +99,23 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     if (val && !timeEnd) {
       const [h, m] = val.split(':').map(Number)
       const endH = Math.min(h + 1, 23)
-      setTimeEnd(`${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+      setTimeEnd(`${String(endH).padStart(2,'0')}:${String(m).padStart(2,'0')}`)
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim()) return
+  async function handleSubmit() {
+    if (!title.trim() || saving) return
     setSaving(true)
     setError('')
     try {
+      const encodedDesc = encodeLabelInDescription(label, description.trim())
       const payload = {
         title: title.trim(),
         task_date: date,
         task_time: isAllDay ? null : (time || null),
         task_time_end: isAllDay ? null : (timeEnd || null),
         is_all_day: isAllDay,
-        description: description.trim() || null,
+        description: encodedDesc || null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
@@ -126,203 +133,245 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
   if (!isOpen && !visible) return null
 
-  const isMobile = window.innerWidth < 768
   const shown = isOpen && visible
+
+  function datePillLabel(): string {
+    try {
+      return format(new Date(date + 'T12:00'), 'MMM d')
+    } catch {
+      return date
+    }
+  }
+
+  const isPreset = date === todayStr || date === tomorrowStr || date === nextWeekStr
 
   return (
     <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: isMobile ? 'flex-end' : 'center',
-        justifyContent: 'center',
-        opacity: shown ? 1 : 0,
-        transition: 'opacity 0.2s ease',
+        background: shown ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0)',
+        backdropFilter: shown ? 'blur(4px)' : 'none',
+        WebkitBackdropFilter: shown ? 'blur(4px)' : 'none',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        transition: 'background 0.25s ease, backdrop-filter 0.25s ease',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: isMobile ? '100%' : '420px',
-          background: 'var(--panel)',
-          border: isMobile ? 'none' : '1px solid var(--border)',
-          borderTop: '1px solid var(--border)',
-          borderRadius: isMobile ? '18px 18px 0 0' : '16px',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          transform: shown
-            ? 'translateY(0)'
-            : isMobile ? 'translateY(100%)' : 'translateY(12px)',
-          transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)',
+          width: '100%', maxWidth: '560px',
+          background: 'var(--surface)',
+          borderRadius: '28px 28px 0 0',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+          boxShadow: 'var(--sheet-shadow)',
+          transform: shown ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
+          display: 'flex', flexDirection: 'column',
         }}
       >
-        {isMobile && (
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '-8px auto 0' }} />
-        )}
-
-        <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-          {isEditMode ? 'Edit task' : 'Add task'}
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border)' }} />
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 2px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {isEditMode ? 'Edit task' : 'New task'}
+          </span>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)', padding: '4px', borderRadius: '50%', background: 'var(--surface2)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IcoChevronDown size={15} />
+          </button>
+        </div>
+
+        <div style={{ padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {error && (
-            <div style={{
-              background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
-              color: '#fca5a5', fontSize: '12px', padding: '8px 12px',
-              borderRadius: '8px', lineHeight: 1.4,
-            }}>
-              ⚠ {error}
+            <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: '12px', padding: '8px 12px', borderRadius: '10px', lineHeight: 1.4 }}>
+              {error}
             </div>
           )}
 
-          {/* Title */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={labelStyle}>Title <span style={{ color: 'var(--accent-2)' }}>*</span></label>
-            <input
-              ref={titleRef}
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Meeting with Alex"
-              required
-              style={inputStyle}
-            />
+          {/* Title — Fraunces */}
+          <input
+            ref={titleRef}
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
+            placeholder={isEditMode ? 'Task title' : 'What needs to happen?'}
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '22px',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              color: 'var(--text)',
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              width: '100%',
+              lineHeight: 1.3,
+            }}
+          />
+
+          {/* Date pills */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={metaLabel}>Date</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {([
+                { label: 'Today',     value: todayStr    },
+                { label: 'Tomorrow',  value: tomorrowStr },
+                { label: 'Next week', value: nextWeekStr },
+              ] as const).map(({ label: l, value: v }) => (
+                <button key={v} onClick={() => setDate(v)} style={pill(date === v)}>
+                  {l}
+                </button>
+              ))}
+              {!isPreset && (
+                <span style={pill(true)}>{datePillLabel()}</span>
+              )}
+              {/* Hidden date input overlay for custom date */}
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <span style={{ ...pill(false), pointerEvents: 'none', paddingLeft: '10px', paddingRight: '10px' }}>···</span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Date + All-day toggle */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label style={labelStyle}>Date</label>
+          {/* Time */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={metaLabel}>Time</span>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                type="button"
-                onClick={() => {
-                  const next = !isAllDay
-                  setIsAllDay(next)
-                  if (next) { setTime(''); setTimeEnd('') }
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '2px 0', WebkitTapHighlightColor: 'transparent' }}
-              >
-                <span style={{ fontSize: '11px', color: isAllDay ? 'var(--accent-2)' : 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}>
-                  All day
-                </span>
-                <div style={{
-                  width: '28px', height: '16px', borderRadius: '8px',
-                  background: isAllDay ? 'var(--accent)' : 'var(--surface2)',
-                  border: `1px solid ${isAllDay ? 'var(--accent)' : 'var(--border)'}`,
-                  position: 'relative', transition: 'all 0.2s', flexShrink: 0,
-                }}>
-                  <div style={{
-                    position: 'absolute', top: '2px',
-                    left: isAllDay ? '14px' : '2px',
-                    width: '10px', height: '10px', borderRadius: '50%',
-                    background: '#fff', transition: 'left 0.2s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-                  }} />
-                </div>
-              </button>
+                onClick={() => { setIsAllDay(!isAllDay); if (!isAllDay) { setTime(''); setTimeEnd('') } }}
+                style={pill(isAllDay)}
+              >All day</button>
+              {!isAllDay && (
+                <>
+                  <div style={{ position: 'relative', display: 'inline-flex' }}>
+                    <span style={{ ...pill(!!time), pointerEvents: 'none', minWidth: '72px', justifyContent: 'center' }}>
+                      {time ? time.slice(0,5) : 'Start'}
+                    </span>
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={e => handleTimeChange(e.target.value)}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                    />
+                  </div>
+                  {time && (
+                    <>
+                      <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>→</span>
+                      <div style={{ position: 'relative', display: 'inline-flex' }}>
+                        <span style={{ ...pill(!!timeEnd), pointerEvents: 'none', minWidth: '72px', justifyContent: 'center' }}>
+                          {timeEnd ? timeEnd.slice(0,5) : 'End'}
+                        </span>
+                        <input
+                          type="time"
+                          value={timeEnd}
+                          onChange={e => setTimeEnd(e.target.value)}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </div>
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              required
-              style={inputStyle}
-            />
           </div>
 
-          {/* Time — hidden when all-day */}
-          {!isAllDay && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={labelStyle}>Start <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={e => handleTimeChange(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={labelStyle}>End <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                <input
-                  type="time"
-                  value={timeEnd}
-                  onChange={e => setTimeEnd(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+          {/* Label pills */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={metaLabel}>Label</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {(Object.entries(TASK_LABELS) as [TaskLabel, { name: string; color: string }][]).map(([k, v]) => (
+                <button
+                  key={k}
+                  onClick={() => setLabel(k)}
+                  style={{
+                    ...pill(label === k),
+                    background: label === k ? v.color : 'var(--surface2)',
+                    color: label === k ? '#1C1917' : 'var(--text-muted)',
+                  }}
+                >
+                  {v.name}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* Description */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={labelStyle}>Description <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          {/* Description (optional, compact) */}
+          <div>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Additional notes…"
+              placeholder="Notes (optional)"
               rows={2}
-              style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
+              style={{
+                width: '100%', background: 'var(--surface2)', border: '1px solid var(--hairline)',
+                borderRadius: '12px', padding: '10px 14px', color: 'var(--text)',
+                fontSize: '13px', fontFamily: 'inherit', outline: 'none',
+                resize: 'none', lineHeight: 1.5, boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          {/* Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                flex: 1, padding: '10px', borderRadius: '10px',
-                background: 'var(--panel-2)', border: '1px solid var(--border)',
-                color: 'var(--text-2)', fontSize: '13px', fontWeight: 500,
-                cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-              }}
-            >Cancel</button>
-            <button
-              type="submit"
-              disabled={!title.trim() || saving}
-              style={{
-                flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
-                background: title.trim() && !saving ? 'var(--accent)' : 'var(--surface2)',
-                color: title.trim() && !saving ? '#fff' : 'var(--text-muted)',
-                fontSize: '13px', fontWeight: 600,
-                cursor: title.trim() && !saving ? 'pointer' : 'not-allowed',
-                fontFamily: 'inherit', transition: 'all 0.15s',
-                boxShadow: title.trim() && !saving ? '0 0 18px var(--accent-glow)' : 'none',
-              }}
-            >
-              {saving
-                ? (isEditMode ? 'Saving…' : 'Adding…')
-                : (isEditMode ? 'Save changes' : 'Add task')
-              }
-            </button>
-          </div>
-        </form>
+          {/* Save button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!title.trim() || saving}
+            style={{
+              width: '100%', height: '52px',
+              borderRadius: '16px', border: 'none',
+              background: title.trim() && !saving ? 'var(--accent)' : 'var(--surface2)',
+              color: title.trim() && !saving ? '#fff' : 'var(--text-muted)',
+              fontSize: '15px', fontWeight: 600, letterSpacing: '-0.02em',
+              cursor: title.trim() && !saving ? 'pointer' : 'not-allowed',
+              transition: 'all 0.15s',
+              boxShadow: title.trim() && !saving
+                ? '0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow)'
+                : 'none',
+              fontFamily: 'inherit',
+            }}
+          >
+            {saving
+              ? (isEditMode ? 'Saving…' : 'Adding…')
+              : (isEditMode ? 'Save changes' : 'Add task')
+            }
+          </button>
+        </div>
       </div>
-
-      <style>{`
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: invert(0.4); cursor: pointer;
-        }
-      `}</style>
     </div>
   )
 }
 
-const labelStyle: React.CSSProperties = {
-  fontSize: '11.5px', fontWeight: 500, color: 'var(--text-muted)',
-  textTransform: 'uppercase', letterSpacing: '0.05em',
+const metaLabel: React.CSSProperties = {
+  fontSize: '10.5px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  color: 'var(--text-muted)',
 }
-const inputStyle: React.CSSProperties = {
-  background: 'var(--surface2)', border: '1px solid var(--border)',
-  borderRadius: '9px', padding: '9px 12px', color: 'var(--text)',
-  fontSize: '13px', fontFamily: 'inherit', outline: 'none',
-  width: '100%', boxSizing: 'border-box',
+
+function pill(active: boolean): React.CSSProperties {
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '7px 14px',
+    borderRadius: '999px',
+    fontSize: '12.5px',
+    fontWeight: 550,
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    background: active ? 'var(--text)' : 'var(--surface2)',
+    color: active ? 'var(--bg)' : 'var(--text-muted)',
+    fontFamily: 'inherit',
+    whiteSpace: 'nowrap',
+  }
 }
