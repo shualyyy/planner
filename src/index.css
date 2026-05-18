@@ -123,7 +123,7 @@ input, textarea { font-family: inherit; color: inherit; }
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: max(env(safe-area-inset-bottom, 0px), 10px);
+  bottom: env(safe-area-inset-bottom, 0px);
   width: 312px;
   height: 56px;
   border-radius: 28px;
@@ -170,7 +170,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── FAB ── */
 .fab-v2 {
   position: fixed;
-  bottom: calc(max(env(safe-area-inset-bottom, 0px), 10px) + 72px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 66px);
   right: 22px;
   width: 56px; height: 56px;
   border-radius: 50%;
