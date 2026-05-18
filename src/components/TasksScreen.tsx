@@ -116,8 +116,17 @@ function TaskRow({ task, onToggle, onDelete, onEdit }: {
           lineHeight: 1.4, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{task.title}</div>
 
+        {/* All-day chip */}
+        {task.is_all_day && (
+          <span style={{
+            fontSize: '11px', padding: '2px 8px', borderRadius: '999px',
+            background: 'rgba(52,211,153,0.12)', color: '#10a371',
+            fontWeight: 500, flexShrink: 0,
+          }}>All day</span>
+        )}
+
         {/* Time chip */}
-        {task.task_time && (
+        {task.task_time && !task.is_all_day && (
           <span style={{
             fontSize: '11px', padding: '2px 8px', borderRadius: '999px',
             background: 'var(--accent-soft)', color: 'var(--accent)',

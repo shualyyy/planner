@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
+import { UserIcon, SunIcon, MoonIcon, SignOutIcon } from './icons'
 
 export default function SettingsScreen() {
   const { theme, setTheme } = useTaskStore()
@@ -45,10 +46,7 @@ export default function SettingsScreen() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <UserIcon size={16} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -70,9 +68,7 @@ export default function SettingsScreen() {
                 onClick={() => setTheme('light')}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                  </svg>
+                  <SunIcon />
                   Light
                 </span>
               </button>
@@ -81,9 +77,7 @@ export default function SettingsScreen() {
                 onClick={() => setTheme('dark')}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                  </svg>
+                  <MoonIcon />
                   Dark
                 </span>
               </button>
@@ -142,11 +136,7 @@ export default function SettingsScreen() {
               animation: 'spin 0.7s linear infinite', display: 'inline-block',
             }} />
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
+            <SignOutIcon />
           )}
           {signingOut ? 'Signing out...' : 'Sign out'}
         </button>
