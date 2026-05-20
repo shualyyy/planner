@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
-import { useTaskStore } from '../store/taskStore'
-import { SunIcon, MoonIcon, IcoBell, IcoLock, IcoHelp, SignOutIcon, ChevronRight } from './icons'
+import { IcoBell, IcoLock, IcoHelp, SignOutIcon, ChevronRight } from './icons'
 
 export default function SettingsScreen() {
-  const { theme, setTheme } = useTaskStore()
   const [email, setEmail] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
 
@@ -29,8 +27,27 @@ export default function SettingsScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 76px)' }}>
       {/* Header */}
-      <div style={{ padding: '28px 24px 20px' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '36px', fontWeight: 500, letterSpacing: '-0.03em', color: 'var(--text)' }}>You</h1>
+      <div style={{ padding: '28px 24px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Dino logo mini */}
+        <svg width="28" height="33" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="28" y="1"  width="5" height="9"  rx="2.5" fill="#2BAB78"/>
+          <rect x="22" y="6"  width="4" height="7"  rx="2"   fill="#2BAB78"/>
+          <rect x="17" y="10" width="3.5" height="6" rx="1.75" fill="#2BAB78"/>
+          <rect x="22" y="7"  width="18" height="17" rx="7" fill="#3CC68A"/>
+          <rect x="36" y="17" width="14" height="10" rx="5" fill="#3CC68A"/>
+          <rect x="46" y="19" width="2.5" height="2.5" rx="1.25" fill="#2BAB78"/>
+          <circle cx="37" cy="13" r="3.5" fill="#06141B"/>
+          <circle cx="38" cy="12" r="1.2" fill="#CCD0CF"/>
+          <rect x="20" y="20" width="16" height="8" rx="4" fill="#3CC68A"/>
+          <rect x="6" y="22" width="28" height="24" rx="9" fill="#3CC68A"/>
+          <rect x="10" y="27" width="16" height="15" rx="6" fill="#2BAB78"/>
+          <path d="M6 36 C0 34, -2 40, 4 42" stroke="#3CC68A" strokeWidth="7" strokeLinecap="round" fill="none"/>
+          <rect x="9"  y="42" width="10" height="12" rx="5" fill="#3CC68A"/>
+          <rect x="22" y="42" width="10" height="12" rx="5" fill="#3CC68A"/>
+          <rect x="7"  y="51" width="13" height="5" rx="2.5" fill="#2BAB78"/>
+          <rect x="20" y="51" width="13" height="5" rx="2.5" fill="#2BAB78"/>
+        </svg>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 500, letterSpacing: '-0.03em', color: 'var(--text)' }}>You</h1>
       </div>
 
       <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -40,7 +57,7 @@ export default function SettingsScreen() {
             width: '52px', height: '52px', borderRadius: '50%', flexShrink: 0,
             background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: '18px', fontWeight: 600,
+            color: 'var(--accent-ink)', fontSize: '18px', fontWeight: 600,
             boxShadow: '0 4px 12px var(--accent-glow)',
           }}>
             {initial}
@@ -53,31 +70,6 @@ export default function SettingsScreen() {
               <span style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px', background: 'var(--accent-soft)', color: 'var(--accent-2)', borderRadius: '999px' }}>
                 Free
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Appearance */}
-        <div className="settings-section-label">Appearance</div>
-        <div className="settings-card">
-          <div className="settings-row" style={{ cursor: 'default' }}>
-            <div className="set-icon">
-              {theme === 'light' ? <SunIcon size={15} /> : <MoonIcon size={15} />}
-            </div>
-            <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>Theme</span>
-            {/* Theme pills */}
-            <div style={{ display: 'inline-flex', background: 'var(--surface2)', borderRadius: '999px', padding: '3px', gap: '2px' }}>
-              {(['light', 'dark'] as const).map(t => (
-                <button key={t} onClick={() => setTheme(t)} style={{
-                  width: '38px', height: '30px', borderRadius: '999px', border: 'none', cursor: 'pointer',
-                  background: theme === t ? 'var(--surface)' : 'transparent',
-                  boxShadow: theme === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--text-2)', transition: 'all 0.2s',
-                }}>
-                  {t === 'light' ? <SunIcon size={15} /> : <MoonIcon size={15} />}
-                </button>
-              ))}
             </div>
           </div>
         </div>
@@ -119,7 +111,7 @@ export default function SettingsScreen() {
 
         {/* Version */}
         <div style={{ textAlign: 'center', fontSize: '11px', fontWeight: 450, color: 'var(--text-muted)', padding: '16px 0 28px', letterSpacing: '0.02em' }}>
-          Planer · v2.0
+          Dino Task · v2.1
         </div>
       </div>
     </div>

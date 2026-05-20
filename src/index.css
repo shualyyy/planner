@@ -1,100 +1,51 @@
-/* ── Design tokens ── */
-:root, [data-theme="light"] {
+/* ── Design tokens — Dino Task dark navy ── */
+:root {
   --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif:   'Fraunces', 'Inter', serif;
 
-  --bg:           #F5F1EC;
-  --bg-2:         #EDE7DF;
-  --surface:      #FFFFFF;
-  --surface2:     #F5F1EC;
-  --border:       #E4DED5;
-  --hairline:     rgba(28,25,23,0.06);
-  --text:         #1C1917;
-  --text-2:       #6B6360;
-  --text-muted:   #A89E9A;
-  --text-faint:   #C8C0BC;
-  --accent:       #E8845A;
-  --accent-2:     #D97757;
-  --accent-soft:  #F5E6DF;
-  --accent-ink:   #4A2418;
-  --accent-glow:  rgba(232,132,90,0.32);
-  --success:      #4F9E7E;
-  --success-soft: #DDEDE3;
-  --danger:       #DA5454;
-  --danger-text:  #DA5454;
-  --danger-soft:  rgba(218,84,84,0.10);
-  --danger-border: rgba(218,84,84,0.25);
-  --info:         #2563eb;
-  --info-hover:   #3b82f6;
-  --shadow:       rgba(0,0,0,0.08);
-
-  --ev-0: #B8D4F2;
-  --ev-1: #F5BDD0;
-  --ev-2: #F5E28A;
-  --ev-3: #8ED4C8;
-  --ev-4: #C8B4E8;
-  --ev-5: #A8D8B0;
-  --ev-ink: #1C1917;
-
-  --tabbar-bg:     rgba(255,255,255,0.78);
-  --tabbar-stroke: rgba(28,25,23,0.06);
-  --tabbar-shadow: 0 12px 36px rgba(74,36,24,0.10), 0 1px 0 rgba(255,255,255,0.9) inset;
-  --sheet-shadow:  0 -8px 40px rgba(0,0,0,0.16);
-  --card-shadow:   0 0 0 0.5px var(--hairline);
-
-  --panel:       var(--surface);
-  --panel-2:     var(--surface2);
-  --border-soft: var(--border);
-  --shadow-lg:   0 30px 80px rgba(0,0,0,0.12);
-  --hover-overlay: rgba(0,0,0,0.04);
-  --danger-text-2: #fca5a5;
-  --danger-soft-2: rgba(218,84,84,0.13);
-}
-
-[data-theme="dark"] {
-  --bg:           #0F0D0B;
-  --bg-2:         #16130F;
-  --surface:      #1B1714;
-  --surface2:     #221D19;
-  --border:       #2A231F;
-  --hairline:     rgba(255,255,255,0.06);
-  --text:         #F2EBE6;
-  --text-2:       #A89E9A;
-  --text-muted:   #6B6360;
-  --text-faint:   #3A3431;
-  --accent:       #E8845A;
-  --accent-2:     #F0976F;
-  --accent-soft:  rgba(232,132,90,0.16);
-  --accent-ink:   #FFE5D6;
-  --accent-glow:  rgba(232,132,90,0.40);
-  --success:      #6DBF9A;
-  --success-soft: rgba(109,191,154,0.14);
+  --bg:           #06141B;
+  --bg-2:         #0D1B27;
+  --surface:      #11212D;
+  --surface2:     #1A2E3D;
+  --border:       #253745;
+  --hairline:     rgba(255,255,255,0.07);
+  --text:         #CCD0CF;
+  --text-2:       #9BA8AB;
+  --text-muted:   #4A5C6A;
+  --text-faint:   #253745;
+  --accent:       #3CC68A;
+  --accent-2:     #4DD69A;
+  --accent-soft:  rgba(60,198,138,0.15);
+  --accent-ink:   #001A0D;
+  --accent-glow:  rgba(60,198,138,0.35);
+  --success:      #3CC68A;
+  --success-soft: rgba(60,198,138,0.12);
   --danger:       #E47474;
   --danger-text:  #E47474;
   --danger-soft:  rgba(228,116,116,0.12);
-  --danger-border: rgba(228,116,116,0.25);
-  --info:         #3b82f6;
-  --info-hover:   #60a5fa;
-  --shadow:       rgba(0,0,0,0.30);
+  --danger-border: rgba(228,116,116,0.28);
+  --info:         #4A9BE8;
+  --info-hover:   #5AAFF8;
+  --shadow:       rgba(0,0,0,0.45);
 
-  --ev-0: #6E94BD;
-  --ev-1: #B98599;
-  --ev-2: #BFA958;
-  --ev-3: #5BA294;
-  --ev-4: #9783BD;
-  --ev-5: #6FA579;
-  --ev-ink: #0F0D0B;
+  --ev-0: #4A7CAD;
+  --ev-1: #A07090;
+  --ev-2: #A89050;
+  --ev-3: #3A8A80;
+  --ev-4: #7060A0;
+  --ev-5: #3C8A60;
+  --ev-ink: #06141B;
 
-  --tabbar-bg:     rgba(27,23,20,0.78);
-  --tabbar-stroke: rgba(255,255,255,0.08);
-  --tabbar-shadow: 0 12px 36px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
-  --sheet-shadow:  0 -8px 40px rgba(0,0,0,0.5);
+  --tabbar-bg:     rgba(17,33,45,0.88);
+  --tabbar-stroke: rgba(255,255,255,0.09);
+  --tabbar-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06) inset;
+  --sheet-shadow:  0 -8px 40px rgba(0,0,0,0.65);
   --card-shadow:   0 0 0 0.5px var(--hairline);
 
-  --panel:       var(--surface);
-  --panel-2:     var(--surface2);
-  --border-soft: var(--border);
-  --shadow-lg:   0 30px 80px rgba(0,0,0,0.5);
+  --panel:         var(--surface);
+  --panel-2:       var(--surface2);
+  --border-soft:   var(--border);
+  --shadow-lg:     0 30px 80px rgba(0,0,0,0.55);
   --hover-overlay: rgba(255,255,255,0.04);
   --danger-text-2: #fca5a5;
   --danger-soft-2: rgba(228,116,116,0.13);
@@ -123,7 +74,7 @@ input, textarea { font-family: inherit; color: inherit; }
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: max(calc(env(safe-area-inset-bottom, 8px) - 16px), 4px);
+  bottom: max(calc(env(safe-area-inset-bottom, 8px) - 10px), 8px);
   width: 312px;
   height: 56px;
   border-radius: 28px;
@@ -170,14 +121,14 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── FAB ── */
 .fab-v2 {
   position: fixed;
-  bottom: calc(max(calc(env(safe-area-inset-bottom, 8px) - 16px), 4px) + 64px);
+  bottom: calc(max(calc(env(safe-area-inset-bottom, 8px) - 10px), 8px) + 64px);
   right: 22px;
   width: 56px; height: 56px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 8px 24px var(--accent-glow);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow);
   z-index: 350;
   transition: transform 0.15s;
   border: none;
@@ -206,8 +157,8 @@ input, textarea { font-family: inherit; color: inherit; }
   letter-spacing: 0.02em;
 }
 .seg-pill.on {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* ── Calendar ── */
@@ -230,9 +181,9 @@ input, textarea { font-family: inherit; color: inherit; }
 .d30.other { pointer-events: none; }
 .d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; }
 .d30.other .d-num { color: var(--text-faint); }
-.d30.today { background: var(--text); }
-.d30.today .d-num { color: var(--bg); font-weight: 600; }
-.d30.today .d-dot { background: var(--bg) !important; opacity: 0.7; }
+.d30.today { background: var(--accent); }
+.d30.today .d-num { color: var(--accent-ink); font-weight: 600; }
+.d30.today .d-dot { background: var(--accent-ink) !important; opacity: 0.5; }
 .d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
 .d-dot { width: 4px; height: 4px; border-radius: 50%; }
 
@@ -246,9 +197,7 @@ input, textarea { font-family: inherit; color: inherit; }
 
 /* ── Date/time picker icons ── */
 input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cursor: pointer; }
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
-[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator { filter: none; }
+input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
 
 /* ── Animations ── */
 @keyframes blink {
@@ -256,8 +205,8 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   40% { opacity: 1; transform: translateY(-2px); }
 }
 @keyframes micPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232,132,90,0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(232,132,90,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(60,198,138,0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(60,198,138,0); }
 }
 @keyframes ping {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -274,4 +223,8 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dinoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
 }

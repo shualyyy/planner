@@ -37,13 +37,6 @@ declare global {
 
 const hasSpeechAPI = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 
-function getGreeting(): string {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 17) return 'Good afternoon'
-  return 'Good evening'
-}
-
 const MicIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -58,6 +51,58 @@ const SendIcon = () => (
   </svg>
 )
 
+/* ── Dino mascot — pixel-art style T-Rex ── */
+const DinoMascot = () => (
+  <svg
+    width="52" height="60"
+    viewBox="0 0 52 60"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ animation: 'dinoFloat 3s ease-in-out infinite', display: 'block' }}
+  >
+    {/* Back spikes */}
+    <rect x="28" y="1"  width="5" height="9"  rx="2.5" fill="#2BAB78"/>
+    <rect x="22" y="6"  width="4" height="7"  rx="2"   fill="#2BAB78"/>
+    <rect x="17" y="10" width="3.5" height="6" rx="1.75" fill="#2BAB78"/>
+
+    {/* Head */}
+    <rect x="22" y="7"  width="18" height="17" rx="7" fill="#3CC68A"/>
+    {/* Snout */}
+    <rect x="36" y="17" width="14" height="10" rx="5" fill="#3CC68A"/>
+    {/* Nostril */}
+    <rect x="46" y="19" width="2.5" height="2.5" rx="1.25" fill="#2BAB78"/>
+    {/* Eye */}
+    <circle cx="37" cy="13" r="3.5" fill="#06141B"/>
+    <circle cx="38" cy="12" r="1.2" fill="#CCD0CF"/>
+
+    {/* Neck */}
+    <rect x="20" y="20" width="16" height="8" rx="4" fill="#3CC68A"/>
+
+    {/* Body */}
+    <rect x="6" y="22" width="28" height="24" rx="9" fill="#3CC68A"/>
+
+    {/* Belly (lighter) */}
+    <rect x="10" y="27" width="16" height="15" rx="6" fill="#2BAB78"/>
+
+    {/* Tail */}
+    <path d="M6 36 C0 34, -2 40, 4 42" stroke="#3CC68A" strokeWidth="7" strokeLinecap="round" fill="none"/>
+
+    {/* Arm (small) */}
+    <rect x="32" y="34" width="9" height="5" rx="2.5" fill="#3CC68A"/>
+    <rect x="38" y="37" width="5" height="3.5" rx="1.75" fill="#2BAB78"/>
+
+    {/* Left leg */}
+    <rect x="9"  y="42" width="10" height="12" rx="5" fill="#3CC68A"/>
+    {/* Right leg */}
+    <rect x="22" y="42" width="10" height="12" rx="5" fill="#3CC68A"/>
+
+    {/* Left foot */}
+    <rect x="7"  y="51" width="13" height="5" rx="2.5" fill="#2BAB78"/>
+    {/* Right foot */}
+    <rect x="20" y="51" width="13" height="5" rx="2.5" fill="#2BAB78"/>
+  </svg>
+)
+
 const SUGGESTIONS = [
   'Встреча завтра в 10:00',
   'Позвонить маме в пятницу',
@@ -67,7 +112,7 @@ const SUGGESTIONS = [
 export default function AssistantScreen() {
   const { addTask } = useTaskStore()
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Hi! Tell me what to add to your calendar — for example: \"Meeting with Alex on Monday at 3pm\" or \"сегодня в 16:00 встреча с Мишей\"." },
+    { role: 'assistant', content: "Привет! Я Dino 🦕 Скажи мне что добавить в календарь — например: «Встреча с Мишей в понедельник в 15:00»." },
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -113,7 +158,7 @@ export default function AssistantScreen() {
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : JSON.stringify(err)
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errMsg}` }])
+      setMessages(prev => [...prev, { role: 'assistant', content: `Ошибка: ${errMsg}` }])
     } finally {
       setLoading(false)
     }
@@ -158,23 +203,17 @@ export default function AssistantScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', height: '100%' }}>
-      {/* Hero header */}
-      <div style={{ padding: '28px 24px 12px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '28px', fontWeight: 500, lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--text)', whiteSpace: 'pre-line' }}>
-          {getGreeting()}.{'\n'}What's <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>on your mind</em>?
-        </div>
-      </div>
 
       {/* Messages */}
-      <div ref={streamRef} style={{ flex: 1, overflowY: 'auto', padding: '8px 18px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div ref={streamRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: '6px' }}>
             <div style={{
               padding: '12px 16px', wordBreak: 'break-word',
               maxWidth: '80%',
               borderRadius: m.role === 'user' ? '20px 20px 6px 20px' : '20px 20px 20px 6px',
-              background: m.role === 'user' ? 'var(--text)' : 'var(--surface)',
-              color: m.role === 'user' ? 'var(--bg)' : 'var(--text)',
+              background: m.role === 'user' ? 'var(--accent)' : 'var(--surface)',
+              color: m.role === 'user' ? 'var(--accent-ink)' : 'var(--text)',
               font: '400 14px/1.5 var(--font-sans)',
               letterSpacing: '-0.005em',
               boxShadow: m.role === 'assistant' ? 'var(--card-shadow)' : 'none',
@@ -188,7 +227,7 @@ export default function AssistantScreen() {
                 border: '1.5px solid var(--accent-soft)', background: 'var(--bg-2)',
               }}>
                 <div style={{ fontSize: '13px', fontWeight: 450, color: 'var(--text-2)', marginBottom: '8px' }}>
-                  Added to your calendar.
+                  Добавлено в календарь.
                 </div>
                 <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', flexShrink: 0 }} />
@@ -225,27 +264,50 @@ export default function AssistantScreen() {
         ))}
       </div>
 
-      {/* Composer */}
-      <div style={{ margin: '6px 14px', marginBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 72px)', borderRadius: '24px', background: 'var(--surface)', padding: '6px 6px 6px 18px', boxShadow: 'var(--card-shadow)', display: 'flex', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
-        <textarea
-          rows={1}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="Add a task to your calendar..."
-          disabled={loading}
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '14px', fontWeight: 400, lineHeight: 1.5, padding: '12px 0', maxHeight: '80px', minHeight: '24px' }}
-        />
-        {hasSpeechAPI && (
-          <button onClick={toggleListening}
-            style={{ width: '38px', height: '38px', borderRadius: '50%', border: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: listening ? 'var(--accent-soft)' : 'var(--surface2)', color: listening ? 'var(--accent)' : 'var(--text-2)', transition: 'all 0.15s', animation: listening ? 'micPulse 1.4s ease-in-out infinite' : 'none' }}>
-            <MicIcon />
+      {/* Composer with Dino mascot */}
+      <div style={{ margin: '0 14px', marginBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 72px)', position: 'relative', flexShrink: 0 }}>
+        {/* Dino standing on top of input bar */}
+        <div style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '10px',
+          marginBottom: '-6px',
+          zIndex: 2,
+          pointerEvents: 'none',
+        }}>
+          <DinoMascot />
+        </div>
+
+        {/* Input bar */}
+        <div style={{
+          borderRadius: '24px',
+          background: 'var(--surface)',
+          padding: '6px 6px 6px 72px',
+          boxShadow: 'var(--card-shadow), 0 0 0 1px var(--border)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '8px',
+        }}>
+          <textarea
+            rows={1}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Скажи Dino что запланировать..."
+            disabled={loading}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '14px', fontWeight: 400, lineHeight: 1.5, padding: '12px 0', maxHeight: '80px', minHeight: '24px' }}
+          />
+          {hasSpeechAPI && (
+            <button onClick={toggleListening}
+              style={{ width: '38px', height: '38px', borderRadius: '50%', border: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: listening ? 'var(--accent-soft)' : 'var(--surface2)', color: listening ? 'var(--accent)' : 'var(--text-2)', transition: 'all 0.15s', animation: listening ? 'micPulse 1.4s ease-in-out infinite' : 'none' }}>
+              <MicIcon />
+            </button>
+          )}
+          <button onClick={() => handleSend()} disabled={!input.trim() || loading}
+            style={{ width: '38px', height: '38px', borderRadius: '50%', border: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: input.trim() && !loading ? 'var(--accent)' : 'var(--surface2)', color: input.trim() && !loading ? 'var(--accent-ink)' : 'var(--text-muted)', transition: 'all 0.15s', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed' }}>
+            <SendIcon />
           </button>
-        )}
-        <button onClick={() => handleSend()} disabled={!input.trim() || loading}
-          style={{ width: '38px', height: '38px', borderRadius: '50%', border: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: input.trim() && !loading ? 'var(--text)' : 'var(--surface2)', color: input.trim() && !loading ? 'var(--bg)' : 'var(--text-muted)', transition: 'all 0.15s', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed' }}>
-          <SendIcon />
-        </button>
+        </div>
       </div>
     </div>
   )
