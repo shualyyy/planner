@@ -62,12 +62,6 @@ const DinoMascot = () => (
   />
 )
 
-const SUGGESTIONS = [
-  'Встреча завтра в 10:00',
-  'Позвонить маме в пятницу',
-  'Тренировка сегодня в 19:00',
-]
-
 export default function AssistantScreen() {
   const { addTask } = useTaskStore()
   const [messages, setMessages] = useState<Message[]>([
