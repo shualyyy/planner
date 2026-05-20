@@ -208,12 +208,12 @@ export default function AssistantScreen() {
       </div>
 
       {/* Composer with Dino mascot */}
-      <div style={{ margin: '0 14px', position: 'relative', flexShrink: 0 }}>
+      <div style={{ margin: '0 14px', marginBottom: '70px', position: 'relative', flexShrink: 0 }}>
         {/* Dino standing on top of input bar */}
         <div style={{
           position: 'absolute',
           bottom: '100%',
-          left: '18px',
+          left: '30px',
           marginBottom: '-6px',
           zIndex: 2,
           pointerEvents: 'none',

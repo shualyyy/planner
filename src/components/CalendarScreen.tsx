@@ -309,7 +309,7 @@ function TimeGrid({ days, tasks, onCellTap }: {
           )
         })}
       </div>
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto',  }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: '70px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `40px repeat(${days.length}, 1fr)` }}>
           <div>
             {hours.map(h => (
@@ -429,7 +429,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
             <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
           </div>
           {/* Upcoming — scrollable, fills remaining space */}
-          <div style={{ flex: 1, overflowY: 'auto',  }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '70px' }}>
             <UpcomingSection tasks={tasks} onAdd={onAdd} />
           </div>
         </>

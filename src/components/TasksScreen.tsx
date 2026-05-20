@@ -214,7 +214,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           <span style={{ fontSize: '13.5px', fontWeight: 450, color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px',  }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px', paddingBottom: '70px' }}>
           {sortedDays.map(dk => {
             const dayTasks = tasks[dk]
             if (dayTasks.length === 0) return null

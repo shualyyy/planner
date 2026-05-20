@@ -49,7 +49,7 @@ export default function WinsScreen({ tasks }: WinsScreenProps) {
   const todayKey = dayKey(today)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto',  }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '70px' }}>
       {/* Header */}
       <div style={{ padding: '28px 24px 0' }}>
         <div style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--accent)', marginBottom: '10px' }}>

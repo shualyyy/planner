@@ -25,7 +25,7 @@ export default function SettingsScreen() {
   const initial = email ? email[0].toUpperCase() : '?'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto',  }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '70px' }}>
       {/* Header */}
       <div style={{ padding: '6px 24px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img src="/dino.png" alt="Dino" width={28} height={28} style={{ imageRendering: 'pixelated' }} />
