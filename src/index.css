@@ -171,7 +171,7 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 
 /* ── Calendar ── */
-.cal-body { flex: 1; min-height: 0; padding: 0 14px 8px; display: flex; flex-direction: column; overflow: hidden; }
+.cal-body { flex: none; padding: 0 14px 8px; display: flex; flex-direction: column; }
 .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px 8px; gap: 2px; }
 .wd { text-align: center; color: var(--text-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px; gap: 2px; }

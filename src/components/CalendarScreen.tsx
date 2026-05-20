@@ -50,7 +50,7 @@ function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
           width: '100%',
           background: 'var(--bg)',
           borderRadius: '28px 28px 0 0',
-          padding: '16px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)',
+          padding: '16px 24px 24px',
           boxShadow: 'var(--sheet-shadow)',
           maxHeight: '75vh', overflowY: 'auto',
         }}
@@ -160,7 +160,7 @@ function Calendar30({ anchor, tasks, onDayTap }: {
         {WD.map((d, i) => <div key={i} className="wd">{d}</div>)}
       </div>
       {/* Day grid */}
-      <div className="days30" style={{ flex: 1 }}>
+      <div className="days30">
         {cells.map((d, i) => {
           const dk = dayKey(d)
           const isToday = dk === todayKey
@@ -209,7 +209,6 @@ function UpcomingSection({ tasks, onAdd }: {
         const db = b.task_date + (b.task_time || '')
         return da.localeCompare(db)
       })
-      .slice(0, 4)
   }, [tasks, todayKey])
 
   return (
@@ -310,7 +309,7 @@ function TimeGrid({ days, tasks, onCellTap }: {
           )
         })}
       </div>
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto',  }}>
         <div style={{ display: 'grid', gridTemplateColumns: `40px repeat(${days.length}, 1fr)` }}>
           <div>
             {hours.map(h => (
@@ -391,9 +390,9 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
   const oneDay = useMemo(() => [anchor], [anchor])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 66px)', overflowY: view === '30d' ? 'auto' : 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '20px 24px 10px', flexShrink: 0 }}>
+      <div style={{ padding: '6px 24px 8px', flexShrink: 0 }}>
         {/* Eyebrow row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-muted)' }}>
@@ -425,8 +424,14 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       {/* Calendar body */}
       {view === '30d' && (
         <>
-          <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
-          <UpcomingSection tasks={tasks} onAdd={onAdd} />
+          {/* Calendar grid — fixed, does not scroll */}
+          <div style={{ flexShrink: 0 }}>
+            <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
+          </div>
+          {/* Upcoming — scrollable, fills remaining space */}
+          <div style={{ flex: 1, overflowY: 'auto',  }}>
+            <UpcomingSection tasks={tasks} onAdd={onAdd} />
+          </div>
         </>
       )}
       {view === '3d' && <TimeGrid days={threeDays} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} />}

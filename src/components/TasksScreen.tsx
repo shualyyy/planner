@@ -184,7 +184,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Hero */}
-      <div style={{ padding: '24px 24px 10px', position: 'relative', zIndex: 1, flexShrink: 0 }}>
+      <div style={{ padding: '6px 24px 10px', position: 'relative', zIndex: 1, flexShrink: 0 }}>
         <div style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--accent)', marginBottom: '10px' }}>
           {greeting}
         </div>
@@ -214,7 +214,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           <span style={{ fontSize: '13.5px', fontWeight: 450, color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px', paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 140px)' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px',  }}>
           {sortedDays.map(dk => {
             const dayTasks = tasks[dk]
             if (dayTasks.length === 0) return null

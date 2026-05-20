@@ -25,9 +25,9 @@ export default function SettingsScreen() {
   const initial = email ? email[0].toUpperCase() : '?'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 76px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto',  }}>
       {/* Header */}
-      <div style={{ padding: '28px 24px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ padding: '6px 24px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img src="/dino.png" alt="Dino" width={28} height={28} style={{ imageRendering: 'pixelated' }} />
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 500, letterSpacing: '-0.03em', color: 'var(--text)' }}>You</h1>
       </div>

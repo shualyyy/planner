@@ -164,7 +164,7 @@ export default function AssistantScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', height: '100%' }}>
 
       {/* Messages */}
-      <div ref={streamRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div ref={streamRef} style={{ flex: 1, overflowY: 'auto', padding: '6px 18px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: '6px' }}>
             <div style={{
@@ -213,23 +213,13 @@ export default function AssistantScreen() {
         )}
       </div>
 
-      {/* Suggestion chips */}
-      <div style={{ display: 'flex', gap: '8px', padding: '4px 18px 10px', overflowX: 'auto', flexShrink: 0 }}>
-        {SUGGESTIONS.map(s => (
-          <button key={s} onClick={() => handleSend(s)} disabled={loading}
-            style={{ flexShrink: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '999px', padding: '8px 14px', fontSize: '12.5px', fontWeight: 500, color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s' }}>
-            {s}
-          </button>
-        ))}
-      </div>
-
       {/* Composer with Dino mascot */}
-      <div style={{ margin: '0 14px', marginBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 10px) + 72px)', position: 'relative', flexShrink: 0 }}>
+      <div style={{ margin: '0 14px', position: 'relative', flexShrink: 0 }}>
         {/* Dino standing on top of input bar */}
         <div style={{
           position: 'absolute',
           bottom: '100%',
-          left: '10px',
+          left: '18px',
           marginBottom: '-6px',
           zIndex: 2,
           pointerEvents: 'none',
@@ -241,7 +231,7 @@ export default function AssistantScreen() {
         <div style={{
           borderRadius: '24px',
           background: 'var(--surface)',
-          padding: '6px 6px 6px 72px',
+          padding: '6px 6px 6px 76px',
           boxShadow: 'var(--card-shadow), 0 0 0 1px var(--border)',
           display: 'flex',
           alignItems: 'flex-end',
@@ -252,7 +242,7 @@ export default function AssistantScreen() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Скажи Dino что запланировать..."
+            placeholder=""
             disabled={loading}
             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--text)', fontFamily: 'inherit', fontSize: '14px', fontWeight: 400, lineHeight: 1.5, padding: '12px 0', maxHeight: '80px', minHeight: '24px' }}
           />
