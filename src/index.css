@@ -1,54 +1,63 @@
-/* ── Design tokens — Dino Task dark navy ── */
+/* ── Design tokens — Dino Task: white + black contrast ── */
 :root {
   --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif:   'Fraunces', 'Inter', serif;
 
-  --bg:           #06141B;
-  --bg-2:         #0D1B27;
-  --surface:      #11212D;
-  --surface2:     #1A2E3D;
-  --border:       #253745;
-  --hairline:     rgba(255,255,255,0.07);
-  --text:         #CCD0CF;
-  --text-2:       #9BA8AB;
+  /* ── Backgrounds ── */
+  --bg:           #CCD0CF;
+  --bg-2:         #B8BCBB;
+  --surface:      #FFFFFF;
+  --surface2:     #F0F2F1;
+  --border:       #CCD0CF;
+  --hairline:     rgba(6,20,27,0.08);
+
+  /* ── Text ── */
+  --text:         #06141B;
+  --text-2:       #253745;
   --text-muted:   #4A5C6A;
-  --text-faint:   #253745;
-  --accent:       #3CC68A;
-  --accent-2:     #4DD69A;
-  --accent-soft:  rgba(60,198,138,0.15);
-  --accent-ink:   #001A0D;
-  --accent-glow:  rgba(60,198,138,0.35);
+  --text-faint:   #9BA8AB;
+
+  /* ── Accent (black) ── */
+  --accent:       #06141B;
+  --accent-2:     #11212D;
+  --accent-soft:  rgba(6,20,27,0.07);
+  --accent-ink:   #FFFFFF;
+  --accent-glow:  rgba(6,20,27,0.12);
+
+  /* ── Status ── */
   --success:      #3CC68A;
   --success-soft: rgba(60,198,138,0.12);
-  --danger:       #E47474;
-  --danger-text:  #E47474;
-  --danger-soft:  rgba(228,116,116,0.12);
-  --danger-border: rgba(228,116,116,0.28);
-  --info:         #4A9BE8;
-  --info-hover:   #5AAFF8;
-  --shadow:       rgba(0,0,0,0.45);
+  --danger:       #D94F4F;
+  --danger-text:  #D94F4F;
+  --danger-soft:  rgba(217,79,79,0.10);
+  --danger-border: rgba(217,79,79,0.25);
+  --info:         #2563EB;
+  --info-hover:   #3B82F6;
+  --shadow:       rgba(6,20,27,0.10);
 
-  --ev-0: #4A7CAD;
-  --ev-1: #A07090;
-  --ev-2: #A89050;
-  --ev-3: #3A8A80;
-  --ev-4: #7060A0;
-  --ev-5: #3C8A60;
+  /* ── Event colors ── */
+  --ev-0: #6A9FCC;
+  --ev-1: #CC7A99;
+  --ev-2: #C8A84B;
+  --ev-3: #4AA896;
+  --ev-4: #9B7ACC;
+  --ev-5: #5AAA78;
   --ev-ink: #06141B;
 
-  --tabbar-bg:     rgba(17,33,45,0.88);
-  --tabbar-stroke: rgba(255,255,255,0.09);
-  --tabbar-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06) inset;
-  --sheet-shadow:  0 -8px 40px rgba(0,0,0,0.65);
-  --card-shadow:   0 0 0 0.5px var(--hairline);
+  /* ── Tab bar ── */
+  --tabbar-bg:     rgba(255,255,255,0.82);
+  --tabbar-stroke: rgba(6,20,27,0.08);
+  --tabbar-shadow: 0 12px 36px rgba(6,20,27,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+  --sheet-shadow:  0 -8px 40px rgba(6,20,27,0.14);
+  --card-shadow:   0 0 0 0.5px var(--hairline), 0 1px 4px rgba(6,20,27,0.04);
 
   --panel:         var(--surface);
   --panel-2:       var(--surface2);
   --border-soft:   var(--border);
-  --shadow-lg:     0 30px 80px rgba(0,0,0,0.55);
-  --hover-overlay: rgba(255,255,255,0.04);
-  --danger-text-2: #fca5a5;
-  --danger-soft-2: rgba(228,116,116,0.13);
+  --shadow-lg:     0 30px 80px rgba(6,20,27,0.14);
+  --hover-overlay: rgba(6,20,27,0.04);
+  --danger-text-2: #E57373;
+  --danger-soft-2: rgba(217,79,79,0.10);
 }
 
 /* ── Base ── */
@@ -98,7 +107,7 @@ input, textarea { font-family: inherit; color: inherit; }
   padding: 0;
   cursor: pointer;
   font-family: inherit;
-  color: var(--text-muted);
+  color: var(--text-faint);
   transition: color 0.2s, transform 0.15s;
   position: relative;
 }
@@ -128,7 +137,7 @@ input, textarea { font-family: inherit; color: inherit; }
   background: var(--accent);
   color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 8px 24px var(--accent-glow);
   z-index: 350;
   transition: transform 0.15s;
   border: none;
@@ -164,7 +173,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Calendar ── */
 .cal-body { flex: 1; min-height: 0; padding: 0 14px 8px; display: flex; flex-direction: column; overflow: hidden; }
 .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px 8px; gap: 2px; }
-.wd { text-align: center; color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.wd { text-align: center; color: var(--text-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px; gap: 2px; }
 .d30 {
   aspect-ratio: 1;
@@ -183,7 +192,7 @@ input, textarea { font-family: inherit; color: inherit; }
 .d30.other .d-num { color: var(--text-faint); }
 .d30.today { background: var(--accent); }
 .d30.today .d-num { color: var(--accent-ink); font-weight: 600; }
-.d30.today .d-dot { background: var(--accent-ink) !important; opacity: 0.5; }
+.d30.today .d-dot { background: var(--accent-ink) !important; opacity: 0.45; }
 .d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
 .d-dot { width: 4px; height: 4px; border-radius: 50%; }
 
@@ -197,7 +206,7 @@ input, textarea { font-family: inherit; color: inherit; }
 
 /* ── Date/time picker icons ── */
 input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+input[type="time"]::-webkit-calendar-picker-indicator { filter: none; cursor: pointer; }
 
 /* ── Animations ── */
 @keyframes blink {
@@ -205,8 +214,8 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
   40% { opacity: 1; transform: translateY(-2px); }
 }
 @keyframes micPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(60,198,138,0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(60,198,138,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6,20,27,0.25); }
+  50% { box-shadow: 0 0 0 5px rgba(6,20,27,0); }
 }
 @keyframes ping {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -223,8 +232,4 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
-}
-@keyframes dinoFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
 }
