@@ -99,7 +99,6 @@ export default function MobileApp() {
               onToggle={(_dk, id) => toggleDone(id)}
               onDelete={(_dk, id) => deleteTask(id)}
               onEdit={handleEdit}
-              onAdd={() => handleAdd()}
             />
           </div>
           <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>

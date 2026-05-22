@@ -18,7 +18,7 @@ function fmtDate(d: Date): string {
 }
 
 export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', editTask }: Props) {
-  const { addTask, fetchTasks, updateTask } = useTaskStore()
+  const { addTask, updateTask } = useTaskStore()
   const isEditMode = !!editTask
 
   const [title, setTitle]         = useState('')
@@ -33,6 +33,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [error, setError]         = useState('')
 
   const titleRef = useRef<HTMLInputElement>(null)
+  const prevTimeRef = useRef('')
+  const prevTimeEndRef = useRef('')
 
   const todayStr    = fmtDate(new Date())
   const tomorrowStr = fmtDate(addDays(new Date(), 1))
@@ -115,13 +117,13 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         task_time: isAllDay ? null : (time || null),
         task_time_end: isAllDay ? null : (timeEnd || null),
         is_all_day: isAllDay,
+        is_done: false as const,
         description: encodedDesc || null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
       } else {
         await addTask(payload)
-        await fetchTasks()
       }
       onClose()
     } catch (err: unknown) {
@@ -149,7 +151,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 100,
+        position: 'fixed', inset: 0, zIndex: 600,
         background: shown ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0)',
         backdropFilter: shown ? 'blur(4px)' : 'none',
         WebkitBackdropFilter: shown ? 'blur(4px)' : 'none',
@@ -248,7 +250,17 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             <span style={metaLabel}>Time</span>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={() => { setIsAllDay(!isAllDay); if (!isAllDay) { setTime(''); setTimeEnd('') } }}
+                onClick={() => {
+                  if (!isAllDay) {
+                    prevTimeRef.current = time
+                    prevTimeEndRef.current = timeEnd
+                    setTime(''); setTimeEnd('')
+                  } else {
+                    setTime(prevTimeRef.current)
+                    setTimeEnd(prevTimeEndRef.current)
+                  }
+                  setIsAllDay(!isAllDay)
+                }}
                 style={pill(isAllDay)}
               >All day</button>
               {!isAllDay && (

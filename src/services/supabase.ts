@@ -31,6 +31,7 @@ export interface Task {
   task_time: string | null
   task_time_end: string | null
   is_all_day: boolean
+  is_done?: boolean
   description: string | null
   created_at: string
   label?: TaskLabel

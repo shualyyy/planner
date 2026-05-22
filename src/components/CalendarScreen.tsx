@@ -203,10 +203,10 @@ function UpcomingSection({ tasks, onAdd }: {
   const upcoming = useMemo(() => {
     const flat = Object.values(tasks).flat()
     return flat
-      .filter(t => !t.done && t.task_time && t.task_date >= todayKey)
+      .filter(t => !t.done && t.task_date >= todayKey)
       .sort((a, b) => {
-        const da = a.task_date + (a.task_time || '')
-        const db = b.task_date + (b.task_time || '')
+        const da = a.task_date + (a.task_time ?? '￿')
+        const db = b.task_date + (b.task_time ?? '￿')
         return da.localeCompare(db)
       })
   }, [tasks, todayKey])
@@ -253,8 +253,8 @@ function UpcomingSection({ tasks, onAdd }: {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: lc }} />
                     <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{TASK_LABELS[label].name}</span>
-                    <span style={{ color: 'var(--text-faint)' }}>·</span>
-                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{t.task_time!.slice(0,5)}</span>
+                    {t.task_time && <><span style={{ color: 'var(--text-faint)' }}>·</span>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{t.task_time.slice(0,5)}</span></>}
                   </div>
                 </div>
               </div>

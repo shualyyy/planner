@@ -10,7 +10,7 @@ interface TaskStore {
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => Promise<void>
   deleteTask: (id: string) => Promise<void>
-  toggleDone: (id: string) => void
+  toggleDone: (id: string) => Promise<void>
   setTheme: (t: 'light' | 'dark') => void
 }
 
@@ -31,7 +31,11 @@ export const useTaskStore = create<TaskStore>((set) => ({
       .from('tasks')
       .select('*')
       .order('task_date', { ascending: true })
-    if (!error && data) set({ tasks: data as Task[] })
+    if (!error && data) {
+      const tasks = data as Task[]
+      const donIds = new Set(tasks.filter(t => t.is_done).map(t => t.id))
+      set({ tasks, donIds })
+    }
     set({ loading: false })
   },
 
@@ -40,12 +44,16 @@ export const useTaskStore = create<TaskStore>((set) => ({
     const userId = session?.user?.id
     const { data, error } = await supabase
       .from('tasks')
-      .insert([{ ...task, user_id: userId }])
+      .insert([{ ...task, user_id: userId, is_done: false }])
       .select()
       .single()
     if (error) throw error
     set((state) => ({
-      tasks: [...state.tasks, data as Task].sort((a, b) => a.task_date.localeCompare(b.task_date)),
+      tasks: [...state.tasks, data as Task].sort((a, b) => {
+        const dateCompare = a.task_date.localeCompare(b.task_date)
+        if (dateCompare !== 0) return dateCompare
+        return (a.task_time ?? '￿').localeCompare(b.task_time ?? '￿')
+      }),
     }))
   },
 
@@ -70,13 +78,18 @@ export const useTaskStore = create<TaskStore>((set) => ({
     })
   },
 
-  toggleDone: (id: string) => {
+  toggleDone: async (id: string) => {
+    // Compute next value, then optimistic-update + persist in parallel
+    let isDoneNow = false
     set((state) => {
       const next = new Set(state.donIds)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      isDoneNow = !next.has(id)
+      if (isDoneNow) next.add(id)
+      else next.delete(id)
       return { donIds: next }
     })
+    // Fire-and-forget — UI already updated optimistically
+    await supabase.from('tasks').update({ is_done: isDoneNow }).eq('id', id)
   },
 }))
 

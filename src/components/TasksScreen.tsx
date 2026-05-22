@@ -8,7 +8,6 @@ interface TasksScreenProps {
   onToggle: (dateKey: string, taskId: string) => void
   onDelete: (dateKey: string, taskId: string) => void
   onEdit: (task: Task) => void
-  onAdd: () => void
 }
 
 const dayKey = (d: Date): string =>

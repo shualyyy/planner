@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import type { Task } from '../services/supabase'
-import { CheckIcon } from './icons'
 
 interface WinsScreenProps {
   tasks: (Task & { done: boolean })[]
@@ -14,6 +13,7 @@ function addDays(d: Date, n: number): Date {
 }
 
 const WD1 = ['S','M','T','W','T','F','S']
+const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
 export default function WinsScreen({ tasks }: WinsScreenProps) {
   const today = useMemo(() => new Date(), [])
@@ -83,10 +83,9 @@ export default function WinsScreen({ tasks }: WinsScreenProps) {
             <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-2)' }}>{weekDone}/{weekTotal} done</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', alignItems: 'flex-end' }}>
-            {last7.map(({ day, done, total, dk }) => {
+            {last7.map(({ day, total, dk }) => {
               const isToday = dk === todayKey
-              const pct = total > 0 ? done / total : 0
-              const barH = total === 0 ? 4 : Math.max(pct * 60, 6)
+              const barH = total === 0 ? 4 : Math.max((total / maxBar) * 60, 6)
               return (
                 <div key={dk} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   <div style={{ width: '100%', height: '60px', background: 'var(--surface2)', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
@@ -109,11 +108,15 @@ export default function WinsScreen({ tasks }: WinsScreenProps) {
 
         {/* Recent wins */}
         <div style={{ background: 'var(--surface)', borderRadius: '22px', boxShadow: 'var(--card-shadow)', overflow: 'hidden' }}>
-          {[
-            { bg: 'var(--accent-soft)', icon: '🔥', title: 'Best week so far', meta: 'Highest completion rate in 30 days' },
-            { bg: 'var(--success-soft)', icon: null, title: 'Morning routine kept', meta: '5 days in a row', isCheck: true },
-            { bg: 'var(--accent-soft)', icon: '✦', title: 'Keep going', meta: "You're building momentum" },
-          ].map((row, i) => (
+          {(() => {
+            const bestDay = last7.reduce((b, d) => d.done > b.done ? d : b, last7[0])
+            const bestName = bestDay.done > 0 ? WEEKDAY_NAMES[bestDay.day.getDay()] : null
+            return [
+              { bg: 'var(--accent-soft)', icon: '🔥', title: `${streak} day streak`, meta: streak > 0 ? 'Keep it going!' : 'Start your streak today' },
+              { bg: 'var(--success-soft)', icon: null, isCheck: true, title: `${weekDone} task${weekDone !== 1 ? 's' : ''} done this week`, meta: `out of ${weekTotal} total` },
+              { bg: 'var(--accent-soft)', icon: '✦', title: bestName ? `Best day: ${bestName}` : 'Keep going', meta: bestName ? `${bestDay.done} task${bestDay.done !== 1 ? 's' : ''} done` : "You're building momentum" },
+            ]
+          })().map((row, i) => (
             <div key={i}>
               {i > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px' }}>
@@ -134,6 +137,4 @@ export default function WinsScreen({ tasks }: WinsScreenProps) {
     </div>
   )
 
-  void maxBar
-  void CheckIcon
 }
