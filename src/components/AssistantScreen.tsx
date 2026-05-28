@@ -367,7 +367,7 @@ export default function AssistantScreen() {
       </div>
 
       {/* Composer */}
-      <div style={{ margin: '0 14px', marginBottom: '82px', position: 'relative', flexShrink: 0 }}>
+      <div style={{ margin: '0 14px', marginBottom: '90px', position: 'relative', flexShrink: 0 }}>
         {/* Dino sitting on input bar */}
         <div style={{ position: 'absolute', bottom: '100%', left: '30px', marginBottom: '-6px', zIndex: 2, pointerEvents: 'none' }}>
           <DinoMascot />
