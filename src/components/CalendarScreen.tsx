@@ -24,6 +24,19 @@ function addDays(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
 }
 
+/* ─── Build month cells ─── */
+function buildMonthCells(anchor: Date): Date[] {
+  const year = anchor.getFullYear()
+  const month = anchor.getMonth()
+  const startDow = (new Date(year, month, 1).getDay() + 6) % 7
+  const cells: Date[] = []
+  const gridStart = new Date(year, month, 1 - startDow)
+  for (let i = 0; i < 42; i++) {
+    cells.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i))
+  }
+  return cells
+}
+
 /* ─── DayPopup ─── */
 function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
   date: Date
@@ -57,7 +70,6 @@ function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
       >
         <div style={{ width: '40px', height: '5px', borderRadius: '999px', background: 'var(--border)', margin: '0 auto 20px' }} />
 
-        {/* Sheet heading */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '16px' }}>
           <span style={{ fontFamily: 'var(--font-serif)', fontSize: '36px', fontWeight: 500, color: 'var(--text)', lineHeight: 1 }}>
             {date.getDate()}
@@ -67,7 +79,6 @@ function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
           </span>
         </div>
 
-        {/* Tasks */}
         {tasks.length === 0 ? (
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0 16px' }}>Nothing scheduled.</div>
         ) : (
@@ -135,31 +146,21 @@ function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
   )
 }
 
-/* ─── Calendar30 ─── */
+/* ─── Calendar30 (dark card grid) ─── */
 function Calendar30({ anchor, tasks, onDayTap }: {
   anchor: Date
   tasks: Record<string, (Task & { done: boolean })[]>
   onDayTap: (d: Date) => void
 }) {
-  const year = anchor.getFullYear()
   const month = anchor.getMonth()
-  const firstDay = new Date(year, month, 1)
-  const startDow = (firstDay.getDay() + 6) % 7
   const todayKey = dayKey(new Date())
-
-  const cells: Date[] = []
-  const gridStart = new Date(year, month, 1 - startDow)
-  for (let i = 0; i < 42; i++) {
-    cells.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i))
-  }
+  const cells = buildMonthCells(anchor)
 
   return (
     <div className="cal-body">
-      {/* Weekday headers */}
       <div className="weekdays">
         {WD.map((d, i) => <div key={i} className="wd">{d}</div>)}
       </div>
-      {/* Day grid */}
       <div className="days30">
         {cells.map((d, i) => {
           const dk = dayKey(d)
@@ -190,6 +191,87 @@ function Calendar30({ anchor, tasks, onDayTap }: {
         })}
       </div>
     </div>
+  )
+}
+
+/* ─── Expanded full-screen calendar ─── */
+function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
+  anchor: Date
+  tasks: Record<string, (Task & { done: boolean })[]>
+  onDayTap: (d: Date) => void
+  onClose: () => void
+}) {
+  const month = anchor.getMonth()
+  const year = anchor.getFullYear()
+  const todayKey = dayKey(new Date())
+  const cells = buildMonthCells(anchor)
+
+  return createPortal(
+    <div className="cal-expanded">
+      {/* Header */}
+      <div style={{ padding: '20px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', fontWeight: 500, color: '#fff', lineHeight: 1 }}>
+            {MONTHS[month]}
+          </div>
+          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{year}</div>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 16px 8px', gap: '2px', flexShrink: 0 }}>
+        {WD.map((d, i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Day grid */}
+      <div className="cal-exp-days">
+        {cells.map((d, i) => {
+          const dk = dayKey(d)
+          const isToday = dk === todayKey
+          const isOther = d.getMonth() !== month
+          const dayTasks = isOther ? [] : (tasks[dk] || [])
+          const pending = dayTasks.filter(t => !t.done)
+
+          return (
+            <button
+              key={i}
+              className={`d-exp${isToday ? ' today-exp' : ''}${isOther ? ' other-exp' : ''}`}
+              onClick={() => !isOther && onDayTap(d)}
+            >
+              <div className="d-exp-num">{d.getDate()}</div>
+              {pending.slice(0, 3).map((t, j) => {
+                const lc = TASK_LABELS[parseLabelFromDescription(t.description)].color
+                return (
+                  <div key={j} className="d-exp-task" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: lc, flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'block', maxWidth: '100%' }}>{t.title}</span>
+                  </div>
+                )
+              })}
+              {pending.length > 3 && (
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>+{pending.length - 3}</div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>,
+    document.body
   )
 }
 
@@ -238,7 +320,6 @@ function UpcomingSection({ tasks, onAdd }: {
                   boxShadow: 'var(--card-shadow)', cursor: 'pointer',
                 }}
               >
-                {/* Date column */}
                 <div style={{ width: '38px', flexShrink: 0, textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 500, color: 'var(--text)', lineHeight: 1 }}>
                     {d.getDate()}
@@ -247,7 +328,6 @@ function UpcomingSection({ tasks, onAdd }: {
                     {SHORT_DAYS[d.getDay()]}
                   </div>
                 </div>
-                {/* Body */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)', marginBottom: '4px' }}>{t.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -357,14 +437,28 @@ function TimeGrid({ days, tasks, onCellTap }: {
   )
 }
 
+/* ─── Expand icon ─── */
+const ExpandIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+  </svg>
+)
+
 /* ─── Main ─── */
 export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }: CalendarScreenProps) {
   const [view, setView] = useState<View>('30d')
   const [anchor, setAnchor] = useState(new Date())
   const [popupDate, setPopupDate] = useState<Date | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   function openPopup(d: Date) { setPopupDate(d); onPopupChange?.(true) }
   function closePopup() { setPopupDate(null); onPopupChange?.(false) }
+
+  // When expanded calendar taps a day — close expanded, open popup
+  function handleExpandedDayTap(d: Date) {
+    setExpanded(false)
+    setTimeout(() => openPopup(d), 50)
+  }
 
   const popupKey = popupDate ? dayKey(popupDate) : ''
   const popupTasks = popupDate ? (tasks[popupKey] || []) : []
@@ -393,7 +487,6 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '6px 24px 8px', flexShrink: 0 }}>
-        {/* Eyebrow row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-muted)' }}>
             {view === '30d' ? 'This month' : view === '3d' ? '3 days' : 'Day view'}
@@ -404,17 +497,16 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
             ))}
           </div>
         </div>
-        {/* Month row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <span style={{ fontFamily: 'var(--font-serif)', fontSize: '34px', fontWeight: 500, color: 'var(--text)', lineHeight: 1 }}>{title.month}</span>
             {title.year !== '' && <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>{title.year}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button onClick={() => navigate(-1)} style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', transition: 'all 0.15s' }}>
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <button onClick={() => navigate(-1)} style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}>
               <ChevronLeft size={16} />
             </button>
-            <button onClick={() => navigate(1)} style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', transition: 'all 0.15s' }}>
+            <button onClick={() => navigate(1)} style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -424,11 +516,25 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       {/* Calendar body */}
       {view === '30d' && (
         <>
-          {/* Calendar grid — fixed, does not scroll */}
-          <div style={{ flexShrink: 0 }}>
+          {/* Dark card with calendar grid + expand button */}
+          <div className="cal-card" style={{ position: 'relative' }}>
+            {/* Expand button */}
+            <button
+              onClick={() => setExpanded(true)}
+              style={{
+                position: 'absolute', top: '14px', right: '14px',
+                width: '28px', height: '28px', borderRadius: '8px',
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'rgba(255,255,255,0.5)', cursor: 'pointer', zIndex: 1,
+              }}
+            >
+              <ExpandIcon />
+            </button>
             <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
           </div>
-          {/* Upcoming — scrollable, fills remaining space */}
+
+          {/* Upcoming — scrollable */}
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '70px' }}>
             <UpcomingSection tasks={tasks} onAdd={onAdd} />
           </div>
@@ -436,6 +542,16 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       )}
       {view === '3d' && <TimeGrid days={threeDays} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} />}
       {view === '1d' && <TimeGrid days={oneDay} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} />}
+
+      {/* Expanded full-screen calendar */}
+      {expanded && (
+        <CalendarExpanded
+          anchor={anchor}
+          tasks={tasks}
+          onDayTap={handleExpandedDayTap}
+          onClose={() => setExpanded(false)}
+        />
+      )}
 
       {popupDate && (
         <DayPopup

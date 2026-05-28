@@ -45,9 +45,9 @@
   --ev-ink: #06141B;
 
   /* ── Tab bar ── */
-  --tabbar-bg:     rgba(255,255,255,0.82);
-  --tabbar-stroke: rgba(6,20,27,0.08);
-  --tabbar-shadow: 0 12px 36px rgba(6,20,27,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+  --tabbar-bg:     rgba(12,12,12,0.96);
+  --tabbar-stroke: rgba(255,255,255,0.07);
+  --tabbar-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.05) inset;
   --sheet-shadow:  0 -8px 40px rgba(6,20,27,0.14);
   --card-shadow:   0 0 0 0.5px var(--hairline), 0 1px 4px rgba(6,20,27,0.04);
 
@@ -107,11 +107,11 @@ input, textarea { font-family: inherit; color: inherit; }
   padding: 0;
   cursor: pointer;
   font-family: inherit;
-  color: var(--text-faint);
+  color: rgba(255,255,255,0.32);
   transition: color 0.2s, transform 0.15s;
   position: relative;
 }
-.tab.on { color: var(--accent); }
+.tab.on { color: #ffffff; }
 .tab:active { transform: scale(0.88); }
 .tab .tab-label {
   font-size: 9.5px;
@@ -170,11 +170,18 @@ input, textarea { font-family: inherit; color: inherit; }
   color: var(--accent-ink);
 }
 
-/* ── Calendar ── */
-.cal-body { flex: none; padding: 0 14px 8px; display: flex; flex-direction: column; }
-.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px 8px; gap: 2px; }
-.wd { text-align: center; color: var(--text-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-.days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 14px; gap: 2px; }
+/* ── Calendar (dark card) ── */
+.cal-card {
+  margin: 0 14px 0;
+  background: #0f0f11;
+  border-radius: 24px;
+  padding: 16px 4px 14px;
+  flex-shrink: 0;
+}
+.cal-body { flex: none; padding: 0 4px 0; display: flex; flex-direction: column; }
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px 8px; gap: 2px; }
+.wd { text-align: center; color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px; gap: 2px; }
 .d30 {
   aspect-ratio: 1;
   border-radius: 12px;
@@ -188,13 +195,39 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 .d30:active { transform: scale(0.92); }
 .d30.other { pointer-events: none; }
-.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; }
-.d30.other .d-num { color: var(--text-faint); }
-.d30.today { background: var(--accent); }
-.d30.today .d-num { color: var(--accent-ink); font-weight: 600; }
-.d30.today .d-dot { background: var(--accent-ink) !important; opacity: 0.45; }
+.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1; }
+.d30.other .d-num { color: rgba(255,255,255,0.15); }
+.d30.today { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); }
+.d30.today .d-num { color: #fff; font-weight: 700; }
 .d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
 .d-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+/* ── Expanded calendar fullscreen ── */
+.cal-expanded {
+  position: fixed; inset: 0; z-index: 700;
+  background: #0f0f11;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.cal-exp-days { display: grid; grid-template-columns: repeat(7, 1fr); flex: 1; overflow-y: auto; padding: 0 12px 80px; gap: 2px; }
+.d-exp {
+  min-height: 72px;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  padding: 7px 6px 5px;
+  background: transparent;
+  border: none; cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  text-align: left;
+  overflow: hidden;
+}
+.d-exp:active { transform: scale(0.94); background: rgba(255,255,255,0.05); }
+.d-exp.today-exp { background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.2); }
+.d-exp.other-exp { pointer-events: none; }
+.d-exp-num { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); line-height: 1; margin-bottom: 4px; }
+.d-exp.today-exp .d-exp-num { color: #fff; }
+.d-exp.other-exp .d-exp-num { color: rgba(255,255,255,0.15); }
+.d-exp-task { font-size: 9px; font-weight: 500; line-height: 1.25; color: rgba(255,255,255,0.6); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; margin-bottom: 2px; }
 
 /* ── Settings ── */
 .settings-card { background: var(--surface); border-radius: 18px; overflow: hidden; margin-bottom: 8px; box-shadow: var(--card-shadow); }

@@ -1,10 +1,26 @@
 import { format, addDays, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, nextSaturday, nextSunday } from 'date-fns'
 
-export interface ParsedTask {
-  title: string
-  task_date: string
-  task_time: string | null
-  description: string | null
+// ── Types ──────────────────────────────────────────────────────────────────
+
+export type ActionType = 'add' | 'delete' | 'reschedule' | 'done' | 'undone' | 'edit' | 'list'
+
+export interface ParsedAction {
+  type: ActionType
+  // ADD
+  title?: string
+  task_date?: string
+  task_time?: string | null
+  task_time_end?: string | null
+  description?: string | null
+  // Reference (delete / done / undone / reschedule / edit)
+  task_id?: string
+  task_title?: string
+  // RESCHEDULE
+  new_date?: string
+  new_time?: string | null
+  // EDIT
+  new_title?: string
+  new_description?: string | null
 }
 
 export interface ChatMessage {
@@ -12,34 +28,80 @@ export interface ChatMessage {
   content: string
 }
 
+export interface TaskSummary {
+  id: string
+  title: string
+  task_date: string
+  task_time: string | null
+  is_done: boolean
+}
+
 interface GroqChatResponse {
   choices: Array<{ message: { content: string } }>
 }
 
-function buildSystemPrompt(): string {
+// ── System prompt ─────────────────────────────────────────────────────────
+
+function buildSystemPrompt(tasks: TaskSummary[]): string {
   const now = new Date()
-  return `You are a calendar assistant. Your ONLY job is to add tasks to the user's calendar instantly.
 
-Today's date is ${format(now, 'EEEE, MMMM d, yyyy')}.
+  const taskListJson = tasks.length
+    ? JSON.stringify(
+        tasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          date: t.task_date,
+          time: t.task_time ?? null,
+          done: t.is_done,
+        })),
+        null,
+        2
+      )
+    : '[]'
 
-When the user describes a task:
-1. Extract: title, date (YYYY-MM-DD), time (HH:MM 24h format or null), description (null if none)
-2. IMMEDIATELY add it — do NOT ask for confirmation. Just do it.
-3. Respond with EXACTLY this format (JSON first, then one short confirmation line):
+  return `You are Dino — a smart calendar assistant. Today is ${format(now, 'EEEE, MMMM d, yyyy')}.
 
-PARSED_TASK:{"title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","description":"... or null"}
-Added ✓
+CURRENT TASKS IN CALENDAR:
+${taskListJson}
 
-Rules for relative dates:
-- "today" / "сегодня" = ${format(now, 'yyyy-MM-dd')}
-- "tomorrow" / "завтра" = ${format(addDays(now, 1), 'yyyy-MM-dd')}
-- "next Monday" / "в понедельник" = next Monday
-- Any weekday name = next occurrence of that day
+You can perform these actions. Always put the ACTION JSON on the FIRST line, then ONE short confirmation in Russian.
 
-If date is completely missing and cannot be inferred, ask ONLY for the date — nothing else.
-If the message is unrelated to adding tasks, reply briefly and redirect.
-Never ask "shall I add this?" or "confirm?" — just add it.`
+━━ ADD a new task ━━
+ACTION:{"type":"add","title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","description":"... or null"}
+
+━━ DELETE a task ━━
+Find it in CURRENT TASKS by title. Use its exact id.
+ACTION:{"type":"delete","task_id":"EXACT_ID","task_title":"title"}
+
+━━ RESCHEDULE ━━
+ACTION:{"type":"reschedule","task_id":"EXACT_ID","task_title":"title","new_date":"YYYY-MM-DD","new_time":"HH:MM or null"}
+
+━━ MARK DONE ━━
+ACTION:{"type":"done","task_id":"EXACT_ID","task_title":"title"}
+
+━━ MARK UNDONE ━━
+ACTION:{"type":"undone","task_id":"EXACT_ID","task_title":"title"}
+
+━━ EDIT title/description ━━
+ACTION:{"type":"edit","task_id":"EXACT_ID","task_title":"old title","new_title":"new title or null","new_description":"text or null"}
+
+━━ LIST / SHOW tasks ━━
+When user asks to show tasks (today, upcoming, all, etc).
+ACTION:{"type":"list"}
+Then list the matching tasks in a friendly format.
+
+RULES:
+- today/сегодня = ${format(now, 'yyyy-MM-dd')}
+- tomorrow/завтра = ${format(addDays(now, 1), 'yyyy-MM-dd')}
+- Weekday name = next occurrence of that weekday
+- NEVER ask for confirmation — just act immediately
+- If task not found by name, say so in one line
+- If date missing and can't infer, ask ONLY for the date
+- Confirmations: 1 short line in Russian
+- Match user language (Russian or English)`
 }
+
+// ── Date resolver ─────────────────────────────────────────────────────────
 
 function resolveRelativeDate(text: string): string {
   const today = new Date()
@@ -56,12 +118,29 @@ function resolveRelativeDate(text: string): string {
   return ''
 }
 
+// ── Fallback confirmation ──────────────────────────────────────────────────
+
+function confirmationFor(action: ParsedAction): string {
+  switch (action.type) {
+    case 'add':        return `Добавил «${action.title}» ✓`
+    case 'delete':     return `Удалил «${action.task_title}» ✓`
+    case 'reschedule': return `Перенёс «${action.task_title}» ✓`
+    case 'done':       return `Отметил «${action.task_title}» как выполненную ✓`
+    case 'undone':     return `Снял отметку с «${action.task_title}» ✓`
+    case 'edit':       return `Обновил «${action.task_title}» ✓`
+    default:           return '✓'
+  }
+}
+
+// ── Main send function ────────────────────────────────────────────────────
+
 export async function sendMessage(
   history: ChatMessage[],
-  userMessage: string
-): Promise<{ reply: string; parsedTask: ParsedTask | null }> {
+  userMessage: string,
+  tasks: TaskSummary[] = []
+): Promise<{ reply: string; action: ParsedAction | null }> {
   const messages = [
-    { role: 'system' as const, content: buildSystemPrompt() },
+    { role: 'system' as const, content: buildSystemPrompt(tasks) },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: 'user' as const, content: userMessage },
   ]
@@ -85,26 +164,38 @@ export async function sendMessage(
   }
 
   const data = (await res.json()) as GroqChatResponse
-  const reply: string = data.choices?.[0]?.message?.content ?? ''
+  const rawReply: string = data.choices?.[0]?.message?.content ?? ''
 
-  // Extract PARSED_TASK JSON if present
-  const taskMatch = reply.match(/PARSED_TASK:(\{.*?\})/s)
-  if (taskMatch) {
+  // Parse ACTION JSON from first line
+  const actionMatch = rawReply.match(/^ACTION:(\{.*?\})/m)
+  if (actionMatch) {
     try {
-      const raw = JSON.parse(taskMatch[1]) as ParsedTask
-      if (!raw.task_date || raw.task_date === 'null') {
-        const resolved = resolveRelativeDate(userMessage)
-        if (resolved) raw.task_date = resolved
-      }
-      // Normalize task_time null
-      if (raw.task_time === 'null' || raw.task_time === '') raw.task_time = null
-      if (raw.description === 'null' || raw.description === '') raw.description = null
+      const action = JSON.parse(actionMatch[1]) as ParsedAction
 
-      return { reply: '✓ Added to your calendar!', parsedTask: raw }
+      // Resolve relative dates
+      if (action.type === 'add') {
+        if (!action.task_date || action.task_date === 'null') {
+          const resolved = resolveRelativeDate(userMessage)
+          if (resolved) action.task_date = resolved
+        }
+        if (action.task_time === 'null' || action.task_time === '') action.task_time = null
+        if (action.description === 'null' || action.description === '') action.description = null
+      }
+
+      if (action.type === 'reschedule') {
+        if (!action.new_date || action.new_date === 'null') {
+          const resolved = resolveRelativeDate(userMessage)
+          if (resolved) action.new_date = resolved
+        }
+        if (action.new_time === 'null' || action.new_time === '') action.new_time = null
+      }
+
+      const cleanReply = rawReply.replace(/^ACTION:\{.*?\}\n?/m, '').trim()
+      return { reply: cleanReply || confirmationFor(action), action }
     } catch {
-      // fall through
+      // fall through to plain reply
     }
   }
 
-  return { reply, parsedTask: null }
+  return { reply: rawReply, action: null }
 }

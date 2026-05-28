@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { sendMessage, type ChatMessage } from '../services/aiService'
+import { sendMessage, type ChatMessage, type ParsedAction, type TaskSummary } from '../services/aiService'
 import { useTaskStore } from '../store/taskStore'
 
 interface Message {
@@ -63,7 +63,7 @@ const SUGGESTIONS = [
 ]
 
 export default function ChatPanel() {
-  const { addTask } = useTaskStore()
+  const { tasks, donIds, addTask, deleteTask, updateTask, toggleDone, fetchTasks } = useTaskStore()
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Hi! Tell me what to add to your calendar — for example: \"Meeting with Alex on Monday at 3pm\" or \"сегодня в 16:00 встреча с Мишей\"." },
   ])
@@ -78,6 +78,40 @@ export default function ChatPanel() {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight
   }, [messages, loading])
 
+  const taskSummaries: TaskSummary[] = tasks.map(t => ({
+    id: t.id,
+    title: t.title,
+    task_date: t.task_date,
+    task_time: t.task_time,
+    is_done: donIds.has(t.id),
+  }))
+
+  async function executeAction(action: ParsedAction) {
+    switch (action.type) {
+      case 'add':
+        if (!action.title || !action.task_date) break
+        await addTask({ title: action.title, task_date: action.task_date, task_time: action.task_time ?? null, task_time_end: null, is_all_day: false, is_done: false, description: action.description ?? null })
+        break
+      case 'delete':
+        if (action.task_id) await deleteTask(action.task_id)
+        break
+      case 'reschedule':
+        if (action.task_id && action.new_date) await updateTask(action.task_id, { task_date: action.new_date, task_time: action.new_time ?? null })
+        break
+      case 'done':
+        if (action.task_id && !donIds.has(action.task_id)) await toggleDone(action.task_id)
+        break
+      case 'undone':
+        if (action.task_id && donIds.has(action.task_id)) await toggleDone(action.task_id)
+        break
+      case 'edit':
+        if (action.task_id) await updateTask(action.task_id, { ...(action.new_title ? { title: action.new_title } : {}), ...(action.new_description !== undefined ? { description: action.new_description ?? null } : {}) })
+        break
+      case 'list': break
+    }
+    if (action.type !== 'list') await fetchTasks()
+  }
+
   async function handleSend(text?: string) {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
@@ -91,20 +125,8 @@ export default function ChatPanel() {
         .slice(1)
         .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
-      const { reply, parsedTask } = await sendMessage(history, msg)
-
-      // If AI extracted a task — save it immediately, no confirmation needed
-      if (parsedTask) {
-        await addTask({
-          title: parsedTask.title,
-          task_date: parsedTask.task_date,
-          task_time: parsedTask.task_time,
-          task_time_end: null,
-          is_all_day: false,
-          description: parsedTask.description,
-        })
-      }
-
+      const { reply, action } = await sendMessage(history, msg, taskSummaries)
+      if (action) await executeAction(action)
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : JSON.stringify(err)
