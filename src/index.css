@@ -83,7 +83,7 @@ input, textarea { font-family: inherit; color: inherit; }
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: max(env(safe-area-inset-bottom, 6px), 6px);
+  bottom: 16px;
   width: 312px;
   height: 68px;
   border-radius: 34px;
