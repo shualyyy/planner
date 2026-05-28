@@ -62,7 +62,7 @@
 
 /* ── Base ── */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body, #root { height: var(--app-h, 100%); }
+html, body, #root { height: var(--app-h, 100%); background: transparent; }
 body {
   background: transparent;
   color: var(--text);
