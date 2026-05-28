@@ -206,6 +206,17 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
   const todayKey = dayKey(new Date())
   const cells = buildMonthCells(anchor)
 
+  // Force body background to dark so iOS safe-area doesn't bleed through
+  useEffect(() => {
+    const prev = document.body.style.background
+    document.body.style.background = '#0f0f11'
+    document.documentElement.style.background = '#0f0f11'
+    return () => {
+      document.body.style.background = prev
+      document.documentElement.style.background = ''
+    }
+  }, [])
+
   return createPortal(
     <div className="cal-expanded">
       {/* Header */}
