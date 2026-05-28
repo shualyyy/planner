@@ -388,7 +388,7 @@ export default function AssistantScreen() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder={loading ? 'Думаю…' : 'Добавь встречу, удали задачу…'}
+            placeholder={loading ? 'Думаю…' : 'Напиши Dino…'}
             disabled={loading}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
