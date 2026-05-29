@@ -11,7 +11,6 @@ import {
   CalendarTabIcon,
   TasksTabIcon,
   AssistantTabIcon,
-  WinsTabIcon,
   SettingsTabIcon,
   IcoPlus,
 } from './icons'
