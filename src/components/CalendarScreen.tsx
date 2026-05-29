@@ -527,9 +527,10 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       {view === '30d' && (
         <>
           {/* Dark card with calendar grid + expand button */}
-          <div className="cal-card">
-            {/* Expand button row — above weekdays, no overlap */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '8px', paddingBottom: '6px' }}>
+          <div className="cal-card" style={{ position: 'relative' }}>
+            <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
+            {/* Expand button — bottom-right corner */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '10px', paddingTop: '6px' }}>
               <button
                 onClick={() => setExpanded(true)}
                 style={{
@@ -542,7 +543,6 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
                 <ExpandIcon />
               </button>
             </div>
-            <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
           </div>
 
           {/* Upcoming — scrollable */}

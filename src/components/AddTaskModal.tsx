@@ -131,6 +131,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       onClose()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error('AddTask error:', err)
       setError(msg)
       setSaving(false)
     }
@@ -191,12 +192,6 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         </div>
 
         <div style={{ padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {error && (
-            <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: '12px', padding: '8px 12px', borderRadius: '10px', lineHeight: 1.4 }}>
-              {error}
-            </div>
-          )}
-
           {/* Title — Fraunces */}
           <input
             ref={titleRef}
@@ -359,6 +354,13 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               : (isEditMode ? 'Save changes' : 'Add task')
             }
           </button>
+
+          {/* Error — shown below button so always visible */}
+          {error && (
+            <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: '12px', padding: '10px 14px', borderRadius: '12px', lineHeight: 1.5 }}>
+              ⚠ {error}
+            </div>
+          )}
         </div>
       </div>
     </div>
