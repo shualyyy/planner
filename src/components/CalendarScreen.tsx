@@ -220,7 +220,7 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
   return createPortal(
     <div className="cal-expanded">
       {/* Header */}
-      <div style={{ padding: '20px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 20px) + 24px) 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', fontWeight: 500, color: '#fff', lineHeight: 1 }}>
             {MONTHS[month]}
@@ -366,7 +366,7 @@ function TimeGrid({ days, tasks, onCellTap }: {
   const scrollRef = useRef<HTMLDivElement>(null)
   const todayKey = dayKey(new Date())
   const now = new Date()
-  const hourHeight = 64
+  const hourHeight = 40
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -528,20 +528,21 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       {view === '30d' && (
         <>
           {/* Dark card with calendar grid + expand button */}
-          <div className="cal-card" style={{ position: 'relative' }}>
-            {/* Expand button */}
-            <button
-              onClick={() => setExpanded(true)}
-              style={{
-                position: 'absolute', top: '14px', right: '14px',
-                width: '28px', height: '28px', borderRadius: '8px',
-                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'rgba(255,255,255,0.5)', cursor: 'pointer', zIndex: 1,
-              }}
-            >
-              <ExpandIcon />
-            </button>
+          <div className="cal-card">
+            {/* Expand button row — above weekdays, no overlap */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '8px', paddingBottom: '6px' }}>
+              <button
+                onClick={() => setExpanded(true)}
+                style={{
+                  width: '28px', height: '28px', borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                }}
+              >
+                <ExpandIcon />
+              </button>
+            </div>
             <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
           </div>
 

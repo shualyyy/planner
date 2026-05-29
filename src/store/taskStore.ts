@@ -40,11 +40,9 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 
   addTask: async (task) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    const userId = session?.user?.id
     const { data, error } = await supabase
       .from('tasks')
-      .insert([{ ...task, user_id: userId, is_done: false }])
+      .insert([{ ...task, is_done: false }])
       .select()
       .single()
     if (error) throw error
