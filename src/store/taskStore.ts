@@ -44,10 +44,11 @@ export const useTaskStore = create<TaskStore>((set) => ({
       .from('tasks')
       .insert([{ ...task, is_done: false }])
       .select()
-      .single()
-    if (error) throw error
+    if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
+    const inserted = data?.[0] as Task | undefined
+    if (!inserted) throw new Error('Task not saved — check Supabase RLS: anon insert may be blocked')
     set((state) => ({
-      tasks: [...state.tasks, data as Task].sort((a, b) => {
+      tasks: [...state.tasks, inserted].sort((a, b) => {
         const dateCompare = a.task_date.localeCompare(b.task_date)
         if (dateCompare !== 0) return dateCompare
         return (a.task_time ?? '￿').localeCompare(b.task_time ?? '￿')
