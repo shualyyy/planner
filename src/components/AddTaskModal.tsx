@@ -109,7 +109,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   }
 
   async function handleSubmit() {
-    if (!title.trim() || saving) return
+    if (saving) return
+    if (!title.trim()) { setError('Введи название задачи'); return }
     setSaving(true)
     setError('')
     try {
@@ -334,18 +335,15 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Save button */}
           <button
             onClick={handleSubmit}
-            disabled={!title.trim() || saving}
             style={{
               width: '100%', height: '52px',
               borderRadius: '16px', border: 'none',
-              background: title.trim() && !saving ? 'var(--accent)' : 'var(--surface2)',
-              color: title.trim() && !saving ? '#fff' : 'var(--text-muted)',
+              background: saving ? 'var(--surface2)' : 'var(--accent)',
+              color: saving ? 'var(--text-muted)' : '#fff',
               fontSize: '15px', fontWeight: 600, letterSpacing: '-0.02em',
-              cursor: title.trim() && !saving ? 'pointer' : 'not-allowed',
+              cursor: saving ? 'not-allowed' : 'pointer',
               transition: 'all 0.15s',
-              boxShadow: title.trim() && !saving
-                ? '0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow)'
-                : 'none',
+              boxShadow: saving ? 'none' : '0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow)',
               fontFamily: 'inherit',
             }}
           >
