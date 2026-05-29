@@ -291,18 +291,17 @@ function UpcomingSection({ tasks, onAdd }: {
   tasks: Record<string, (Task & { done: boolean })[]>
   onAdd: (date: Date, time?: string) => void
 }) {
-  const todayKey = dayKey(new Date())
-
   const upcoming = useMemo(() => {
+    const todayK = dayKey(new Date()) // fresh each recalc — survives midnight
     const flat = Object.values(tasks).flat()
     return flat
-      .filter(t => !t.done && t.task_date >= todayKey)
+      .filter(t => !t.done && t.task_date >= todayK)
       .sort((a, b) => {
         const da = a.task_date + (a.task_time ?? '￿')
         const db = b.task_date + (b.task_time ?? '￿')
         return da.localeCompare(db)
       })
-  }, [tasks, todayKey])
+  }, [tasks])
 
   return (
     <div style={{ padding: '20px 24px 0' }}>
@@ -370,10 +369,10 @@ function TimeGrid({ days, tasks, onCellTap }: {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = Math.max(now.getHours() - 2, 0) * hourHeight
+      const currentHour = new Date().getHours()
+      scrollRef.current.scrollTop = Math.max(currentHour - 2, 0) * hourHeight
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [hourHeight])
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
 

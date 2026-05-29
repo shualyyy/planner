@@ -320,19 +320,24 @@ export default function AssistantScreen() {
         if (e.results[i].isFinal) final += t
         else interim += t
       }
-      interimRef.current = interim
       setInput(prev => {
-        const base = prev.replace(interimRef.current, '').trimEnd()
+        const prevInterim = interimRef.current
+        const base = prevInterim ? prev.replace(prevInterim, '').trimEnd() : prev
         const appended = final || interim
+        interimRef.current = final ? '' : interim
         return appended ? (base ? base + ' ' + appended : appended) : base
       })
-      if (final) interimRef.current = ''
     }
     recognition.onerror = () => setListening(false)
     recognition.onend   = () => setListening(false)
     recognitionRef.current = recognition
-    recognition.start()
-    setListening(true)
+    try {
+      recognition.start()
+      setListening(true)
+    } catch (err) {
+      console.error('Speech recognition start failed:', err)
+      setListening(false)
+    }
   }, [listening])
 
   // ── Render ────────────────────────────────────────────────────────────

@@ -53,9 +53,9 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     }
   }, [isOpen, editTask])
 
-  // Sync defaultDate + defaultTime only in add mode
+  // Sync defaultDate + defaultTime only when modal first opens in add mode
   useEffect(() => {
-    if (!editTask) {
+    if (isOpen && !editTask) {
       setDate(fmtDate(defaultDate))
       setTime(defaultTime)
       if (defaultTime) {
@@ -66,7 +66,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         setTimeEnd('')
       }
     }
-  }, [defaultDate, defaultTime, editTask])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // Mount / unmount animation
   useEffect(() => {
@@ -86,13 +87,15 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     return () => window.removeEventListener('keydown', handler)
   }, [isOpen, onClose])
 
-  // Reset when closes
+  // Reset when closes — guarded so rapid reopen doesn't apply stale reset
   useEffect(() => {
     if (!isOpen) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
         setLabel('personal'); setDescription(''); setSaving(false); setError('')
+        setVisible(false)
       }, 300)
+      return () => clearTimeout(timer)
     }
   }, [isOpen])
 

@@ -23,7 +23,6 @@ const TABS: { id: Tab; Icon: React.FC<{ color: string }>; label: string }[] = [
   { id: 'calendar', Icon: CalendarTabIcon, label: 'Today' },
   { id: 'tasks',    Icon: TasksTabIcon,    label: 'Tasks' },
   { id: 'assistant',Icon: AssistantTabIcon,label: 'Ask'   },
-  { id: 'wins',     Icon: WinsTabIcon,     label: 'Wins'  },
   { id: 'settings', Icon: SettingsTabIcon, label: 'You'   },
 ]
 

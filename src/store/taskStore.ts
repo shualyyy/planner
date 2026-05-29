@@ -77,7 +77,6 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 
   toggleDone: async (id: string) => {
-    // Compute next value, then optimistic-update + persist in parallel
     let isDoneNow = false
     set((state) => {
       const next = new Set(state.donIds)
@@ -86,8 +85,17 @@ export const useTaskStore = create<TaskStore>((set) => ({
       else next.delete(id)
       return { donIds: next }
     })
-    // Fire-and-forget — UI already updated optimistically
-    await supabase.from('tasks').update({ is_done: isDoneNow }).eq('id', id)
+    const { error } = await supabase.from('tasks').update({ is_done: isDoneNow }).eq('id', id)
+    if (error) {
+      // Revert optimistic update on failure
+      set((state) => {
+        const next = new Set(state.donIds)
+        if (isDoneNow) next.delete(id)
+        else next.add(id)
+        return { donIds: next }
+      })
+      console.error('toggleDone failed:', error)
+    }
   },
 }))
 
