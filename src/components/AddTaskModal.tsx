@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, addDays } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
-import type { Task, TaskLabel } from '../services/supabase'
+import type { Task, TaskLabel, RecurrenceType } from '../services/supabase'
 import { TASK_LABELS, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
 import { IcoChevronDown } from './icons'
 
@@ -27,6 +27,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [timeEnd, setTimeEnd]     = useState('')
   const [isAllDay, setIsAllDay]   = useState(false)
   const [label, setLabel]         = useState<TaskLabel>('personal')
+  const [recurrence, setRecurrence] = useState<RecurrenceType | null>(null)
   const [description, setDescription] = useState('')
   const [saving, setSaving]       = useState(false)
   const [visible, setVisible]     = useState(false)
@@ -50,6 +51,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       setIsAllDay(editTask.is_all_day ?? false)
       setLabel(parseLabelFromDescription(editTask.description))
       setDescription(stripLabelFromDescription(editTask.description))
+      setRecurrence(editTask.recurrence ?? null)
     }
   }, [isOpen, editTask])
 
@@ -92,7 +94,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     if (!isOpen) {
       const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
-        setLabel('personal'); setDescription(''); setSaving(false); setError('')
+        setLabel('personal'); setRecurrence(null); setDescription(''); setSaving(false); setError('')
         setVisible(false)
       }, 300)
       return () => clearTimeout(timer)
@@ -123,6 +125,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         is_all_day: isAllDay,
         is_done: false as const,
         description: encodedDesc || null,
+        recurrence: recurrence ?? null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
@@ -311,6 +314,18 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
                   }}
                 >
                   {v.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recurrence */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={metaLabel}>Repeat</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {([null, 'daily', 'weekly', 'monthly'] as (RecurrenceType | null)[]).map(r => (
+                <button key={r ?? 'none'} onClick={() => setRecurrence(r)} style={pill(recurrence === r)}>
+                  {r === null ? 'Never' : r === 'daily' ? 'Daily' : r === 'weekly' ? 'Weekly' : 'Monthly'}
                 </button>
               ))}
             </div>

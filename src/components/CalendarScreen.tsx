@@ -356,16 +356,51 @@ function UpcomingSection({ tasks, onAdd }: {
   )
 }
 
+/* ─── Overlap layout helpers ─── */
+function toMins(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + (m || 0)
+}
+
+function layoutDayTasks(tasks: (Task & { done: boolean })[]) {
+  const timed = tasks
+    .filter(t => t.task_time)
+    .sort((a, b) => (a.task_time!).localeCompare(b.task_time!))
+
+  type Slot = { task: typeof timed[0]; start: number; end: number; col: number }
+  const slots: Slot[] = timed.map(t => ({
+    task: t,
+    start: toMins(t.task_time!),
+    end: t.task_time_end ? toMins(t.task_time_end) : toMins(t.task_time!) + 60,
+    col: 0,
+  }))
+
+  // Greedy column assignment
+  const colEnds: number[] = []
+  for (const s of slots) {
+    let placed = false
+    for (let c = 0; c < colEnds.length; c++) {
+      if (s.start >= colEnds[c]) { s.col = c; colEnds[c] = s.end; placed = true; break }
+    }
+    if (!placed) { s.col = colEnds.length; colEnds.push(s.end) }
+  }
+  const totalCols = Math.max(1, colEnds.length)
+
+  const layout = new Map<string, { col: number; total: number }>()
+  slots.forEach(s => layout.set(s.task.id, { col: s.col, total: totalCols }))
+  return layout
+}
+
 /* ─── TimeGrid ─── */
-function TimeGrid({ days, tasks, onCellTap }: {
+function TimeGrid({ days, tasks, onCellTap, hourHeight }: {
   days: Date[]
   tasks: Record<string, (Task & { done: boolean })[]>
   onCellTap: (d: Date, hour: string) => void
+  hourHeight: number
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const todayKey = dayKey(new Date())
   const now = new Date()
-  const hourHeight = 40
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -412,6 +447,7 @@ function TimeGrid({ days, tasks, onCellTap }: {
             const dk = dayKey(d)
             const isToday = dk === todayKey
             const dayTasks = tasks[dk] || []
+            const layout = layoutDayTasks(dayTasks)
             return (
               <div key={dk} style={{ position: 'relative', borderLeft: '1px solid var(--hairline)' }}>
                 {hours.map(h => (
@@ -421,15 +457,20 @@ function TimeGrid({ days, tasks, onCellTap }: {
                 {dayTasks.filter(t => t.task_time).map(t => {
                   const [hh, mm] = t.task_time!.split(':').map(Number)
                   const top = hh * hourHeight + (mm / 60) * hourHeight
-                  const label = parseLabelFromDescription(t.description)
+                  const lbl = parseLabelFromDescription(t.description)
+                  const { col, total } = layout.get(t.id) ?? { col: 0, total: 1 }
+                  const w = `calc((100% - 4px) / ${total})`
+                  const l = `calc(2px + (100% - 4px) / ${total} * ${col})`
                   return (
-                    <div key={t.id} style={{
-                      position: 'absolute', left: '2px', right: '2px', top: `${top}px`, height: '56px',
-                      background: TASK_LABELS[label].color, borderRadius: '10px',
-                      padding: '4px 8px', overflow: 'hidden', opacity: t.done ? 0.5 : 1,
+                    <div key={`${t.id}-${dk}`} style={{
+                      position: 'absolute', left: l, width: w,
+                      top: `${top}px`, height: `${Math.max(hourHeight - 4, 24)}px`,
+                      background: TASK_LABELS[lbl].color, borderRadius: '8px',
+                      padding: '3px 6px', overflow: 'hidden', opacity: t.done ? 0.5 : 1,
+                      boxSizing: 'border-box',
                     }}>
-                      <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--ev-ink)', lineHeight: 1.3 }}>{t.title}</div>
-                      <div style={{ fontSize: '10px', color: 'rgba(0,0,0,0.45)', marginTop: '1px' }}>{t.task_time!.slice(0,5)}</div>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--ev-ink)', lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{t.title}</div>
+                      <div style={{ fontSize: '9px', color: 'rgba(0,0,0,0.5)' }}>{t.task_time!.slice(0,5)}</div>
                     </div>
                   )
                 })}
@@ -460,6 +501,8 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
   const [anchor, setAnchor] = useState(new Date())
   const [popupDate, setPopupDate] = useState<Date | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [zoomedOut, setZoomedOut] = useState(false)
+  const hourHeight = zoomedOut ? 28 : 44
 
   function openPopup(d: Date) { setPopupDate(d); onPopupChange?.(true) }
   function closePopup() { setPopupDate(null); onPopupChange?.(false) }
@@ -513,6 +556,15 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
             {title.year !== '' && <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>{title.year}</span>}
           </div>
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            {(view === '3d' || view === '1d') && (
+              <button
+                onClick={() => setZoomedOut(z => !z)}
+                title={zoomedOut ? 'Zoom in' : 'Zoom out'}
+                style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', background: zoomedOut ? 'var(--accent-soft)' : 'transparent' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>{zoomedOut ? <line x1="8" y1="11" x2="14" y2="11"/> : <><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></>}</svg>
+              </button>
+            )}
             <button onClick={() => navigate(-1)} style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}>
               <ChevronLeft size={16} />
             </button>
@@ -551,8 +603,8 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
           </div>
         </>
       )}
-      {view === '3d' && <TimeGrid days={threeDays} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} />}
-      {view === '1d' && <TimeGrid days={oneDay} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} />}
+      {view === '3d' && <TimeGrid days={threeDays} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} hourHeight={hourHeight} />}
+      {view === '1d' && <TimeGrid days={oneDay} tasks={tasks} onCellTap={(d, t) => onAdd(d, t)} hourHeight={hourHeight} />}
 
       {/* Expanded full-screen calendar */}
       {expanded && (

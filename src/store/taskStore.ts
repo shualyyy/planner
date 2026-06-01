@@ -100,14 +100,44 @@ export const useTaskStore = create<TaskStore>((set) => ({
   },
 }))
 
-/** Groups Task[] into Record<'yyyy-MM-dd', (Task & { done: boolean })[]> */
+function addDaysToDate(d: Date, n: number): Date {
+  const r = new Date(d); r.setDate(r.getDate() + n); return r
+}
+function addMonthsToDate(d: Date, n: number): Date {
+  return new Date(d.getFullYear(), d.getMonth() + n, d.getDate())
+}
+function dateToKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
+/** Groups Task[] into Record<'yyyy-MM-dd', (Task & { done: boolean })[]>
+ *  Expands recurring tasks into virtual instances for ±1 year */
 export function groupTasksByDay(
   tasks: Task[],
   donIds: Set<string>
 ): Record<string, (Task & { done: boolean })[]> {
-  return tasks.reduce((acc, t) => {
+  const acc: Record<string, (Task & { done: boolean })[]> = {}
+  const horizon = dateToKey(addMonthsToDate(new Date(), 12))
+
+  for (const t of tasks) {
+    // Original
     if (!acc[t.task_date]) acc[t.task_date] = []
     acc[t.task_date].push({ ...t, done: donIds.has(t.id) })
-    return acc
-  }, {} as Record<string, (Task & { done: boolean })[]>)
+
+    // Recurring instances
+    if (t.recurrence) {
+      let cur = new Date(t.task_date + 'T12:00:00')
+      for (let i = 0; i < 366; i++) {
+        if (t.recurrence === 'daily')   cur = addDaysToDate(cur, 1)
+        else if (t.recurrence === 'weekly')  cur = addDaysToDate(cur, 7)
+        else if (t.recurrence === 'monthly') cur = addMonthsToDate(cur, 1)
+        const dk = dateToKey(cur)
+        if (dk > horizon) break
+        if (!acc[dk]) acc[dk] = []
+        // Same id — done state shared across instances
+        acc[dk].push({ ...t, task_date: dk, done: donIds.has(t.id) })
+      }
+    }
+  }
+  return acc
 }

@@ -24,6 +24,8 @@ export const TASK_LABELS: Record<TaskLabel, { name: string; color: string }> = {
   travel:   { name: 'Travel',   color: '#C8B4E8' },
 }
 
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly'
+
 export interface Task {
   id: string
   title: string
@@ -35,6 +37,7 @@ export interface Task {
   description: string | null
   created_at: string
   label?: TaskLabel
+  recurrence?: RecurrenceType | null
 }
 
 /** Parse label from description prefix "[label] ..." */
