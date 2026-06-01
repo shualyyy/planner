@@ -160,24 +160,74 @@ function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
 export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: TasksScreenProps) {
   const todayKey = dayKey(new Date())
   const tomorrowKey = dayKey(addDays(new Date(), 1))
-  const sortedDays = Object.keys(tasks).sort()
-  const hasAny = sortedDays.some(dk => tasks[dk].length > 0)
+  const [showHistory, setShowHistory] = useState(false)
 
   const { totalToday, doneToday } = useMemo(() => {
     const t = tasks[todayKey] || []
     return { totalToday: t.length, doneToday: t.filter(x => x.done).length }
   }, [tasks, todayKey])
 
+  // Active: today + future + overdue (past undone)
+  // History: past days that only have done tasks
+  const { activeDays, historyDays, historyCount } = useMemo(() => {
+    const sorted = Object.keys(tasks).sort()
+    const active: string[] = []
+    const history: string[] = []
+    let count = 0
+    for (const dk of sorted) {
+      const dayTasks = tasks[dk]
+      if (!dayTasks.length) continue
+      if (dk >= todayKey) {
+        active.push(dk)
+      } else {
+        // Past day — show overdue (undone) in active, done in history
+        const undone = dayTasks.filter(t => !t.done)
+        const done = dayTasks.filter(t => t.done)
+        if (undone.length) active.push(dk)
+        if (done.length) { history.push(dk); count += done.length }
+      }
+    }
+    return { activeDays: active, historyDays: history, historyCount: count }
+  }, [tasks, todayKey])
+
+  const hasActive = activeDays.length > 0
   const pct = totalToday > 0 ? Math.round(doneToday / totalToday * 100) : 0
   const greeting = getGreeting()
 
   function dayLabel(dk: string): string {
     if (dk === todayKey) return 'Today'
     if (dk === tomorrowKey) return 'Tomorrow'
+    if (dk < todayKey) return '⚠ ' + format(parseISO(dk), 'EEEE')
     return format(parseISO(dk), 'EEEE')
   }
   function dayMeta(dk: string): string {
     return format(parseISO(dk), 'MMMM d')
+  }
+
+  function renderDayGroup(dk: string, filterFn?: (t: Task & { done: boolean }) => boolean) {
+    const dayTasks = (tasks[dk] || []).filter(filterFn ?? (() => true))
+    if (!dayTasks.length) return null
+    return (
+      <div key={dk} style={{ marginBottom: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: dk < todayKey ? 'var(--danger-text)' : 'var(--text)', letterSpacing: '-0.01em' }}>{dayLabel(dk)}</span>
+          <span style={{ fontSize: '12px', fontWeight: 450, color: 'var(--text-muted)' }}>{dayMeta(dk)}</span>
+        </div>
+        <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
+          {dayTasks.map((t, idx) => (
+            <div key={t.id}>
+              {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
+              <TaskRow
+                task={t} dateKey={dk}
+                onToggle={() => onToggle(dk, t.id)}
+                onDelete={() => onDelete(dk, t.id)}
+                onEdit={() => onEdit(t)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -208,39 +258,50 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       </div>
 
       {/* Content */}
-      {!hasAny ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-          <span style={{ fontSize: '13.5px', fontWeight: 450, color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
-        </div>
-      ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px', paddingBottom: '90px' }}>
-          {sortedDays.map(dk => {
-            const dayTasks = tasks[dk]
-            if (dayTasks.length === 0) return null
-            return (
-              <div key={dk} style={{ marginBottom: '18px' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}>{dayLabel(dk)}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 450, color: 'var(--text-muted)' }}>{dayMeta(dk)}</span>
-                </div>
-                <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
-                  {dayTasks.map((t, idx) => (
-                    <div key={t.id}>
-                      {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
-                      <TaskRow
-                        task={t} dateKey={dk}
-                        onToggle={() => onToggle(dk, t.id)}
-                        onDelete={() => onDelete(dk, t.id)}
-                        onEdit={() => onEdit(t)}
-                      />
-                    </div>
-                  ))}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px', paddingBottom: '90px' }}>
+        {!hasActive ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 450, color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
+          </div>
+        ) : (
+          activeDays.map(dk => {
+            const filterFn = dk < todayKey ? (t: Task & { done: boolean }) => !t.done : undefined
+            return renderDayGroup(dk, filterFn)
+          })
+        )}
+
+        {/* History button */}
+        {historyCount > 0 && (
+          <div style={{ marginTop: '8px' }}>
+            <button
+              onClick={() => setShowHistory(h => !h)}
+              style={{
+                width: '100%', padding: '14px 18px', borderRadius: '16px',
+                background: 'var(--surface)', boxShadow: 'var(--card-shadow)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>🗂</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>История</div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{historyCount} выполненных задач</div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" style={{ transform: showHistory ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            {showHistory && (
+              <div style={{ marginTop: '12px' }}>
+                {historyDays.map(dk => renderDayGroup(dk, t => t.done))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
