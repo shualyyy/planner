@@ -38,6 +38,8 @@ export interface Task {
   created_at: string
   label?: TaskLabel
   recurrence?: RecurrenceType | null
+  is_pinned?: boolean
+  pin_end?: string | null   // 'yyyy-MM-dd' until which date to show as pinned
 }
 
 /** Parse label from description prefix "[label] ..." */

@@ -556,12 +556,15 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
             {title.year !== '' && <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>{title.year}</span>}
           </div>
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            {view === '30d' && (
+              <button onClick={() => setExpanded(true)} title="Expand"
+                style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)' }}>
+                <ExpandIcon />
+              </button>
+            )}
             {(view === '3d' || view === '1d') && (
-              <button
-                onClick={() => setZoomedOut(z => !z)}
-                title={zoomedOut ? 'Zoom in' : 'Zoom out'}
-                style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', background: zoomedOut ? 'var(--accent-soft)' : 'transparent' }}
-              >
+              <button onClick={() => setZoomedOut(z => !z)} title={zoomedOut ? 'Zoom in' : 'Zoom out'}
+                style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', background: zoomedOut ? 'var(--accent-soft)' : 'transparent' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>{zoomedOut ? <line x1="8" y1="11" x2="14" y2="11"/> : <><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></>}</svg>
               </button>
             )}
@@ -578,23 +581,9 @@ export default function CalendarScreen({ tasks, onAdd, onToggle, onPopupChange }
       {/* Calendar body */}
       {view === '30d' && (
         <>
-          {/* Dark card with calendar grid + expand button */}
-          <div className="cal-card" style={{ position: 'relative' }}>
+          {/* Dark card with calendar grid */}
+          <div className="cal-card">
             <Calendar30 anchor={anchor} tasks={tasks} onDayTap={d => openPopup(d)} />
-            {/* Expand button — bottom-right corner */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '10px', paddingTop: '6px' }}>
-              <button
-                onClick={() => setExpanded(true)}
-                style={{
-                  width: '28px', height: '28px', borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-                }}
-              >
-                <ExpandIcon />
-              </button>
-            </div>
           </div>
 
           {/* Upcoming — scrollable */}

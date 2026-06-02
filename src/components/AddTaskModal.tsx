@@ -13,6 +13,14 @@ interface Props {
   editTask?: Task
 }
 
+function calcPinEnd(dur: 'week' | 'month' | 'quarter'): string {
+  const d = new Date()
+  if (dur === 'week') d.setDate(d.getDate() + 7)
+  else if (dur === 'month') d.setMonth(d.getMonth() + 1)
+  else d.setMonth(d.getMonth() + 3)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 function fmtDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
@@ -28,6 +36,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [isAllDay, setIsAllDay]   = useState(false)
   const [label, setLabel]         = useState<TaskLabel>('personal')
   const [recurrence, setRecurrence] = useState<RecurrenceType | null>(null)
+  const [isPinned, setIsPinned]   = useState(false)
+  const [pinDuration, setPinDuration] = useState<'week' | 'month' | 'quarter'>('week')
   const [description, setDescription] = useState('')
   const [saving, setSaving]       = useState(false)
   const [visible, setVisible]     = useState(false)
@@ -94,7 +104,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     if (!isOpen) {
       const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
-        setLabel('personal'); setRecurrence(null); setDescription(''); setSaving(false); setError('')
+        setLabel('personal'); setRecurrence(null); setIsPinned(false); setPinDuration('week'); setDescription(''); setSaving(false); setError('')
         setVisible(false)
       }, 300)
       return () => clearTimeout(timer)
@@ -126,6 +136,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         is_done: false as const,
         description: encodedDesc || null,
         recurrence: recurrence ?? null,
+        is_pinned: isPinned,
+        pin_end: isPinned ? calcPinEnd(pinDuration) : null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
@@ -328,6 +340,25 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
                   {r === null ? 'Never' : r === 'daily' ? 'Daily' : r === 'weekly' ? 'Weekly' : 'Monthly'}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Pin as goal */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={metaLabel}>Главная задача</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => setIsPinned(p => !p)} style={{ ...pill(isPinned), gap: '6px' }}>
+                <span>📌</span> {isPinned ? 'Закреплено' : 'Закрепить'}
+              </button>
+              {isPinned && (
+                <>
+                  {(['week','month','quarter'] as const).map(d => (
+                    <button key={d} onClick={() => setPinDuration(d)} style={pill(pinDuration === d)}>
+                      {d === 'week' ? '1 неделя' : d === 'month' ? '1 месяц' : '3 месяца'}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           </div>
 

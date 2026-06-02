@@ -210,9 +210,9 @@ input, textarea { font-family: inherit; color: inherit; }
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.cal-exp-days { display: grid; grid-template-columns: repeat(7, 1fr); flex: 1; overflow-y: auto; padding: 0 12px 80px; gap: 2px; }
+.cal-exp-days { display: grid; grid-template-columns: repeat(7, 1fr); flex: 1; overflow-y: auto; padding: 0 8px 80px; gap: 3px; }
 .d-exp {
-  min-height: 72px;
+  min-height: 96px;
   border-radius: 12px;
   display: flex; flex-direction: column;
   padding: 7px 6px 5px;
