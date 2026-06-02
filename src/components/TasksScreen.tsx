@@ -158,10 +158,9 @@ function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
 }
 
 /* ─── History sheet ─── */
-function HistorySheet({ tasks, historyDays, todayKey, onToggle, onDelete, onEdit, onClose }: {
+function HistorySheet({ tasks, historyDays, onToggle, onDelete, onEdit, onClose }: {
   tasks: Record<string, (Task & { done: boolean })[]>
   historyDays: string[]
-  todayKey: string
   onToggle: (dk: string, id: string) => void
   onDelete: (dk: string, id: string) => void
   onEdit: (t: Task) => void
@@ -351,7 +350,6 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         <HistorySheet
           tasks={tasks}
           historyDays={historyDays}
-          todayKey={todayKey}
           onToggle={onToggle}
           onDelete={onDelete}
           onEdit={onEdit}
