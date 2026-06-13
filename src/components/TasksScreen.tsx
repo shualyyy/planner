@@ -191,7 +191,7 @@ function HistorySheet({ tasks, historyDays, onToggle, onDelete, onEdit, onClose 
                   </div>
                   <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
                     {dayTasks.map((t, idx) => (
-                      <div key={t.id}>
+                      <div key={`${t.id}-${dk}`}>
                         {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
                         <TaskRow task={t} dateKey={dk} onToggle={() => onToggle(dk, t.id)} onDelete={() => onDelete(dk, t.id)} onEdit={() => onEdit(t)} />
                       </div>
@@ -266,7 +266,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         </div>
         <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
           {dayTasks.map((t, idx) => (
-            <div key={t.id}>
+            <div key={`${t.id}-${dk}`}>
               {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
               <TaskRow task={t} dateKey={dk} onToggle={() => onToggle(dk, t.id)} onDelete={() => onDelete(dk, t.id)} onEdit={() => onEdit(t)} />
             </div>
@@ -323,7 +323,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
               {pinnedTasks.map(t => {
                 const label = parseLabelFromDescription(t.description)
                 const lc = TASK_LABELS[label].color
-                const daysLeft = t.pin_end ? Math.ceil((new Date(t.pin_end).getTime() - Date.now()) / 86400000) : null
+                const daysLeft = t.pin_end ? Math.ceil((new Date(t.pin_end + 'T12:00:00').getTime() - Date.now()) / 86400000) : null
                 return (
                   <div key={t.id} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '14px 16px', boxShadow: 'var(--card-shadow)', display: 'flex', alignItems: 'center', gap: '12px', borderLeft: `3px solid ${lc}` }}>
                     <div style={{ flex: 1, minWidth: 0 }}>

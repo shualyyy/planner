@@ -59,5 +59,6 @@ export function stripLabelFromDescription(desc: string | null): string {
 /** Encode label as prefix in description */
 export function encodeLabelInDescription(label: TaskLabel, desc: string): string {
   const stripped = desc.replace(/^\[[a-z]+\]\s*/, '').trim()
+  if (!stripped && label === 'personal') return ''
   return stripped ? `[${label}] ${stripped}` : `[${label}]`
 }

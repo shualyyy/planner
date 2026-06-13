@@ -88,7 +88,7 @@ function DayPopup({ date, tasks, onClose, onToggle, onAdd }: {
               const lc = TASK_LABELS[label].color
               return (
                 <div
-                  key={t.id}
+                  key={`${t.id}-${dayKey(date)}`}
                   onClick={() => onToggle(t.id)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
@@ -322,7 +322,7 @@ function UpcomingSection({ tasks, onAdd }: {
             const lc = TASK_LABELS[label].color
             return (
               <div
-                key={t.id}
+                key={`${t.id}-${t.task_date}`}
                 onClick={() => onAdd(d, t.task_time || undefined)}
                 style={{
                   background: 'var(--surface)', borderRadius: '16px', padding: '14px',
@@ -371,7 +371,10 @@ function layoutDayTasks(tasks: (Task & { done: boolean })[]) {
   const slots: Slot[] = timed.map(t => ({
     task: t,
     start: toMins(t.task_time!),
-    end: t.task_time_end ? toMins(t.task_time_end) : toMins(t.task_time!) + 60,
+    end: Math.max(
+      t.task_time_end ? toMins(t.task_time_end) : toMins(t.task_time!) + 60,
+      toMins(t.task_time!) + 15
+    ),
     col: 0,
   }))
 

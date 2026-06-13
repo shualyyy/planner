@@ -49,9 +49,12 @@ export const useTaskStore = create<TaskStore>((set) => ({
     if (!inserted) throw new Error('Task not saved — check Supabase RLS: anon insert may be blocked')
     set((state) => ({
       tasks: [...state.tasks, inserted].sort((a, b) => {
-        const dateCompare = a.task_date.localeCompare(b.task_date)
-        if (dateCompare !== 0) return dateCompare
-        return (a.task_time ?? '￿').localeCompare(b.task_time ?? '￿')
+        const dc = a.task_date.localeCompare(b.task_date)
+        if (dc !== 0) return dc
+        if (!a.task_time && !b.task_time) return 0
+        if (!a.task_time) return 1
+        if (!b.task_time) return -1
+        return a.task_time.localeCompare(b.task_time)
       }),
     }))
   },
@@ -106,6 +109,15 @@ function addDaysToDate(d: Date, n: number): Date {
 function addMonthsToDate(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + n, d.getDate())
 }
+/** Add n months to a base date, anchored to the original day-of-month and
+ *  clamped to the target month's last valid day (Jan 31 +1mo → Feb 28/29). */
+function addMonthsClamped(base: Date, n: number, anchorDay: number): Date {
+  const m = base.getMonth() + n
+  const y = base.getFullYear() + Math.floor(m / 12)
+  const tm = ((m % 12) + 12) % 12
+  const daysInMonth = new Date(y, tm + 1, 0).getDate()
+  return new Date(y, tm, Math.min(anchorDay, daysInMonth), 12, 0, 0)
+}
 function dateToKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
@@ -126,11 +138,13 @@ export function groupTasksByDay(
 
     // Recurring instances
     if (t.recurrence) {
-      let cur = new Date(t.task_date + 'T12:00:00')
+      const base = new Date(t.task_date + 'T12:00:00')
+      const anchorDay = base.getDate()
+      let cur = base
       for (let i = 0; i < 366; i++) {
         if (t.recurrence === 'daily')   cur = addDaysToDate(cur, 1)
         else if (t.recurrence === 'weekly')  cur = addDaysToDate(cur, 7)
-        else if (t.recurrence === 'monthly') cur = addMonthsToDate(cur, 1)
+        else if (t.recurrence === 'monthly') cur = addMonthsClamped(base, i + 1, anchorDay)
         const dk = dateToKey(cur)
         if (dk > horizon) break
         if (!acc[dk]) acc[dk] = []

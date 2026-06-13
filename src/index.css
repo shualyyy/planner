@@ -24,6 +24,33 @@
   --accent-ink:   #FFFFFF;
   --accent-glow:  rgba(6,20,27,0.12);
 
+  /* ── Brand (terracotta — icon/logo only) ── */
+  --brand:        #D97757;
+  --brand-deep:   #B85A3D;
+
+  /* ── Label colors ── */
+  --label-work:     #B8D4F2;
+  --label-personal: #F5BDD0;
+  --label-health:   #8ED4C8;
+  --label-family:   #F5E28A;
+  --label-travel:   #C8B4E8;
+  --label-ink:      #1C1917;
+
+  /* ── Radii ── */
+  --r-chip:    999px;
+  --r-card:    18px;
+  --r-card-lg: 22px;
+  --r-cal:     24px;
+  --r-sheet:   28px;
+  --r-input:   12px;
+
+  /* ── Motion ── */
+  --ease-ios:  cubic-bezier(0.32,0.72,0,1);
+  --ease-snap: cubic-bezier(0.4,0,0.2,1);
+  --t-fast:    0.15s;
+  --t-base:    0.2s;
+  --t-sheet:   0.32s;
+
   /* ── Status ── */
   --success:      #3CC68A;
   --success-soft: rgba(60,198,138,0.12);

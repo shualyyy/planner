@@ -41,8 +41,6 @@ declare global {
   }
 }
 
-const hasSpeechAPI = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
-
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 const MicIcon = () => (
@@ -156,6 +154,13 @@ export default function AssistantScreen() {
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const [listening, setListening] = useState(false)
+  const [hasSpeechAPI, setHasSpeechAPI] = useState(false)
+
+  // Evaluated post-mount: on some iOS Safari versions the Speech API
+  // registers on window only after first user interaction
+  useEffect(() => {
+    setHasSpeechAPI(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
+  }, [])
 
   const streamRef      = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
@@ -338,7 +343,7 @@ export default function AssistantScreen() {
       console.error('Speech recognition start failed:', err)
       setListening(false)
     }
-  }, [listening])
+  }, [listening, hasSpeechAPI])
 
   // ── Render ────────────────────────────────────────────────────────────
 

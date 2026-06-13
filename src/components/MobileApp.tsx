@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import CalendarScreen from './CalendarScreen'
 import TasksScreen from './TasksScreen'
 import AssistantScreen from './AssistantScreen'
-import WinsScreen from './WinsScreen'
+import NotesScreen from './NotesScreen'
 import SettingsScreen from './SettingsScreen'
 import AddTaskModal from './AddTaskModal'
 import { useTaskStore, groupTasksByDay } from '../store/taskStore'
@@ -16,15 +16,22 @@ import {
 } from './icons'
 import type { Task } from '../services/supabase'
 
-type Tab = 'calendar' | 'tasks' | 'assistant' | 'wins' | 'settings'
+type Tab = 'calendar' | 'tasks' | 'assistant' | 'notes' | 'settings'
+
+const NotesTabIcon = ({ color }: { color: string }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+  </svg>
+)
 
 const TABS: { id: Tab; Icon: React.FC<{ color: string }>; label: string }[] = [
-  { id: 'calendar', Icon: CalendarTabIcon, label: 'Today' },
-  { id: 'tasks',    Icon: TasksTabIcon,    label: 'Tasks' },
-  { id: 'assistant',Icon: AssistantTabIcon,label: 'Ask'   },
-  { id: 'settings', Icon: SettingsTabIcon, label: 'You'   },
+  { id: 'calendar', Icon: CalendarTabIcon, label: 'Today'  },
+  { id: 'tasks',    Icon: TasksTabIcon,    label: 'Tasks'  },
+  { id: 'assistant',Icon: AssistantTabIcon,label: 'Ask'    },
+  { id: 'notes',    Icon: NotesTabIcon,    label: 'Notes'  },
+  { id: 'settings', Icon: SettingsTabIcon, label: 'You'    },
 ]
-
 
 export default function MobileApp() {
   const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
@@ -56,7 +63,6 @@ export default function MobileApp() {
 
   const showFab = (tab === 'calendar' || tab === 'tasks') && !calPopupOpen
 
-  // Tab bar rendered via portal directly into body — bypasses iOS fixed-in-fixed bug
   const tabBar = createPortal(
     <div className="tabbar">
       {TABS.map(({ id, Icon, label }) => {
@@ -81,7 +87,6 @@ export default function MobileApp() {
         background: 'var(--bg)',
         paddingTop: 'env(safe-area-inset-top)',
       }}>
-        {/* Panels — all mounted, active one visible */}
         <div style={{ position: 'absolute', top: 'env(safe-area-inset-top)', left: 0, right: 0, bottom: 0 }}>
           <div style={{ position: 'absolute', inset: 0, display: tab === 'calendar' ? 'flex' : 'none', flexDirection: 'column' }}>
             <CalendarScreen
@@ -102,8 +107,8 @@ export default function MobileApp() {
           <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
             <AssistantScreen />
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'wins' ? 'flex' : 'none', flexDirection: 'column' }}>
-            <WinsScreen tasks={tasks.map(t => ({ ...t, done: donIds.has(t.id) }))} />
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'notes' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <NotesScreen />
           </div>
           <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
             <SettingsScreen />
@@ -111,10 +116,8 @@ export default function MobileApp() {
         </div>
       </div>
 
-      {/* Tab bar via portal — hidden when calendar day popup is open */}
       {!calPopupOpen && tabBar}
 
-      {/* FAB via portal — shown only on calendar and tasks tabs */}
       {showFab && createPortal(
         <button className="fab-v2" onClick={() => handleAdd()}>
           <IcoPlus size={22} />

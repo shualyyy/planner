@@ -133,7 +133,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         task_time: isAllDay ? null : (time || null),
         task_time_end: isAllDay ? null : (timeEnd || null),
         is_all_day: isAllDay,
-        is_done: false as const,
+        is_done: isEditMode ? (editTask?.is_done ?? false) : false,
         description: encodedDesc || null,
         recurrence: recurrence ?? null,
         is_pinned: isPinned,
