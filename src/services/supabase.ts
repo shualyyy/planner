@@ -40,6 +40,52 @@ export interface Task {
   recurrence?: RecurrenceType | null
   is_pinned?: boolean
   pin_end?: string | null   // 'yyyy-MM-dd' until which date to show as pinned
+  project_id?: string | null
+  status?: TaskStatus
+  priority?: TaskPriority
+  time_estimate?: number | null  // minutes
+}
+
+export type TaskStatus = 'not_started' | 'in_progress' | 'blocked' | 'done'
+export type TaskPriority = 'high' | 'medium' | 'low'
+
+export const TASK_STATUSES: Record<TaskStatus, { name: string; color: string; icon: string }> = {
+  not_started: { name: 'To Do',       color: '#9BA8AB', icon: '○' },
+  in_progress: { name: 'In Progress', color: '#4A9EFF', icon: '◑' },
+  blocked:     { name: 'Blocked',     color: '#FF5C5C', icon: '⊘' },
+  done:        { name: 'Done',        color: '#3DD68C', icon: '●' },
+}
+
+export const TASK_PRIORITIES: Record<TaskPriority, { name: string; color: string }> = {
+  high:   { name: 'High',   color: '#FF5C5C' },
+  medium: { name: 'Medium', color: '#E8A24A' },
+  low:    { name: 'Low',    color: 'rgba(255,255,255,0.3)' },
+}
+
+export interface Project {
+  id: string
+  name: string
+  color: string
+  description: string | null
+  is_archived: boolean
+  created_at: string
+}
+
+export interface Habit {
+  id: string
+  name: string
+  icon: string
+  color: string
+  frequency: 'daily' | 'weekly'
+  time_of_day: 'morning' | 'evening' | 'anytime'
+  created_at: string
+}
+
+export interface HabitLog {
+  id: string
+  habit_id: string
+  completed_date: string  // 'yyyy-MM-dd'
+  created_at: string
 }
 
 /** Parse label from description prefix "[label] ..." */

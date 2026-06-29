@@ -11,7 +11,7 @@ import { useIsMobile } from './hooks/useIsMobile'
 import { GearIcon } from './components/icons'
 
 export default function App() {
-  const { fetchTasks, theme } = useTaskStore()
+  const { fetchTasks, fetchProjects, fetchHabits, theme } = useTaskStore()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [session, setSession] = useState<boolean | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -33,8 +33,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (session) fetchTasks()
-  }, [session, fetchTasks])
+    if (session) { fetchTasks(); fetchProjects(); fetchHabits() }
+  }, [session, fetchTasks, fetchProjects, fetchHabits])
 
   // Loading spinner
   if (session === null) {

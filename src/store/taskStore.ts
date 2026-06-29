@@ -1,8 +1,11 @@
 import { create } from 'zustand'
-import { supabase, type Task } from '../services/supabase'
+import { supabase, type Task, type Project, type Habit, type HabitLog } from '../services/supabase'
 
 interface TaskStore {
   tasks: Task[]
+  projects: Project[]
+  habits: Habit[]
+  habitLogs: HabitLog[]
   loading: boolean
   donIds: Set<string>
   theme: 'light' | 'dark'
@@ -11,11 +14,21 @@ interface TaskStore {
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   toggleDone: (id: string) => Promise<void>
+  fetchProjects: () => Promise<void>
+  addProject: (p: Omit<Project, 'id' | 'created_at'>) => Promise<Project>
+  updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'created_at'>>) => Promise<void>
+  deleteProject: (id: string) => Promise<void>
+  fetchHabits: () => Promise<void>
+  addHabit: (h: Omit<Habit, 'id' | 'created_at'>) => Promise<void>
+  toggleHabitLog: (habitId: string, date: string) => Promise<void>
   setTheme: (t: 'light' | 'dark') => void
 }
 
-export const useTaskStore = create<TaskStore>((set) => ({
+export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
+  projects: [],
+  habits: [],
+  habitLogs: [],
   loading: false,
   donIds: new Set(),
   theme: 'light',
@@ -99,6 +112,79 @@ export const useTaskStore = create<TaskStore>((set) => ({
         return { donIds: next }
       })
       console.error('toggleDone failed:', error)
+    }
+  },
+
+  fetchProjects: async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: true })
+    if (!error && data) set({ projects: data as Project[] })
+  },
+
+  addProject: async (p) => {
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([p])
+      .select()
+    if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
+    const inserted = data?.[0] as Project | undefined
+    if (!inserted) throw new Error('Project not saved — check Supabase RLS: anon insert may be blocked')
+    set((state) => ({ projects: [...state.projects, inserted] }))
+    return inserted
+  },
+
+  updateProject: async (id, updates) => {
+    const { error } = await supabase.from('projects').update(updates).eq('id', id)
+    if (error) throw error
+    set((state) => ({
+      projects: state.projects.map(p => p.id === id ? { ...p, ...updates } : p),
+    }))
+  },
+
+  deleteProject: async (id) => {
+    const { error } = await supabase.from('projects').delete().eq('id', id)
+    if (error) throw error
+    set((state) => ({
+      projects: state.projects.filter(p => p.id !== id),
+      // Detach tasks from the deleted project (DB does ON DELETE SET NULL)
+      tasks: state.tasks.map(t => t.project_id === id ? { ...t, project_id: null } : t),
+    }))
+  },
+
+  fetchHabits: async () => {
+    const [hRes, lRes] = await Promise.all([
+      supabase.from('habits').select('*').order('created_at', { ascending: true }),
+      supabase.from('habit_logs').select('*'),
+    ])
+    if (!hRes.error && hRes.data) set({ habits: hRes.data as Habit[] })
+    if (!lRes.error && lRes.data) set({ habitLogs: lRes.data as HabitLog[] })
+  },
+
+  addHabit: async (h) => {
+    const { data, error } = await supabase.from('habits').insert([h]).select()
+    if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
+    const inserted = data?.[0] as Habit | undefined
+    if (!inserted) throw new Error('Habit not saved — check Supabase RLS: anon insert may be blocked')
+    set((state) => ({ habits: [...state.habits, inserted] }))
+  },
+
+  toggleHabitLog: async (habitId, date) => {
+    const existing = get().habitLogs.find(l => l.habit_id === habitId && l.completed_date === date)
+    if (existing) {
+      // Optimistic remove
+      set((state) => ({ habitLogs: state.habitLogs.filter(l => l.id !== existing.id) }))
+      const { error } = await supabase.from('habit_logs').delete().eq('id', existing.id)
+      if (error) { set((state) => ({ habitLogs: [...state.habitLogs, existing] })); console.error('toggleHabitLog failed:', error) }
+    } else {
+      const { data, error } = await supabase
+        .from('habit_logs')
+        .insert([{ habit_id: habitId, completed_date: date }])
+        .select()
+      if (error) { console.error('toggleHabitLog failed:', error); return }
+      const inserted = data?.[0] as HabitLog | undefined
+      if (inserted) set((state) => ({ habitLogs: [...state.habitLogs, inserted] }))
     }
   },
 }))

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, addDays } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
-import type { Task, TaskLabel, RecurrenceType } from '../services/supabase'
-import { TASK_LABELS, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
+import type { Task, TaskLabel, RecurrenceType, TaskStatus, TaskPriority } from '../services/supabase'
+import { TASK_STATUSES, TASK_PRIORITIES, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
 import { IcoChevronDown } from './icons'
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   onClose: () => void
   defaultDate: Date
   defaultTime?: string
+  defaultProjectId?: string | null
   editTask?: Task
 }
 
@@ -25,8 +26,8 @@ function fmtDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', editTask }: Props) {
-  const { addTask, updateTask } = useTaskStore()
+export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', defaultProjectId = null, editTask }: Props) {
+  const { addTask, updateTask, projects } = useTaskStore()
   const isEditMode = !!editTask
 
   const [title, setTitle]         = useState('')
@@ -38,10 +39,15 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [recurrence, setRecurrence] = useState<RecurrenceType | null>(null)
   const [isPinned, setIsPinned]   = useState(false)
   const [pinDuration, setPinDuration] = useState<'week' | 'month' | 'quarter'>('week')
+  const [projectId, setProjectId] = useState<string | null>(null)
+  const [status, setStatus]       = useState<TaskStatus>('not_started')
+  const [priority, setPriority]   = useState<TaskPriority>('medium')
+  const [timeEstimate, setTimeEstimate] = useState<number | null>(null)
   const [description, setDescription] = useState('')
   const [saving, setSaving]       = useState(false)
   const [visible, setVisible]     = useState(false)
   const [error, setError]         = useState('')
+  const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
   const titleRef = useRef<HTMLInputElement>(null)
   const prevTimeRef = useRef('')
@@ -62,6 +68,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       setLabel(parseLabelFromDescription(editTask.description))
       setDescription(stripLabelFromDescription(editTask.description))
       setRecurrence(editTask.recurrence ?? null)
+      setProjectId(editTask.project_id ?? null)
+      setStatus(editTask.status ?? 'not_started')
+      setPriority(editTask.priority ?? 'medium')
+      setTimeEstimate(editTask.time_estimate ?? null)
     }
   }, [isOpen, editTask])
 
@@ -69,6 +79,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   useEffect(() => {
     if (isOpen && !editTask) {
       setDate(fmtDate(defaultDate))
+      setProjectId(defaultProjectId)
       setTime(defaultTime)
       if (defaultTime) {
         const [h, m] = defaultTime.split(':').map(Number)
@@ -105,6 +116,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
         setLabel('personal'); setRecurrence(null); setIsPinned(false); setPinDuration('week'); setDescription(''); setSaving(false); setError('')
+        setProjectId(null); setStatus('not_started'); setPriority('medium'); setTimeEstimate(null)
+        setExpandedRow(null)
         setVisible(false)
       }, 300)
       return () => clearTimeout(timer)
@@ -118,6 +131,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       const endH = Math.min(h + 1, 23)
       setTimeEnd(`${String(endH).padStart(2,'0')}:${String(m).padStart(2,'0')}`)
     }
+  }
+
+  function toggleRow(key: string) {
+    setExpandedRow(prev => prev === key ? null : key)
   }
 
   async function handleSubmit() {
@@ -138,6 +155,10 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         recurrence: recurrence ?? null,
         is_pinned: isPinned,
         pin_end: isPinned ? calcPinEnd(pinDuration) : null,
+        project_id: projectId ?? null,
+        status,
+        priority,
+        time_estimate: timeEstimate ?? null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
@@ -207,216 +228,185 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           </button>
         </div>
 
-        <div style={{ padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Title — Fraunces */}
+        {/* Title + description */}
+        <div style={{ padding: '18px 22px 6px' }}>
           <input
             ref={titleRef}
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
-            placeholder={isEditMode ? 'Task title' : 'What needs to happen?'}
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: '22px',
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              color: 'var(--text)',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              width: '100%',
-              lineHeight: 1.3,
-            }}
+            placeholder="Название задачи..."
+            style={{ font: '300 24px Fraunces', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Описание (необязательно)"
+            rows={1}
+            style={{ font: '400 13px Inter', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
+          />
+        </div>
 
-          {/* Date pills */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={metaLabel}>Date</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              {([
-                { label: 'Today',     value: todayStr    },
-                { label: 'Tomorrow',  value: tomorrowStr },
-                { label: 'Next week', value: nextWeekStr },
-              ] as const).map(({ label: l, value: v }) => (
-                <button key={v} onClick={() => setDate(v)} style={pill(date === v)}>
-                  {l}
+        {/* Metadata rows */}
+        <div>
+          {/* Row 1 — Project */}
+          <button onClick={() => toggleRow('project')} style={rowBtn(false)}>
+            <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Проект</span></span>
+            {projectId
+              ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#4A9EFF' }} />{p?.name ?? '—'}</span> })()
+              : <span style={valuePill('rgba(255,255,255,0.4)')}>Без проекта</span>}
+          </button>
+          <div style={expandWrap(expandedRow === 'project')}>
+            <div style={expandInner}>
+              <button onClick={() => setProjectId(null)} style={pill(projectId === null)}>Без проекта</button>
+              {projects.filter(p => !p.is_archived).map(p => (
+                <button key={p.id} onClick={() => setProjectId(p.id)} style={{ ...pill(projectId === p.id), gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />{p.name}
                 </button>
               ))}
-              {!isPreset && (
-                <span style={pill(true)}>{datePillLabel()}</span>
-              )}
-              {/* Hidden date input overlay for custom date */}
+            </div>
+          </div>
+
+          {/* Row 2 — Status */}
+          <button onClick={() => toggleRow('status')} style={rowBtn(false)}>
+            <span style={rowLeft}><span style={{ color: TASK_STATUSES[status].color, fontSize: 14 }}>{TASK_STATUSES[status].icon}</span><span style={rowLabelTxt}>Статус</span></span>
+            <span style={valuePill(TASK_STATUSES[status].color)}>{TASK_STATUSES[status].name}</span>
+          </button>
+          <div style={expandWrap(expandedRow === 'status')}>
+            <div style={expandInner}>
+              {(Object.entries(TASK_STATUSES) as [TaskStatus, { name: string; color: string; icon: string }][]).map(([k, v]) => (
+                <button key={k} onClick={() => setStatus(k)} style={{ ...pill(status === k), gap: 5, background: status === k ? v.color : 'var(--surface2)', color: status === k ? '#fff' : 'var(--text-muted)' }}>
+                  <span>{v.icon}</span>{v.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Row 3 — Priority */}
+          <button onClick={() => toggleRow('priority')} style={rowBtn(false)}>
+            <span style={rowLeft}><span style={{ color: TASK_PRIORITIES[priority].color, font: '700 14px Inter' }}>{priority === 'high' ? '↑' : priority === 'low' ? '↓' : '–'}</span><span style={rowLabelTxt}>Приоритет</span></span>
+            <span style={valuePill(TASK_PRIORITIES[priority].color)}>{TASK_PRIORITIES[priority].name}</span>
+          </button>
+          <div style={expandWrap(expandedRow === 'priority')}>
+            <div style={expandInner}>
+              {(Object.entries(TASK_PRIORITIES) as [TaskPriority, { name: string; color: string }][]).map(([k, v]) => (
+                <button key={k} onClick={() => setPriority(k)} style={{ ...pill(priority === k), background: priority === k ? v.color : 'var(--surface2)', color: priority === k ? '#fff' : 'var(--text-muted)' }}>
+                  {k === 'high' ? '↑ ' : k === 'low' ? '↓ ' : '– '}{v.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Row 4 — Estimate */}
+          <button onClick={() => toggleRow('estimate')} style={rowBtn(false)}>
+            <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Оценка</span></span>
+            <span style={valuePill(timeEstimate != null ? '#4A9EFF' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
+          </button>
+          <div style={expandWrap(expandedRow === 'estimate')}>
+            <div style={expandInner}>
+              {([15,30,60,120,240,480]).map(mins => (
+                <button key={mins} onClick={() => setTimeEstimate(timeEstimate === mins ? null : mins)} style={pill(timeEstimate === mins)}>
+                  {estimateLabel(mins)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Row 5 — Date */}
+          <button onClick={() => toggleRow('date')} style={rowBtn(false)}>
+            <span style={rowLeft}>{icoCalendar}<span style={rowLabelTxt}>Дата</span></span>
+            <span style={valuePill('#4A9EFF')}>{date === todayStr ? 'Сегодня' : date === tomorrowStr ? 'Завтра' : datePillLabel()}</span>
+          </button>
+          <div style={expandWrap(expandedRow === 'date')}>
+            <div style={expandInner}>
+              {([{ label: 'Сегодня', value: todayStr }, { label: 'Завтра', value: tomorrowStr }, { label: 'След. неделя', value: nextWeekStr }] as const).map(({ label: l, value: v }) => (
+                <button key={v} onClick={() => setDate(v)} style={pill(date === v)}>{l}</button>
+              ))}
               <div style={{ position: 'relative', display: 'inline-flex' }}>
-                <span style={{ ...pill(false), pointerEvents: 'none', paddingLeft: '10px', paddingRight: '10px' }}>···</span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
-                />
+                <span style={{ ...pill(!isPreset), pointerEvents: 'none' }}>{isPreset ? 'Другая…' : datePillLabel()}</span>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
               </div>
             </div>
           </div>
 
-          {/* Time */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={metaLabel}>Time</span>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Row 6 — Time */}
+          <button onClick={() => toggleRow('time')} style={rowBtn(true)}>
+            <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Время</span></span>
+            <span style={valuePill(time && !isAllDay ? '#4A9EFF' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'Весь день' : (time ? time.slice(0,5) : '—')}</span>
+          </button>
+          <div style={expandWrap(expandedRow === 'time')}>
+            <div style={expandInner}>
               <button
                 onClick={() => {
-                  if (!isAllDay) {
-                    prevTimeRef.current = time
-                    prevTimeEndRef.current = timeEnd
-                    setTime(''); setTimeEnd('')
-                  } else {
-                    setTime(prevTimeRef.current)
-                    setTimeEnd(prevTimeEndRef.current)
-                  }
+                  if (!isAllDay) { prevTimeRef.current = time; prevTimeEndRef.current = timeEnd; setTime(''); setTimeEnd('') }
+                  else { setTime(prevTimeRef.current); setTimeEnd(prevTimeEndRef.current) }
                   setIsAllDay(!isAllDay)
                 }}
                 style={pill(isAllDay)}
-              >All day</button>
+              >Весь день</button>
               {!isAllDay && (
                 <>
                   <div style={{ position: 'relative', display: 'inline-flex' }}>
-                    <span style={{ ...pill(!!time), pointerEvents: 'none', minWidth: '72px', justifyContent: 'center' }}>
-                      {time ? time.slice(0,5) : 'Start'}
-                    </span>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={e => handleTimeChange(e.target.value)}
-                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
-                    />
+                    <span style={{ ...pill(!!time), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{time ? time.slice(0,5) : 'Начало'}</span>
+                    <input type="time" value={time} onChange={e => handleTimeChange(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
                   </div>
                   {time && (
-                    <>
-                      <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>→</span>
-                      <div style={{ position: 'relative', display: 'inline-flex' }}>
-                        <span style={{ ...pill(!!timeEnd), pointerEvents: 'none', minWidth: '72px', justifyContent: 'center' }}>
-                          {timeEnd ? timeEnd.slice(0,5) : 'End'}
-                        </span>
-                        <input
-                          type="time"
-                          value={timeEnd}
-                          onChange={e => setTimeEnd(e.target.value)}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
-                        />
-                      </div>
-                    </>
+                    <div style={{ position: 'relative', display: 'inline-flex' }}>
+                      <span style={{ ...pill(!!timeEnd), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{timeEnd ? timeEnd.slice(0,5) : 'Конец'}</span>
+                      <input type="time" value={timeEnd} onChange={e => setTimeEnd(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+                    </div>
                   )}
                 </>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Label pills */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={metaLabel}>Label</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {(Object.entries(TASK_LABELS) as [TaskLabel, { name: string; color: string }][]).map(([k, v]) => (
-                <button
-                  key={k}
-                  onClick={() => setLabel(k)}
-                  style={{
-                    ...pill(label === k),
-                    background: label === k ? v.color : 'var(--surface2)',
-                    color: label === k ? '#1C1917' : 'var(--text-muted)',
-                  }}
-                >
-                  {v.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recurrence */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={metaLabel}>Repeat</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {([null, 'daily', 'weekly', 'monthly'] as (RecurrenceType | null)[]).map(r => (
-                <button key={r ?? 'none'} onClick={() => setRecurrence(r)} style={pill(recurrence === r)}>
-                  {r === null ? 'Never' : r === 'daily' ? 'Daily' : r === 'weekly' ? 'Weekly' : 'Monthly'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Pin as goal */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={metaLabel}>Главная задача</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <button onClick={() => setIsPinned(p => !p)} style={{ ...pill(isPinned), gap: '6px' }}>
-                <span>📌</span> {isPinned ? 'Закреплено' : 'Закрепить'}
-              </button>
-              {isPinned && (
-                <>
-                  {(['week','month','quarter'] as const).map(d => (
-                    <button key={d} onClick={() => setPinDuration(d)} style={pill(pinDuration === d)}>
-                      {d === 'week' ? '1 неделя' : d === 'month' ? '1 месяц' : '3 месяца'}
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Description (optional, compact) */}
-          <div>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Notes (optional)"
-              rows={2}
-              style={{
-                width: '100%', background: 'var(--surface2)', border: '1px solid var(--hairline)',
-                borderRadius: '12px', padding: '10px 14px', color: 'var(--text)',
-                fontSize: '13px', fontFamily: 'inherit', outline: 'none',
-                resize: 'none', lineHeight: 1.5, boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          {/* Save button */}
-          <button
-            onClick={handleSubmit}
-            style={{
-              width: '100%', height: '52px',
-              borderRadius: '16px', border: 'none',
-              background: saving ? 'var(--surface2)' : 'var(--accent)',
-              color: saving ? 'var(--text-muted)' : '#fff',
-              fontSize: '15px', fontWeight: 600, letterSpacing: '-0.02em',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              transition: 'all 0.15s',
-              boxShadow: saving ? 'none' : '0 1px 0 rgba(255,255,255,0.2) inset, 0 8px 24px var(--accent-glow)',
-              fontFamily: 'inherit',
-            }}
-          >
-            {saving
-              ? (isEditMode ? 'Saving…' : 'Adding…')
-              : (isEditMode ? 'Save changes' : 'Add task')
-            }
-          </button>
-
-          {/* Error — shown below button so always visible */}
+        {/* Save */}
+        <div style={{ padding: '18px 22px 30px' }}>
           {error && (
-            <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: '12px', padding: '10px 14px', borderRadius: '12px', lineHeight: 1.5 }}>
+            <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: 12, padding: '10px 14px', borderRadius: 12, lineHeight: 1.5, marginBottom: 12 }}>
               ⚠ {error}
             </div>
           )}
+          <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#4A9EFF', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+            {saving ? (isEditMode ? 'Сохранение…' : 'Добавление…') : (isEditMode ? 'Сохранить' : 'Добавить задачу')}
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-const metaLabel: React.CSSProperties = {
-  fontSize: '10.5px',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: 'var(--text-muted)',
+function rowBtn(last: boolean): React.CSSProperties {
+  return {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    height: 48, borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.07)',
+    padding: '0 22px', background: 'transparent', width: '100%', cursor: 'pointer',
+    fontFamily: 'inherit',
+  }
+}
+
+const rowLeft: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12 }
+const rowLabelTxt: React.CSSProperties = { font: '500 14px Inter', color: '#F0ECE3' }
+
+function valuePill(color = 'rgba(255,255,255,0.7)'): React.CSSProperties {
+  return {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '5px 12px', borderRadius: 999, background: '#16161E',
+    font: '500 13px Inter', color, whiteSpace: 'nowrap',
+  }
+}
+
+function expandWrap(open: boolean): React.CSSProperties {
+  return { maxHeight: open ? 360 : 0, overflow: 'hidden', transition: 'max-height 0.25s ease' }
+}
+const expandInner: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '6px 22px 14px' }
+
+function estimateLabel(mins: number | null): string {
+  if (mins == null) return '—'
+  return mins >= 60 ? `${mins % 60 === 0 ? mins / 60 : (mins / 60).toFixed(1)}ч` : `${mins}м`
 }
 
 function pill(active: boolean): React.CSSProperties {
@@ -436,3 +426,16 @@ function pill(active: boolean): React.CSSProperties {
     whiteSpace: 'nowrap',
   }
 }
+
+const icoFolder = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+)
+const icoClock = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+)
+const icoCalendar = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+)
+const icoBell = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+)

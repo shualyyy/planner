@@ -1,8 +1,10 @@
 import { useState, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { format, parseISO } from 'date-fns'
-import type { Task } from '../services/supabase'
-import { TASK_LABELS, parseLabelFromDescription } from '../services/supabase'
+import type { Task, Project } from '../services/supabase'
+import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription } from '../services/supabase'
+import { useTaskStore } from '../store/taskStore'
+import HabitsSheet from './HabitsSheet'
 
 interface TasksScreenProps {
   tasks: Record<string, (Task & { done: boolean })[]>
@@ -18,18 +20,10 @@ function addDays(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
 }
 
-function getGreeting(): string {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 17) return 'Good afternoon'
-  return 'Good evening'
-}
-
 function isNear(task: Task): boolean {
   if (!task.task_time) return false
   const now = new Date()
-  const todayStr = dayKey(now)
-  if (task.task_date !== todayStr) return false
+  if (task.task_date !== dayKey(now)) return false
   const [hh, mm] = task.task_time.split(':').map(Number)
   const diff = hh * 60 + mm - (now.getHours() * 60 + now.getMinutes())
   return diff >= 0 && diff <= 90
@@ -47,10 +41,25 @@ const PencilIcon = () => (
   </svg>
 )
 
-/* ─── TaskRow ─── */
-function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
+/* ─── Status circle ─── */
+function StatusCircle({ task }: { task: Task & { done: boolean } }) {
+  const base: React.CSSProperties = { width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  if (task.done) {
+    return (
+      <div style={{ ...base, background: '#4A9EFF' }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+    )
+  }
+  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #4A9EFF', background: 'linear-gradient(90deg,#4A9EFF 50%,transparent 50%)' }} />
+  if (task.status === 'blocked')     return <div style={{ ...base, border: '2px solid #FF5C5C' }} />
+  return <div style={{ ...base, border: '2px solid rgba(255,255,255,0.25)' }} />
+}
+
+/* ─── Task card ─── */
+function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
   task: Task & { done: boolean }
-  dateKey: string
+  project?: Project
   onToggle: () => void
   onDelete: () => void
   onEdit: () => void
@@ -58,7 +67,6 @@ function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
   const [swipeX, setSwipeX] = useState(0)
   const [swipeLocked, setSwipeLocked] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [popped, setPopped] = useState(false)
   const touchStartX = useRef(0)
   const SWIPE_THRESHOLD = 50
   const SWIPE_LOCK_X = -128
@@ -76,125 +84,104 @@ function TaskRow({ task, dateKey, onToggle, onDelete, onEdit }: {
   }
   function resetSwipe() { setSwipeX(0); setSwipeLocked(false) }
 
-  function handleToggle() {
-    if (!task.done) { setPopped(true); setTimeout(() => setPopped(false), 350) }
-    onToggle()
-  }
-
   const label = parseLabelFromDescription(task.description)
-  const lc = TASK_LABELS[label].color
+  const chipColor = project ? project.color : TASK_LABELS[label].color
+  const chipName = project ? project.name : TASK_LABELS[label].name
   const near = isNear(task)
 
-  void dateKey
-
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', opacity: deleting ? 0 : 1, maxHeight: deleting ? 0 : '200px', transition: 'opacity 0.2s, max-height 0.2s' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, opacity: deleting ? 0 : 1, maxHeight: deleting ? 0 : 200, transition: 'opacity 0.2s, max-height 0.2s' }}>
       {/* Action zone */}
-      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '128px', display: 'flex' }}>
-        <div style={{ width: '64px', background: 'var(--info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <button onClick={() => { resetSwipe(); onEdit() }} style={{ color: '#fff', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PencilIcon /></button>
+      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 128, display: 'flex' }}>
+        <div style={{ width: 64, background: 'var(--info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={() => { resetSwipe(); onEdit() }} style={{ color: '#fff', padding: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PencilIcon /></button>
         </div>
-        <div style={{ width: '64px', background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <button onClick={() => { setDeleting(true); setTimeout(onDelete, 200) }} style={{ color: '#fff', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon /></button>
+        <div style={{ width: 64, background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={() => { setDeleting(true); setTimeout(onDelete, 200) }} style={{ color: '#fff', padding: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon /></button>
         </div>
       </div>
 
-      {/* Swipeable content */}
+      {/* Card */}
       <div
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-        onClick={() => { if (swipeLocked) { resetSwipe(); return } handleToggle() }}
+        onClick={() => { if (swipeLocked) { resetSwipe(); return } onToggle() }}
         style={{
-          display: 'flex', alignItems: 'center', gap: '14px',
-          padding: '16px 18px', background: 'var(--surface)',
+          display: 'flex', alignItems: 'center', gap: 13,
+          padding: '14px 15px', background: '#111118',
+          border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14,
           transform: `translateX(${swipeX}px)`,
           transition: swipeLocked || swipeX === 0 ? 'transform 0.2s ease' : 'none',
           cursor: 'pointer',
         }}
       >
-        {/* Checkbox */}
-        <div style={{
-          width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
-          border: task.done ? 'none' : '1.5px solid var(--border)',
-          background: task.done ? 'var(--accent)' : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: task.done ? '0 0 0 4px var(--accent-soft)' : 'none',
-          transition: 'all 0.15s',
-          animation: popped ? 'pop 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none',
-        }}>
-          {task.done && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-          )}
-        </div>
+        <StatusCircle task={task} />
 
-        {/* Body */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: '14.5px', fontWeight: 500, letterSpacing: '-0.005em',
-            color: task.done ? 'var(--text-muted)' : 'var(--text)',
+            font: '500 14px Inter', letterSpacing: '-0.005em',
+            color: task.done ? 'rgba(255,255,255,0.3)' : '#F0ECE3',
             textDecoration: task.done ? 'line-through' : 'none',
-            textDecorationThickness: '1.2px',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{task.title}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: lc, flexShrink: 0 }} />
-            <span style={{ fontSize: '11.5px', fontWeight: 450, color: 'var(--text-muted)' }}>{TASK_LABELS[label].name}</span>
-            {task.is_all_day && <><span style={{ color: 'var(--text-faint)' }}>·</span><span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>All day</span></>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
+            {task.task_time && (
+              <span style={{ background: near ? 'var(--accent-soft)' : '#16161E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: near ? '#4A9EFF' : 'rgba(255,255,255,0.35)' }}>
+                {task.task_time.slice(0,5)}
+              </span>
+            )}
+            <span style={{ background: chipColor + '1E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: chipColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
+              {chipName}
+            </span>
           </div>
         </div>
 
-        {/* Time chip */}
-        {task.task_time && (
-          <span style={{
-            fontSize: '11.5px', fontWeight: 550, padding: '4px 9px', borderRadius: '999px', flexShrink: 0,
-            background: near ? 'var(--accent-soft)' : 'var(--surface2)',
-            color: near ? 'var(--accent-2)' : 'var(--text-2)',
-          }}>{task.task_time.slice(0,5)}</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {task.priority === 'high' && (
+            <span style={{ color: TASK_PRIORITIES.high.color, font: '700 13px Inter' }}>↑</span>
+          )}
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: chipColor }} />
+        </div>
       </div>
     </div>
   )
 }
 
 /* ─── History sheet ─── */
-function HistorySheet({ tasks, historyDays, onToggle, onDelete, onEdit, onClose }: {
+function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEdit, onClose }: {
   tasks: Record<string, (Task & { done: boolean })[]>
   historyDays: string[]
+  projectMap: Record<string, Project>
   onToggle: (dk: string, id: string) => void
   onDelete: (dk: string, id: string) => void
   onEdit: (t: Task) => void
   onClose: () => void
 }) {
   return createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--bg)', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--sheet-shadow)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#111118', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 16px' }} />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }}>История задач</span>
-            <button onClick={onClose} style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Закрыть</button>
+          <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ font: '300 24px Fraunces', color: '#F0ECE3' }}>История</span>
+            <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Закрыть</button>
           </div>
         </div>
         <div style={{ overflowY: 'auto', padding: '0 20px 32px', flex: 1 }}>
           {historyDays.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: '13px' }}>История пуста</div>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>История пуста</div>
           ) : (
             [...historyDays].reverse().map(dk => {
               const dayTasks = tasks[dk] || []
               if (!dayTasks.length) return null
               return (
-                <div key={dk} style={{ marginBottom: '16px' }}>
+                <div key={dk} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
+                    <span style={{ font: '600 12px Inter', color: 'rgba(255,255,255,0.4)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
+                    <span style={{ font: '500 11px Inter', color: 'rgba(255,255,255,0.25)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
                   </div>
-                  <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
-                    {dayTasks.map((t, idx) => (
-                      <div key={`${t.id}-${dk}`}>
-                        {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
-                        <TaskRow task={t} dateKey={dk} onToggle={() => onToggle(dk, t.id)} onDelete={() => onDelete(dk, t.id)} onEdit={() => onEdit(t)} />
-                      </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {dayTasks.map(t => (
+                      <TaskRow key={`${t.id}-${dk}`} task={t} project={t.project_id ? projectMap[t.project_id] : undefined} onToggle={() => onToggle(dk, t.id)} onDelete={() => onDelete(dk, t.id)} onEdit={() => onEdit(t)} />
                     ))}
                   </div>
                 </div>
@@ -210,28 +197,21 @@ function HistorySheet({ tasks, historyDays, onToggle, onDelete, onEdit, onClose 
 
 /* ─── Main ─── */
 export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: TasksScreenProps) {
-  const todayKey = dayKey(new Date())
-  const tomorrowKey = dayKey(addDays(new Date(), 1))
+  const { projects, habits, habitLogs, toggleHabitLog } = useTaskStore()
+  const today = new Date()
+  const todayKey = dayKey(today)
+  const tomorrowKey = dayKey(addDays(today, 1))
   const [showHistory, setShowHistory] = useState(false)
+  const [showHabits, setShowHabits] = useState(false)
 
-  const { totalToday, doneToday } = useMemo(() => {
-    const t = tasks[todayKey] || []
-    return { totalToday: t.length, doneToday: t.filter(x => x.done).length }
-  }, [tasks, todayKey])
+  const projectMap = useMemo(() => {
+    const m: Record<string, Project> = {}
+    for (const p of projects) m[p.id] = p
+    return m
+  }, [projects])
 
-  // Pinned goals: tasks with is_pinned=true and pin_end >= today
-  const pinnedTasks = useMemo(() => {
-    const all = Object.values(tasks).flat()
-    const seen = new Set<string>()
-    return all.filter(t => {
-      if (!t.is_pinned || seen.has(t.id)) return false
-      seen.add(t.id)
-      return !t.pin_end || t.pin_end >= todayKey
-    })
-  }, [tasks, todayKey])
+  const habitsDone = habits.filter(h => habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)).length
 
-  // Active: today + future only
-  // History: all past days (both done and undone)
   const { activeDays, historyDays } = useMemo(() => {
     const sorted = Object.keys(tasks).sort()
     const active: string[] = []
@@ -245,104 +225,90 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   }, [tasks, todayKey])
 
   const historyCount = historyDays.reduce((s, dk) => s + (tasks[dk]?.length ?? 0), 0)
-  const pct = totalToday > 0 ? Math.round(doneToday / totalToday * 100) : 0
-  const greeting = getGreeting()
 
   function dayLabel(dk: string): string {
-    if (dk === todayKey) return 'Today'
-    if (dk === tomorrowKey) return 'Tomorrow'
+    if (dk === todayKey) return 'Сегодня'
+    if (dk === tomorrowKey) return 'Завтра'
     return format(parseISO(dk), 'EEEE')
-  }
-  function dayMeta(dk: string): string { return format(parseISO(dk), 'MMMM d') }
-
-  function renderDayGroup(dk: string) {
-    const dayTasks = tasks[dk] || []
-    if (!dayTasks.length) return null
-    return (
-      <div key={dk} style={{ marginBottom: '18px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
-          <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}>{dayLabel(dk)}</span>
-          <span style={{ fontSize: '12px', fontWeight: 450, color: 'var(--text-muted)' }}>{dayMeta(dk)}</span>
-        </div>
-        <div style={{ background: 'var(--surface)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--card-shadow)' }}>
-          {dayTasks.map((t, idx) => (
-            <div key={`${t.id}-${dk}`}>
-              {idx > 0 && <div style={{ borderTop: '1px solid var(--hairline)' }} />}
-              <TaskRow task={t} dateKey={dk} onToggle={() => onToggle(dk, t.id)} onDelete={() => onDelete(dk, t.id)} onEdit={() => onEdit(t)} />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
-      {/* Hero */}
-      <div style={{ padding: '6px 24px 10px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--accent)' }}>{greeting}</div>
-          {historyCount > 0 && (
-            <button onClick={() => setShowHistory(true)} style={{
-              display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px',
-              borderRadius: '999px', background: 'var(--surface)', boxShadow: 'var(--card-shadow)',
-              fontSize: '12px', fontWeight: 550, color: 'var(--text-2)', fontFamily: 'inherit',
-            }}>
-              🗂 История · {historyCount}
-            </button>
-          )}
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
+        <div>
+          <div style={{ font: '600 11px Inter', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
+          <div style={{ font: '300 32px/1 Fraunces', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 500, fontSize: '44px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--text)', marginBottom: '16px' }}>
-          {totalToday === 0
-            ? <>Let's plan <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>today</em></>
-            : doneToday === totalToday
-              ? <><em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>All done.</em></>
-              : <>{totalToday - doneToday} left for <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>today</em></>
-          }
-        </h1>
-        {totalToday > 0 && (
-          <>
-            <div style={{ height: '6px', background: 'var(--surface)', borderRadius: '999px', overflow: 'hidden', boxShadow: 'var(--card-shadow)', marginBottom: '6px' }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, var(--accent-2), var(--accent))', borderRadius: '999px', transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)' }} />
-            </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 450, color: 'var(--text-2)' }}>
-              <b style={{ color: 'var(--text)', fontWeight: 600 }}>{doneToday}</b> of <b style={{ color: 'var(--text)', fontWeight: 600 }}>{totalToday}</b> done · {pct}%
-            </div>
-          </>
-        )}
+        <div style={{ width: 40, height: 40, borderRadius: 999, background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 13px Inter', color: '#C8C2B8' }}>АП</div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px', paddingBottom: '90px' }}>
-
-        {/* Pinned goals */}
-        {pinnedTasks.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', padding: '0 2px 8px' }}>📌 Главное</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {pinnedTasks.map(t => {
-                const label = parseLabelFromDescription(t.description)
-                const lc = TASK_LABELS[label].color
-                const daysLeft = t.pin_end ? Math.ceil((new Date(t.pin_end + 'T12:00:00').getTime() - Date.now()) / 86400000) : null
-                return (
-                  <div key={t.id} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '14px 16px', boxShadow: 'var(--card-shadow)', display: 'flex', alignItems: 'center', gap: '12px', borderLeft: `3px solid ${lc}` }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', textDecoration: t.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
-                      {daysLeft !== null && <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{daysLeft > 0 ? `${daysLeft} дн. осталось` : 'Срок истёк'}</div>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+      {/* Habits strip */}
+      {habits.length > 0 && (
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10, padding: '0 22px' }}>
+            <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#4A9EFF', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+              Привычки · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span>
+            </button>
           </div>
-        )}
+          <div style={{ display: 'flex', gap: 9, overflowX: 'auto', marginBottom: 22, padding: '0 22px 2px' }}>
+            {habits.map(h => {
+              const done = habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)
+              return (
+                <button key={h.id} onClick={() => toggleHabitLog(h.id, todayKey)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 13px', background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}>
+                  <span style={{ font: '500 12px Inter', color: '#F0ECE3' }}>{h.name}</span>
+                  {done
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3DD68C"/><path d="M8 12.5l2.5 2.5L16 9" stroke="#0A0A0F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    : <span style={{ width: 16, height: 16, borderRadius: 999, border: '1.5px solid rgba(255,255,255,0.25)' }} />
+                  }
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
+      {/* History button */}
+      {historyCount > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 22px 8px', flexShrink: 0 }}>
+          <button onClick={() => setShowHistory(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 999, background: '#16161E', border: '1px solid rgba(255,255,255,0.08)', font: '500 12px Inter', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+            История · {historyCount}
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
         {activeDays.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
-            <span style={{ fontSize: '13.5px', fontWeight: 450, color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
+            <span style={{ font: '450 13.5px Inter', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
           </div>
         ) : (
-          activeDays.map(dk => renderDayGroup(dk))
+          activeDays.map(dk => {
+            const dayTasks = tasks[dk]
+            if (!dayTasks.length) return null
+            const isTomorrowOrLater = dk !== todayKey
+            return (
+              <div key={dk} style={{ marginBottom: 24 }}>
+                <div style={{ font: '600 10px Inter', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)', marginBottom: 11 }}>
+                  {dayLabel(dk)}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.55 : 1 }}>
+                  {dayTasks.map(t => (
+                    <TaskRow
+                      key={`${t.id}-${dk}`}
+                      task={t}
+                      project={t.project_id ? projectMap[t.project_id] : undefined}
+                      onToggle={() => onToggle(dk, t.id)}
+                      onDelete={() => onDelete(dk, t.id)}
+                      onEdit={() => onEdit(t)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 
@@ -350,10 +316,20 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         <HistorySheet
           tasks={tasks}
           historyDays={historyDays}
+          projectMap={projectMap}
           onToggle={onToggle}
           onDelete={onDelete}
           onEdit={onEdit}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {showHabits && (
+        <HabitsSheet
+          habits={habits}
+          habitLogs={habitLogs}
+          onToggle={toggleHabitLog}
+          onClose={() => setShowHabits(false)}
         />
       )}
     </div>
