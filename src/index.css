@@ -118,24 +118,25 @@ input, textarea { font-family: inherit; color: inherit; }
 @media (max-width: 767px) { body { -webkit-text-size-adjust: 100%; } }
 ::-webkit-scrollbar { width: 0; display: none; }
 
-/* ── Tab bar (flat bottom) ── */
+/* ── Tab bar (floating pill) ── */
 .tabbar {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 74px;
-  background: rgba(10,10,15,0.85);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border-top: 1px solid rgba(255,255,255,0.06);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 58px;
+  background: rgba(12,12,12,0.96);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border-radius: 40px;
+  border: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 0 8px;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 400;
-  transform: none;
-  width: auto;
-  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 .tab {
   flex: 1;
@@ -167,7 +168,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── FAB ── */
 .fab-v2 {
   position: fixed;
-  bottom: calc(74px + env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px) + 58px + 14px);
   right: 22px;
   width: 52px; height: 52px;
   border-radius: 50%;
@@ -210,7 +211,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Calendar (dark card) ── */
 .cal-card {
   margin: 0 14px 0;
-  background: #0f0f11;
+  background: #1C1C26;
   border-radius: 24px;
   padding: 8px 4px 14px;
   flex-shrink: 0;
@@ -223,7 +224,8 @@ input, textarea { font-family: inherit; color: inherit; }
   aspect-ratio: 1;
   border-radius: 12px;
   display: flex; flex-direction: column;
-  padding: 6px 6px 5px;
+  align-items: center;
+  padding: 6px 2px 5px;
   background: transparent;
   position: relative;
   transition: background 0.15s, transform 0.15s;
@@ -232,12 +234,28 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 .d30:active { transform: scale(0.92); }
 .d30.other { pointer-events: none; }
-.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1; }
+.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1; text-align: center; }
 .d30.other .d-num { color: rgba(255,255,255,0.15); }
 .d30.today { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); }
 .d30.today .d-num { color: #fff; font-weight: 700; }
 .d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
 .d-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+/* ── Label chip glow + pulse ── */
+@keyframes chip-glow {
+  0%, 100% { box-shadow: 0 0 0px 0px currentColor; }
+  50%       { box-shadow: 0 0 6px 2px currentColor; opacity: 0.88; }
+}
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.6); opacity: 0.6; }
+}
+.label-chip {
+  animation: chip-glow 2.6s ease-in-out infinite;
+}
+.color-dot {
+  animation: dot-pulse 2.6s ease-in-out infinite;
+}
 
 /* ── Expanded calendar fullscreen ── */
 .cal-expanded {

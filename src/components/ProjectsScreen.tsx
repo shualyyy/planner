@@ -196,7 +196,7 @@ function ProjectCard({ project, stats, onTap }: {
 }
 
 /* ─── Main ─── */
-export default function ProjectsScreen({ onAddProject, onAddTask, onDetailChange }: ProjectsScreenProps) {
+export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask, onDetailChange }: ProjectsScreenProps) {
   const { projects, tasks: rawTasks, donIds } = useTaskStore()
   const [openProject, setOpenProject] = useState<Project | null>(null)
 
@@ -247,13 +247,6 @@ export default function ProjectsScreen({ onAddProject, onAddTask, onDetailChange
             ))}
           </div>
         )}
-      </div>
-
-      {/* Bottom CTA */}
-      <div style={{ padding: '14px 22px calc(74px + env(safe-area-inset-bottom, 0px) + 12px)', background: 'linear-gradient(to top,#0A0A0F 70%,transparent)', flexShrink: 0 }}>
-        <button onClick={onAddProject} style={{ width: '100%', height: 52, background: '#4A9EFF', borderRadius: 14, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer' }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Новый проект
-        </button>
       </div>
 
       {/* Detail */}

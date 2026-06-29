@@ -129,7 +129,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
                 {task.task_time.slice(0,5)}
               </span>
             )}
-            <span style={{ background: chipColor + '1E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: chipColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
+            <span className="label-chip" style={{ background: chipColor + '1E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: chipColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
               {chipName}
             </span>
           </div>
@@ -139,7 +139,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
           {task.priority === 'high' && (
             <span style={{ color: TASK_PRIORITIES.high.color, font: '700 13px Inter' }}>↑</span>
           )}
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: chipColor }} />
+          <span className="color-dot" style={{ width: 5, height: 5, borderRadius: '50%', background: chipColor }} />
         </div>
       </div>
     </div>

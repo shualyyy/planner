@@ -6,7 +6,8 @@
       "Bash(echo \"exit: $?\")",
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
-      "Bash(grep -n 'key={`${t.id}' src/components/TasksScreen.tsx src/components/CalendarScreen.tsx)"
+      "Bash(grep -n 'key={`${t.id}' src/components/TasksScreen.tsx src/components/CalendarScreen.tsx)",
+      "Bash(./install.sh)"
     ]
   }
 }
