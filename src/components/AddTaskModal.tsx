@@ -237,7 +237,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
             placeholder="Название задачи..."
-            style={{ font: '300 24px Fraunces', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
+            style={{ font: '300 24px Inter', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
           <textarea
             value={description}
@@ -254,7 +254,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           <button onClick={() => toggleRow('project')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Проект</span></span>
             {projectId
-              ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#4A9EFF' }} />{p?.name ?? '—'}</span> })()
+              ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#e35914' }} />{p?.name ?? '—'}</span> })()
               : <span style={valuePill('rgba(255,255,255,0.4)')}>Без проекта</span>}
           </button>
           <div style={expandWrap(expandedRow === 'project')}>
@@ -301,7 +301,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 4 — Estimate */}
           <button onClick={() => toggleRow('estimate')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Оценка</span></span>
-            <span style={valuePill(timeEstimate != null ? '#4A9EFF' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
+            <span style={valuePill(timeEstimate != null ? '#e35914' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
           </button>
           <div style={expandWrap(expandedRow === 'estimate')}>
             <div style={expandInner}>
@@ -316,7 +316,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 5 — Date */}
           <button onClick={() => toggleRow('date')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoCalendar}<span style={rowLabelTxt}>Дата</span></span>
-            <span style={valuePill('#4A9EFF')}>{date === todayStr ? 'Сегодня' : date === tomorrowStr ? 'Завтра' : datePillLabel()}</span>
+            <span style={valuePill('#e35914')}>{date === todayStr ? 'Сегодня' : date === tomorrowStr ? 'Завтра' : datePillLabel()}</span>
           </button>
           <div style={expandWrap(expandedRow === 'date')}>
             <div style={expandInner}>
@@ -333,7 +333,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 6 — Time */}
           <button onClick={() => toggleRow('time')} style={rowBtn(true)}>
             <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Время</span></span>
-            <span style={valuePill(time && !isAllDay ? '#4A9EFF' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'Весь день' : (time ? time.slice(0,5) : '—')}</span>
+            <span style={valuePill(time && !isAllDay ? '#e35914' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'Весь день' : (time ? time.slice(0,5) : '—')}</span>
           </button>
           <div style={expandWrap(expandedRow === 'time')}>
             <div style={expandInner}>
@@ -370,7 +370,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               ⚠ {error}
             </div>
           )}
-          <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#4A9EFF', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#e35914', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? (isEditMode ? 'Сохранение…' : 'Добавление…') : (isEditMode ? 'Сохранить' : 'Добавить задачу')}
           </button>
         </div>

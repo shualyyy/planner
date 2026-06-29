@@ -46,12 +46,12 @@ function StatusCircle({ task }: { task: Task & { done: boolean } }) {
   const base: React.CSSProperties = { width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   if (task.done) {
     return (
-      <div style={{ ...base, background: '#4A9EFF' }}>
+      <div style={{ ...base, background: '#e35914' }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
     )
   }
-  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #4A9EFF', background: 'linear-gradient(90deg,#4A9EFF 50%,transparent 50%)' }} />
+  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #e35914', background: 'linear-gradient(90deg,#e35914 50%,transparent 50%)' }} />
   if (task.status === 'blocked')     return <div style={{ ...base, border: '2px solid #FF5C5C' }} />
   return <div style={{ ...base, border: '2px solid rgba(255,255,255,0.25)' }} />
 }
@@ -125,7 +125,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
           }}>{task.title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
             {task.task_time && (
-              <span style={{ background: near ? 'var(--accent-soft)' : '#16161E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: near ? '#4A9EFF' : 'rgba(255,255,255,0.35)' }}>
+              <span style={{ background: near ? 'var(--accent-soft)' : '#16161E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: near ? '#e35914' : 'rgba(255,255,255,0.35)' }}>
                 {task.task_time.slice(0,5)}
               </span>
             )}
@@ -162,7 +162,7 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ font: '300 24px Fraunces', color: '#F0ECE3' }}>История</span>
+            <span style={{ font: '300 24px Inter', color: '#F0ECE3' }}>История</span>
             <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Закрыть</button>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
         <div>
           <div style={{ font: '600 11px Inter', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
-          <div style={{ font: '300 32px/1 Fraunces', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
+          <div style={{ font: '300 32px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
         </div>
         <div style={{ width: 40, height: 40, borderRadius: 999, background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 13px Inter', color: '#C8C2B8' }}>АП</div>
       </div>
@@ -247,7 +247,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       {habits.length > 0 && (
         <div style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10, padding: '0 22px' }}>
-            <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#4A9EFF', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#e35914', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
               Привычки · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span>
             </button>
           </div>

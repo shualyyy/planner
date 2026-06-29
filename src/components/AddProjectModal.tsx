@@ -10,7 +10,7 @@ interface Props {
 }
 
 const PROJECT_COLORS = [
-  '#4A9EFF', '#3CC68A', '#D94F4F', '#C8A84B',
+  '#e35914', '#3CC68A', '#D94F4F', '#C8A84B',
   '#9B7ACC', '#D97757', '#8ED4C8', '#F5BDD0',
 ]
 
@@ -136,7 +136,7 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
         </div>
 
         <div style={{ padding: '10px 20px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Name — Fraunces */}
+          {/* Name — Inter */}
           <input
             ref={nameRef}
             type="text"

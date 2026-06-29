@@ -74,7 +74,7 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
     if (!name || !name.trim()) return
     setAdding(true)
     try {
-      await addHabit({ name: name.trim(), icon: 'circle', color: '#4A9EFF', frequency: 'daily', time_of_day: 'morning' })
+      await addHabit({ name: name.trim(), icon: 'circle', color: '#e35914', frequency: 'daily', time_of_day: 'morning' })
     } catch (e) { console.error(e) }
     setAdding(false)
   }
@@ -93,7 +93,7 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
         <div style={{ padding: '12px 22px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 18px' }} />
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div style={{ font: '300 28px/1 Fraunces', color: '#F0ECE3' }}>Привычки</div>
+            <div style={{ font: '300 28px/1 Inter', color: '#F0ECE3' }}>Привычки</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)' }}>{MONTHS_RU[today.getMonth()]} {today.getFullYear()}</span>
               <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: '#16161E', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>

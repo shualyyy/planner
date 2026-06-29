@@ -51,7 +51,7 @@ export type TaskPriority = 'high' | 'medium' | 'low'
 
 export const TASK_STATUSES: Record<TaskStatus, { name: string; color: string; icon: string }> = {
   not_started: { name: 'To Do',       color: '#9BA8AB', icon: '○' },
-  in_progress: { name: 'In Progress', color: '#4A9EFF', icon: '◑' },
+  in_progress: { name: 'In Progress', color: '#e35914', icon: '◑' },
   blocked:     { name: 'Blocked',     color: '#FF5C5C', icon: '⊘' },
   done:        { name: 'Done',        color: '#3DD68C', icon: '●' },
 }

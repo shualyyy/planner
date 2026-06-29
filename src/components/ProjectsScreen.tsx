@@ -24,7 +24,7 @@ function effStatus(t: Task, done: boolean): TaskStatus {
 function StatusIcon({ status }: { status: TaskStatus }) {
   const base: React.CSSProperties = { width: 14, height: 14, borderRadius: '50%', flexShrink: 0 }
   if (status === 'not_started') return <span style={{ ...base, border: '2px solid rgba(255,255,255,0.3)' }} />
-  if (status === 'in_progress') return <span style={{ ...base, border: '2px solid #4A9EFF', background: 'linear-gradient(90deg,#4A9EFF 50%,transparent 50%)' }} />
+  if (status === 'in_progress') return <span style={{ ...base, border: '2px solid #e35914', background: 'linear-gradient(90deg,#e35914 50%,transparent 50%)' }} />
   if (status === 'blocked') return <span style={{ ...base, border: '2px solid #FF5C5C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 6, height: 1.5, background: '#FF5C5C' }} /></span>
   return <span style={{ ...base, background: '#3DD68C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
 }
@@ -53,7 +53,7 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
 
   const metrics = [
     { value: total, label: 'Всего', color: '#F0ECE3' },
-    { value: byStatus.in_progress.length, label: 'В работе', color: '#4A9EFF' },
+    { value: byStatus.in_progress.length, label: 'В работе', color: '#e35914' },
     { value: byStatus.blocked.length, label: 'Блок', color: '#FF5C5C' },
     { value: `${pct}%`, label: 'Готово', color: '#3DD68C' },
   ]
@@ -63,14 +63,14 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
       {/* Header */}
       <div style={{ padding: '8px 22px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={onBack} style={{ font: '500 13px Inter', color: '#4A9EFF', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <button onClick={onBack} style={{ font: '500 13px Inter', color: '#e35914', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
             ← Работа
           </button>
           <button style={{ width: 30, height: 30, borderRadius: '50%', background: '#16161E', color: 'rgba(255,255,255,0.5)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: project.color, flexShrink: 0 }} />
-          <h1 style={{ font: '300 30px/1 Fraunces', color: '#F0ECE3' }}>{project.name}</h1>
+          <h1 style={{ font: '300 30px/1 Inter', color: '#F0ECE3' }}>{project.name}</h1>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
 
       {/* Board label */}
       <div style={{ padding: '18px 22px 12px', flexShrink: 0 }}>
-        <span style={{ font: '600 10px Inter', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A9EFF' }}>Board</span>
+        <span style={{ font: '600 10px Inter', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#e35914' }}>Board</span>
       </div>
 
       {/* Kanban */}
@@ -139,7 +139,7 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
         style={{
           position: 'absolute', bottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 16px)', left: '50%', transform: 'translateX(-50%)',
           display: 'flex', alignItems: 'center', gap: 7, height: 48, padding: '0 22px',
-          borderRadius: 999, background: '#4A9EFF', color: '#fff', font: '600 14px Inter',
+          borderRadius: 999, background: '#e35914', color: '#fff', font: '600 14px Inter',
           boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset, 0 8px 24px var(--accent-glow)', border: 'none', zIndex: 5,
         }}
       ><span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Задача</button>
@@ -179,7 +179,7 @@ function ProjectCard({ project, stats, onTap }: {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         {[
-          { c: '#4A9EFF', n: stats.inProgress },
+          { c: '#e35914', n: stats.inProgress },
           { c: '#FF5C5C', n: stats.blocked },
           { c: '#3DD68C', n: stats.done },
         ].map((row, i) => (
@@ -225,7 +225,7 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
       {/* Header */}
       <div style={{ padding: '8px 22px 14px', flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ font: '300 34px/1 Fraunces', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Работа</div>
+          <div style={{ font: '300 34px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Работа</div>
           <div style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 7 }}>{visibleProjects.length} проектов · {totalTasks} задачи</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 12px', background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999 }}>

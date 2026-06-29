@@ -88,7 +88,7 @@ export default function MobileApp() {
         return (
           <button key={id} className={`tab${active ? ' on' : ''}`} onClick={() => setTab(id)}>
             <span className="tab-icon">
-              <Icon color={active ? '#4A9EFF' : 'rgba(255,255,255,0.35)'} />
+              <Icon color={active ? '#e35914' : 'rgba(255,255,255,0.35)'} />
             </span>
             <span className="tab-label">{label}</span>
           </button>
@@ -143,7 +143,7 @@ export default function MobileApp() {
       {!calPopupOpen && tabBar}
 
       {showFab && createPortal(
-        <button className="fab-v2" onClick={() => handleAdd()}>
+        <button className="fab-v2" onClick={() => tab === 'projects' ? handleAddProject() : handleAdd()}>
           <IcoPlus size={22} />
         </button>,
         document.body

@@ -1,7 +1,7 @@
 /* ── Design tokens — Dino Task v2: dark-first ── */
 :root {
   --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: 'Fraunces', 'Inter', serif;
+  --font-serif: 'Inter', -apple-system, sans-serif;
 
   /* ── Backgrounds ── */
   --bg:         #0A0A0F;
@@ -19,11 +19,11 @@
   --text-faint: rgba(255,255,255,0.25);
 
   /* ── Accent ── */
-  --accent:      #4A9EFF;
-  --accent-soft: rgba(74,158,255,0.12);
-  --accent-2:    rgba(74,158,255,0.30);
-  --accent-ink:  #0A0A0F;
-  --accent-glow: rgba(74,158,255,0.35);
+  --accent:      #e35914;
+  --accent-soft: rgba(227,89,20,0.12);
+  --accent-2:    rgba(227,89,20,0.30);
+  --accent-ink:  #fff;
+  --accent-glow: rgba(227,89,20,0.35);
 
   /* ── Brand (keep for logo/icon only) ── */
   --brand:      #D97757;
@@ -38,8 +38,8 @@
   --danger-text:  #FF5C5C;
   --warning:      #E8A24A;
   --warning-soft: rgba(232,162,74,0.12);
-  --info:         #4A9EFF;
-  --info-hover:   #74B5FF;
+  --info:         #e35914;
+  --info-hover:   #f07840;
 
   /* ── Project colors ── */
   --pc-blue:   #4A9EFF;
@@ -152,7 +152,7 @@ input, textarea { font-family: inherit; color: inherit; }
   color: rgba(255,255,255,0.35);
   transition: color 0.15s;
 }
-.tab.on { color: #4A9EFF; }
+.tab.on { color: #e35914; }
 .tab:active { transform: scale(0.88); }
 .tab .tab-label {
   font-size: 9.5px;
@@ -239,22 +239,9 @@ input, textarea { font-family: inherit; color: inherit; }
 .d30.today { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); }
 .d30.today .d-num { color: #fff; font-weight: 700; }
 .d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
-.d-dot { width: 4px; height: 4px; border-radius: 50%; }
-
-/* ── Label chip glow + pulse ── */
-@keyframes chip-glow {
-  0%, 100% { box-shadow: 0 0 0px 0px currentColor; }
-  50%       { box-shadow: 0 0 6px 2px currentColor; opacity: 0.88; }
-}
-@keyframes dot-pulse {
-  0%, 100% { transform: scale(1);   opacity: 1; }
-  50%       { transform: scale(1.6); opacity: 0.6; }
-}
-.label-chip {
-  animation: chip-glow 2.6s ease-in-out infinite;
-}
-.color-dot {
-  animation: dot-pulse 2.6s ease-in-out infinite;
+.d-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  box-shadow: 0 0 5px 1.5px rgba(255,255,255,0.22);
 }
 
 /* ── Expanded calendar fullscreen ── */
