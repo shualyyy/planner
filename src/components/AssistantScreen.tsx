@@ -60,11 +60,27 @@ const SendIcon = () => (
 // ── Action icon ───────────────────────────────────────────────────────────
 
 function ActionIcon({ type }: { type: ParsedAction['type'] }) {
-  const icons: Record<string, string> = {
-    add: '📅', delete: '🗑️', reschedule: '📆',
-    done: '✅', undone: '↩️', edit: '✏️', list: '📋',
+  const p = {
+    width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none',
+    stroke: 'var(--accent)' as string, strokeWidth: '2',
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
   }
-  return <span style={{ fontSize: '16px' }}>{icons[type] ?? '✓'}</span>
+  switch (type) {
+    case 'add':
+      return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+    case 'delete':
+      return <svg {...p}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+    case 'reschedule':
+      return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="17 13 13 17 11 15"/></svg>
+    case 'done':
+      return <svg {...p}><path d="M20 6L9 17l-5-5"/></svg>
+    case 'undone':
+      return <svg {...p}><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
+    case 'edit':
+      return <svg {...p}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    default:
+      return <svg {...p}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  }
 }
 
 // ── Action bubble ─────────────────────────────────────────────────────────
@@ -89,7 +105,13 @@ function ActionBubble({ meta }: { meta: ActionMeta }) {
       border: '1.5px solid var(--accent-soft)', background: 'var(--bg-2)',
     }}>
       <div style={{ fontSize: '13px', fontWeight: 450, color: 'var(--text-2)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <ActionIcon type={meta.type} />
+        <span style={{
+          width: 24, height: 24, borderRadius: 7,
+          background: 'var(--accent-soft)',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <ActionIcon type={meta.type} />
+        </span>
         {labelMap[meta.type] ?? 'Done'}
       </div>
       <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -398,8 +420,28 @@ export default function AssistantScreen() {
         {loading && <TypingDots />}
       </div>
 
+      {/* Quick-prompt chips — only on empty chat */}
+      {messages.length === 1 && !loading && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 18px 14px', flexShrink: 0 }}>
+          {["What's today?", "Show overdue", "Add a task"].map(prompt => (
+            <button
+              key={prompt}
+              onClick={() => handleSend(prompt)}
+              style={{
+                padding: '8px 14px', borderRadius: 999,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                color: 'var(--text-2)', font: '500 12px/1.2 var(--font-sans)',
+                cursor: 'pointer', flexShrink: 0, letterSpacing: '-0.01em',
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Composer */}
-      <div style={{ margin: '0 14px', marginBottom: '90px', position: 'relative', flexShrink: 0 }}>
+      <div style={{ margin: '0 14px', marginBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 16px)', position: 'relative', flexShrink: 0 }}>
         {/* Input bar */}
         <div style={{
           borderRadius: '24px',

@@ -17,6 +17,7 @@ const MONTHS_EN = ['January','February','March','April','May','June','July','Aug
 const WD_EN = ['Mo','Tu','We','Th','Fr','Sa','Su']
 
 const HABIT_COLORS = ['#D97757','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
+const HABIT_EMOJIS = ['⭕', '🏃', '📚', '💧', '🧘', '💪', '🥗', '😴', '✍️', '🎯']
 
 function startOfWeekMonday(d: Date): Date {
   const r = new Date(d)
@@ -40,7 +41,26 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(HABIT_COLORS[0])
+  const [newEmoji, setNewEmoji] = useState('⭕')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Swipe-down to close
+  const dragStartY = useRef(0)
+  const [dragY, setDragY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  function onSheetDragStart(e: React.TouchEvent) {
+    dragStartY.current = e.touches[0].clientY
+    setIsDragging(true)
+  }
+  function onSheetDragMove(e: React.TouchEvent) {
+    const dy = Math.max(0, e.touches[0].clientY - dragStartY.current)
+    setDragY(dy)
+  }
+  function onSheetDragEnd() {
+    setIsDragging(false)
+    if (dragY > 100) { setDragY(0); onClose() }
+    else setDragY(0)
+  }
 
   useEffect(() => {
     if (showForm) setTimeout(() => inputRef.current?.focus(), 80)
@@ -56,13 +76,17 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
   const isLogged = (habitId: string, dk: string) =>
     habitLogs.some(l => l.habit_id === habitId && l.completed_date === dk)
 
-  // Stats
+  // Stats — streak only counts days where ALL habits were completed
   const streak = (() => {
+    if (habits.length === 0) return 0
     let s = 0
     const d = new Date(today)
     while (true) {
       const dk = dayKey(d)
-      if (habitLogs.some(l => l.completed_date === dk)) { s++; d.setDate(d.getDate() - 1) }
+      const allDone = habits.every(h =>
+        habitLogs.some(l => l.habit_id === h.id && l.completed_date === dk)
+      )
+      if (allDone) { s++; d.setDate(d.getDate() - 1) }
       else break
     }
     return s
@@ -83,9 +107,10 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
     if (!newName.trim()) return
     setAdding(true)
     try {
-      await addHabit({ name: newName.trim(), icon: 'circle', color: newColor, frequency: 'daily', time_of_day: 'morning' })
+      await addHabit({ name: newName.trim(), icon: newEmoji, color: newColor, frequency: 'daily', time_of_day: 'morning' })
       setNewName('')
       setNewColor(HABIT_COLORS[0])
+      setNewEmoji('⭕')
       setShowForm(false)
     } catch (e) { console.error(e) }
     setAdding(false)
@@ -95,10 +120,15 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)' }}>
       <div
         onClick={e => e.stopPropagation()}
+        onTouchStart={onSheetDragStart}
+        onTouchMove={onSheetDragMove}
+        onTouchEnd={onSheetDragEnd}
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 0, height: '85%',
           background: '#242120', borderTopLeftRadius: 28, borderTopRightRadius: 28,
           borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column',
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
         {/* Handle + header */}
@@ -146,8 +176,13 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
               return (
                 <div key={h.id} style={{ background: '#2D2926', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '14px 15px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: h.color + '26', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={h.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 9,
+                      background: h.color + '26',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, fontSize: 18, lineHeight: 1,
+                    }}>
+                      {h.icon && h.icon !== 'circle' ? h.icon : '⭕'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ font: '600 15px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{h.name}</div>
@@ -195,7 +230,7 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
 
             {/* Inline add form */}
             {showForm ? (
-              <div style={{ background: '#2D2926', border: '1.5px solid rgba(227,89,20,0.3)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ background: '#2D2926', border: '1.5px solid rgba(217,119,87,0.3)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input
                   ref={inputRef}
                   value={newName}
@@ -208,6 +243,23 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
                     borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 8,
                   }}
                 />
+                {/* Emoji selector */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {HABIT_EMOJIS.map(e => (
+                    <button
+                      key={e}
+                      onClick={() => setNewEmoji(e)}
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer',
+                        fontSize: 16, lineHeight: 1,
+                        background: newEmoji === e ? 'var(--accent-soft)' : 'rgba(255,255,255,0.06)',
+                        outline: newEmoji === e ? `1.5px solid var(--accent)` : 'none',
+                        outlineOffset: 1,
+                        transition: 'background 0.12s, outline 0.12s',
+                      }}
+                    >{e}</button>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   {/* Color chips */}
                   <div style={{ display: 'flex', gap: 8 }}>

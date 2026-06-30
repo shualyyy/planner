@@ -203,6 +203,7 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
   const year = anchor.getFullYear()
   const todayKey = dayKey(new Date())
   const cells = buildMonthCells(anchor)
+  const todayCellRef = useRef<HTMLButtonElement | null>(null)
 
   // Force body background to dark so iOS safe-area doesn't bleed through
   useEffect(() => {
@@ -225,19 +226,34 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
           </div>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{year}</div>
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => todayCellRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            style={{
+              padding: '5px 13px', borderRadius: 999,
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--text-2)',
+              font: '500 12px/1.2 var(--font-sans)',
+              cursor: 'pointer',
+            }}
+          >
+            Today
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Weekday headers */}
@@ -259,6 +275,7 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
           return (
             <button
               key={i}
+              ref={isToday ? todayCellRef : undefined}
               className={`d-exp${isToday ? ' today-exp' : ''}${isOther ? ' other-exp' : ''}`}
               onClick={() => !isOther && onDayTap(d)}
             >

@@ -156,9 +156,36 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
   onEdit: (t: Task) => void
   onClose: () => void
 }) {
+  const dragStartY = useRef(0)
+  const [dragY, setDragY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  function onSheetDragStart(e: React.TouchEvent) {
+    dragStartY.current = e.touches[0].clientY
+    setIsDragging(true)
+  }
+  function onSheetDragMove(e: React.TouchEvent) {
+    const dy = Math.max(0, e.touches[0].clientY - dragStartY.current)
+    setDragY(dy)
+  }
+  function onSheetDragEnd() {
+    setIsDragging(false)
+    if (dragY > 100) { setDragY(0); onClose() }
+    else setDragY(0)
+  }
   return createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#242120', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        onTouchStart={onSheetDragStart}
+        onTouchMove={onSheetDragMove}
+        onTouchEnd={onSheetDragEnd}
+        style={{
+          width: '100%', background: '#242120', borderRadius: '28px 28px 0 0', maxHeight: '80vh',
+          display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)',
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
+        }}
+      >
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -226,6 +253,16 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
 
   const historyCount = historyDays.reduce((s, dk) => s + (tasks[dk]?.length ?? 0), 0)
 
+  // Overdue: undone tasks from days before today, tagged with their original date
+  const overdueTasks = historyDays.flatMap(dk =>
+    (tasks[dk] || []).filter(t => !t.done).map(t => ({ ...t, task_date: dk }))
+  )
+
+  // Today progress
+  const todayTasks = tasks[todayKey] || []
+  const todayDone = todayTasks.filter(t => t.done).length
+  const todayTotal = todayTasks.length
+
   function dayLabel(dk: string): string {
     if (dk === todayKey) return 'Today'
     if (dk === tomorrowKey) return 'Tomorrow'
@@ -237,7 +274,23 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       {/* Header */}
       <div style={{ marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
         <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
-        <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>
+            {format(today, 'EEEE')},<br />{format(today, 'd MMMM')}
+          </div>
+          {todayTotal > 0 && (
+            <div style={{ textAlign: 'right', paddingBottom: 4 }}>
+              {todayDone === todayTotal ? (
+                <span style={{ font: '600 13px/1.2 var(--font-sans)', color: 'var(--success)' }}>All done ✓</span>
+              ) : (
+                <>
+                  <span style={{ font: '700 26px/1 var(--font-sans)', color: 'var(--accent)' }}>{todayDone}</span>
+                  <span style={{ font: '400 14px/1 var(--font-sans)', color: 'rgba(255,255,255,0.3)' }}>/{todayTotal}</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Habits strip — always visible so user can open sheet even with 0 habits */}
@@ -307,7 +360,32 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
           </div>
         ) : (
-          activeDays.map(dk => {
+          <>
+          {overdueTasks.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{
+                font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em',
+                textTransform: 'uppercase', color: 'var(--danger)', marginBottom: 11,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />
+                Overdue
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {overdueTasks.map(t => (
+                  <TaskRow
+                    key={`overdue-${t.id}`}
+                    task={t}
+                    project={t.project_id ? projectMap[t.project_id] : undefined}
+                    onToggle={() => onToggle(t.task_date, t.id)}
+                    onDelete={() => onDelete(t.task_date, t.id)}
+                    onEdit={() => onEdit(t)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {activeDays.map(dk => {
             const dayTasks = tasks[dk]
             if (!dayTasks.length) return null
             const isTomorrowOrLater = dk !== todayKey
@@ -316,7 +394,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                 <div style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)', marginBottom: 11 }}>
                   {dayLabel(dk)}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.55 : 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.75 : 1 }}>
                   {dayTasks.map(t => (
                     <TaskRow
                       key={`${t.id}-${dk}`}
@@ -330,7 +408,8 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                 </div>
               </div>
             )
-          })
+          })}
+          </>
         )}
       </div>
 

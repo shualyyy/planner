@@ -31,7 +31,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   habitLogs: [],
   loading: false,
   donIds: new Set(),
-  theme: 'light',
+  theme: 'dark',
 
   setTheme: (t) => {
     document.documentElement.setAttribute('data-theme', t)
@@ -188,6 +188,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 }))
+
+// Ensure data-theme="dark" is set on <html> from the very first render
+useTaskStore.getState().setTheme('dark')
 
 function addDaysToDate(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
