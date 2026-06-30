@@ -240,14 +240,17 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         <div style={{ font: '300 32px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
       </div>
 
-      {/* Habits strip */}
-      {habits.length > 0 && (
-        <div style={{ flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10, padding: '0 22px' }}>
-            <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#e35914', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-              Habits · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span>
-            </button>
-          </div>
+      {/* Habits strip — always visible so user can open sheet even with 0 habits */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: habits.length > 0 ? 10 : 14, padding: '0 22px' }}>
+          <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#e35914', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+            {habits.length > 0
+              ? <>Habits · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span></>
+              : <>Habits <span style={{ fontSize: 13 }}>→</span></>
+            }
+          </button>
+        </div>
+        {habits.length > 0 && (
           <div style={{ display: 'flex', gap: 9, overflowX: 'auto', marginBottom: 22, padding: '0 22px 2px' }}>
             {habits.map(h => {
               const done = habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)
@@ -263,8 +266,8 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* History icon button */}
       {historyCount > 0 && (

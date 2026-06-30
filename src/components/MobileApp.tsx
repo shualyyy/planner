@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import CalendarScreen from './CalendarScreen'
 import TasksScreen from './TasksScreen'
 import ProjectsScreen from './ProjectsScreen'
+import AssistantScreen from './AssistantScreen'
 import SettingsScreen from './SettingsScreen'
 import AddTaskModal from './AddTaskModal'
 import AddProjectModal from './AddProjectModal'
@@ -15,7 +16,7 @@ import {
 } from './icons'
 import type { Task, Project } from '../services/supabase'
 
-type Tab = 'calendar' | 'tasks' | 'projects' | 'settings'
+type Tab = 'calendar' | 'tasks' | 'projects' | 'assistant' | 'settings'
 
 const ProjectsTabIcon = ({ color }: { color: string }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -24,11 +25,18 @@ const ProjectsTabIcon = ({ color }: { color: string }) => (
   </svg>
 )
 
+const AssistantTabIcon = ({ color }: { color: string }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+)
+
 const TABS: { id: Tab; Icon: React.FC<{ color: string }>; label: string }[] = [
-  { id: 'calendar', Icon: CalendarTabIcon, label: 'Calendar' },
-  { id: 'tasks',    Icon: TasksTabIcon,    label: 'Tasks'    },
-  { id: 'projects', Icon: ProjectsTabIcon, label: 'Work'     },
-  { id: 'settings', Icon: SettingsTabIcon, label: 'You'      },
+  { id: 'calendar',  Icon: CalendarTabIcon,  label: 'Calendar' },
+  { id: 'tasks',     Icon: TasksTabIcon,     label: 'Tasks'    },
+  { id: 'projects',  Icon: ProjectsTabIcon,  label: 'Projects' },
+  { id: 'assistant', Icon: AssistantTabIcon, label: 'AI'       },
+  { id: 'settings',  Icon: SettingsTabIcon,  label: 'You'      },
 ]
 
 export default function MobileApp() {
@@ -80,6 +88,7 @@ export default function MobileApp() {
   }
 
   const showFab = (tab === 'calendar' || tab === 'tasks' || tab === 'projects') && !calPopupOpen && !projectDetailOpen
+
 
   const tabBar = createPortal(
     <div className="tabbar">
@@ -133,6 +142,9 @@ export default function MobileApp() {
               onAddTask={(projectId) => handleAdd(undefined, undefined, projectId)}
               onDetailChange={setProjectDetailOpen}
             />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <AssistantScreen />
           </div>
           <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
             <SettingsScreen />
