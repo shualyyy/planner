@@ -67,7 +67,7 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
 
   async function handleSubmit() {
     if (saving) return
-    if (!name.trim()) { setError('Введи название проекта'); return }
+    if (!name.trim()) { setError('Enter a project name'); return }
     setSaving(true)
     setError('')
     try {
@@ -143,7 +143,7 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
-            placeholder="Название проекта"
+            placeholder="Project name…"
             style={{
               fontFamily: 'var(--font-serif)',
               fontSize: '22px',
@@ -182,7 +182,7 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Описание (необязательно)"
+              placeholder="Description (optional)"
               rows={2}
               style={{
                 width: '100%', background: 'var(--surface2)', border: '1px solid var(--hairline)',
@@ -209,8 +209,8 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
             }}
           >
             {saving
-              ? (isEditMode ? 'Сохраняю…' : 'Создаю…')
-              : (isEditMode ? 'Сохранить' : 'Создать проект')
+              ? (isEditMode ? 'Saving…' : 'Creating…')
+              : (isEditMode ? 'Save' : 'Create project')
             }
           </button>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
-import { IcoBell, IcoLock, IcoHelp, SignOutIcon, ChevronRight } from './icons'
+import { IcoLock, IcoHelp, SignOutIcon, ChevronRight } from './icons'
 
 export default function SettingsScreen() {
   const [email, setEmail] = useState<string | null>(null)
@@ -28,7 +28,6 @@ export default function SettingsScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '90px' }}>
       {/* Header */}
       <div style={{ padding: '6px 24px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <img src="/dino.png" alt="Dino" width={28} height={28} style={{ imageRendering: 'pixelated' }} />
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 500, letterSpacing: '-0.03em', color: 'var(--text)' }}>You</h1>
       </div>
 
@@ -53,16 +52,6 @@ export default function SettingsScreen() {
                 Free
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="settings-section-label">Notifications</div>
-        <div className="settings-card">
-          <div className="settings-row" style={{ opacity: 0.55, cursor: 'default' }}>
-            <div className="set-icon"><IcoBell size={16} /></div>
-            <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>Reminders</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 8px', background: 'var(--accent-soft)', color: 'var(--accent-2)', borderRadius: '999px' }}>Soon</span>
           </div>
         </div>
 
@@ -93,7 +82,7 @@ export default function SettingsScreen() {
 
         {/* Version */}
         <div style={{ textAlign: 'center', fontSize: '11px', fontWeight: 450, color: 'var(--text-muted)', padding: '16px 0 28px', letterSpacing: '0.02em' }}>
-          Dino Task · v2.1
+          Planer · v2.1
         </div>
       </div>
     </div>

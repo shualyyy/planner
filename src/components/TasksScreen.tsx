@@ -162,13 +162,13 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ font: '300 24px Inter', color: '#F0ECE3' }}>История</span>
-            <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Закрыть</button>
+            <span style={{ font: '300 24px Inter', color: '#F0ECE3' }}>History</span>
+            <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Close</button>
           </div>
         </div>
         <div style={{ overflowY: 'auto', padding: '0 20px 32px', flex: 1 }}>
           {historyDays.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>История пуста</div>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>No history yet</div>
           ) : (
             [...historyDays].reverse().map(dk => {
               const dayTasks = tasks[dk] || []
@@ -227,20 +227,17 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   const historyCount = historyDays.reduce((s, dk) => s + (tasks[dk]?.length ?? 0), 0)
 
   function dayLabel(dk: string): string {
-    if (dk === todayKey) return 'Сегодня'
-    if (dk === tomorrowKey) return 'Завтра'
+    if (dk === todayKey) return 'Today'
+    if (dk === tomorrowKey) return 'Tomorrow'
     return format(parseISO(dk), 'EEEE')
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
-        <div>
-          <div style={{ font: '600 11px Inter', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
-          <div style={{ font: '300 32px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
-        </div>
-        <div style={{ width: 40, height: 40, borderRadius: 999, background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 13px Inter', color: '#C8C2B8' }}>АП</div>
+      <div style={{ marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
+        <div style={{ font: '600 11px Inter', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
+        <div style={{ font: '300 32px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
       </div>
 
       {/* Habits strip */}
@@ -248,7 +245,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         <div style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10, padding: '0 22px' }}>
             <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#e35914', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-              Привычки · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span>
+              Habits · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span>
             </button>
           </div>
           <div style={{ display: 'flex', gap: 9, overflowX: 'auto', marginBottom: 22, padding: '0 22px 2px' }}>
@@ -269,11 +266,33 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         </div>
       )}
 
-      {/* History button */}
+      {/* History icon button */}
       {historyCount > 0 && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 22px 8px', flexShrink: 0 }}>
-          <button onClick={() => setShowHistory(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 999, background: '#16161E', border: '1px solid rgba(255,255,255,0.08)', font: '500 12px Inter', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
-            История · {historyCount}
+          <button
+            onClick={() => setShowHistory(true)}
+            title={`History (${historyCount})`}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: '#16161E', border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.55)', cursor: 'pointer', flexShrink: 0,
+              position: 'relative',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {historyCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -3, right: -3,
+                minWidth: 14, height: 14, borderRadius: 999,
+                background: 'var(--accent)', color: '#fff',
+                fontSize: '8.5px', fontWeight: 700, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', padding: '0 3px',
+              }}>{historyCount > 9 ? '9+' : historyCount}</span>
+            )}
           </button>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
-import { sendMessage, type ChatMessage, type ParsedAction, type TaskSummary } from '../services/aiService'
+import { sendMessage, type ChatMessage, type ParsedAction, type TaskSummary, type ProjectSummary } from '../services/aiService'
 import { useTaskStore } from '../store/taskStore'
 
 // ── Action bubble metadata ────────────────────────────────────────────────
@@ -57,18 +57,6 @@ const SendIcon = () => (
   </svg>
 )
 
-// ── Dino mascot ───────────────────────────────────────────────────────────
-
-const DinoMascot = () => (
-  <img
-    src="/dino.png"
-    alt="Dino"
-    width={56}
-    height={56}
-    style={{ display: 'block', imageRendering: 'pixelated' }}
-  />
-)
-
 // ── Action icon ───────────────────────────────────────────────────────────
 
 function ActionIcon({ type }: { type: ParsedAction['type'] }) {
@@ -83,13 +71,16 @@ function ActionIcon({ type }: { type: ParsedAction['type'] }) {
 
 function ActionBubble({ meta }: { meta: ActionMeta }) {
   const labelMap: Record<string, string> = {
-    add: 'Добавлено в календарь',
-    delete: 'Удалено из календаря',
-    reschedule: 'Перенесено',
-    done: 'Отмечено выполненным',
-    undone: 'Отметка снята',
-    edit: 'Задача обновлена',
-    list: 'Список задач',
+    add: 'Added to calendar',
+    delete: 'Deleted',
+    reschedule: 'Rescheduled',
+    done: 'Marked as done',
+    undone: 'Unmarked',
+    edit: 'Task updated',
+    list: 'Task list',
+    set_status: 'Status updated',
+    set_priority: 'Priority updated',
+    set_project: 'Assigned to project',
   }
 
   return (
@@ -99,7 +90,7 @@ function ActionBubble({ meta }: { meta: ActionMeta }) {
     }}>
       <div style={{ fontSize: '13px', fontWeight: 450, color: 'var(--text-2)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <ActionIcon type={meta.type} />
-        {labelMap[meta.type] ?? 'Готово'}
+        {labelMap[meta.type] ?? 'Done'}
       </div>
       <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', flexShrink: 0 }} />
@@ -146,10 +137,10 @@ function fmtDate(d: string): string {
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function AssistantScreen() {
-  const { tasks, donIds, addTask, deleteTask, updateTask, toggleDone, fetchTasks } = useTaskStore()
+  const { tasks, donIds, projects, addTask, deleteTask, updateTask, toggleDone, fetchTasks } = useTaskStore()
 
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Привет! Я Dino 🦕 Могу добавить, удалить, перенести или отметить выполненной любую задачу. Просто скажи!' },
+    { role: 'assistant', content: 'Hey! I can add, move, complete, and organize your tasks. I also know your projects — just tell me what to do.' },
   ])
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -171,13 +162,23 @@ export default function AssistantScreen() {
     if (streamRef.current) streamRef.current.scrollTop = streamRef.current.scrollHeight
   }, [messages, loading])
 
-  // Task context for AI
+  // Task & project context for AI
   const taskSummaries: TaskSummary[] = tasks.map(t => ({
     id: t.id,
     title: t.title,
     task_date: t.task_date,
     task_time: t.task_time,
     is_done: donIds.has(t.id),
+    status: t.status ?? null,
+    priority: t.priority ?? null,
+    project_id: t.project_id ?? null,
+  }))
+
+  const projectSummaries: ProjectSummary[] = projects.map(p => ({
+    id: p.id,
+    name: p.name,
+    color: p.color,
+    is_archived: p.is_archived,
   }))
 
   // ── Send message ──────────────────────────────────────────────────────
@@ -195,7 +196,7 @@ export default function AssistantScreen() {
         .slice(1)
         .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
-      const { reply, action } = await sendMessage(history, msg, taskSummaries)
+      const { reply, action } = await sendMessage(history, msg, taskSummaries, projectSummaries)
 
       if (action) {
         await executeAction(action)
@@ -206,7 +207,7 @@ export default function AssistantScreen() {
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : JSON.stringify(err)
-      setMessages(prev => [...prev, { role: 'assistant', content: `Ошибка: ${errMsg}` }])
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errMsg}` }])
     } finally {
       setLoading(false)
     }
@@ -260,6 +261,21 @@ export default function AssistantScreen() {
         })
         break
 
+      case 'set_status':
+        if (!action.task_id || !action.new_status) break
+        await updateTask(action.task_id, { status: action.new_status as import('../services/supabase').TaskStatus })
+        break
+
+      case 'set_priority':
+        if (!action.task_id || !action.new_priority) break
+        await updateTask(action.task_id, { priority: action.new_priority as import('../services/supabase').TaskPriority })
+        break
+
+      case 'set_project':
+        if (!action.task_id) break
+        await updateTask(action.task_id, { project_id: action.new_project_id ?? null })
+        break
+
       case 'list':
         break // AI replies with text, no store action
     }
@@ -295,7 +311,13 @@ export default function AssistantScreen() {
       case 'edit':
         return { type: 'edit', label: action.new_title ?? action.task_title ?? '' }
       case 'list':
-        return { type: 'list', label: `${tasks.length} задач в календаре` }
+        return { type: 'list', label: `${tasks.length} tasks` }
+      case 'set_status':
+        return { type: 'set_status', label: action.task_title ?? '' }
+      case 'set_priority':
+        return { type: 'set_priority', label: action.task_title ?? '' }
+      case 'set_project':
+        return { type: 'set_project', label: action.task_title ?? '' }
     }
   }
 
@@ -313,7 +335,7 @@ export default function AssistantScreen() {
 
     const SpeechRecognition = window.SpeechRecognition ?? window.webkitSpeechRecognition!
     const recognition = new SpeechRecognition()
-    recognition.lang = 'ru-RU'
+    recognition.lang = 'en-US'
     recognition.continuous = true
     recognition.interimResults = true
     interimRef.current = ''
@@ -378,16 +400,11 @@ export default function AssistantScreen() {
 
       {/* Composer */}
       <div style={{ margin: '0 14px', marginBottom: '90px', position: 'relative', flexShrink: 0 }}>
-        {/* Dino sitting on input bar */}
-        <div style={{ position: 'absolute', bottom: '100%', left: '30px', marginBottom: '-6px', zIndex: 2, pointerEvents: 'none' }}>
-          <DinoMascot />
-        </div>
-
         {/* Input bar */}
         <div style={{
           borderRadius: '24px',
           background: 'var(--surface)',
-          padding: '6px 6px 6px 76px',
+          padding: '6px 6px 6px 16px',
           boxShadow: 'var(--card-shadow), 0 0 0 1px var(--border)',
           display: 'flex',
           alignItems: 'flex-end',
@@ -398,7 +415,7 @@ export default function AssistantScreen() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder={loading ? 'Думаю…' : 'Напиши Dino…'}
+            placeholder={loading ? 'Thinking…' : 'Message AI…'}
             disabled={loading}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',

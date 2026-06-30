@@ -139,7 +139,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
   async function handleSubmit() {
     if (saving) return
-    if (!title.trim()) { setError('Введи название задачи'); return }
+    if (!title.trim()) { setError('Enter a task title'); return }
     setSaving(true)
     setError('')
     try {
@@ -236,13 +236,13 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
-            placeholder="Название задачи..."
+            placeholder="Task title…"
             style={{ font: '300 24px Inter', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
-            placeholder="Описание (необязательно)"
+            placeholder="Description (optional)"
             rows={1}
             style={{ font: '400 13px Inter', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
           />
@@ -252,14 +252,14 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         <div>
           {/* Row 1 — Project */}
           <button onClick={() => toggleRow('project')} style={rowBtn(false)}>
-            <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Проект</span></span>
+            <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Project</span></span>
             {projectId
               ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#e35914' }} />{p?.name ?? '—'}</span> })()
-              : <span style={valuePill('rgba(255,255,255,0.4)')}>Без проекта</span>}
+              : <span style={valuePill('rgba(255,255,255,0.4)')}>No project</span>}
           </button>
           <div style={expandWrap(expandedRow === 'project')}>
             <div style={expandInner}>
-              <button onClick={() => setProjectId(null)} style={pill(projectId === null)}>Без проекта</button>
+              <button onClick={() => setProjectId(null)} style={pill(projectId === null)}>No project</button>
               {projects.filter(p => !p.is_archived).map(p => (
                 <button key={p.id} onClick={() => setProjectId(p.id)} style={{ ...pill(projectId === p.id), gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />{p.name}
@@ -270,7 +270,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 2 — Status */}
           <button onClick={() => toggleRow('status')} style={rowBtn(false)}>
-            <span style={rowLeft}><span style={{ color: TASK_STATUSES[status].color, fontSize: 14 }}>{TASK_STATUSES[status].icon}</span><span style={rowLabelTxt}>Статус</span></span>
+            <span style={rowLeft}><span style={{ color: TASK_STATUSES[status].color, fontSize: 14 }}>{TASK_STATUSES[status].icon}</span><span style={rowLabelTxt}>Status</span></span>
             <span style={valuePill(TASK_STATUSES[status].color)}>{TASK_STATUSES[status].name}</span>
           </button>
           <div style={expandWrap(expandedRow === 'status')}>
@@ -285,7 +285,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 3 — Priority */}
           <button onClick={() => toggleRow('priority')} style={rowBtn(false)}>
-            <span style={rowLeft}><span style={{ color: TASK_PRIORITIES[priority].color, font: '700 14px Inter' }}>{priority === 'high' ? '↑' : priority === 'low' ? '↓' : '–'}</span><span style={rowLabelTxt}>Приоритет</span></span>
+            <span style={rowLeft}><span style={{ color: TASK_PRIORITIES[priority].color, font: '700 14px Inter' }}>{priority === 'high' ? '↑' : priority === 'low' ? '↓' : '–'}</span><span style={rowLabelTxt}>Priority</span></span>
             <span style={valuePill(TASK_PRIORITIES[priority].color)}>{TASK_PRIORITIES[priority].name}</span>
           </button>
           <div style={expandWrap(expandedRow === 'priority')}>
@@ -300,7 +300,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 4 — Estimate */}
           <button onClick={() => toggleRow('estimate')} style={rowBtn(false)}>
-            <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Оценка</span></span>
+            <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Estimate</span></span>
             <span style={valuePill(timeEstimate != null ? '#e35914' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
           </button>
           <div style={expandWrap(expandedRow === 'estimate')}>
@@ -315,16 +315,16 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 5 — Date */}
           <button onClick={() => toggleRow('date')} style={rowBtn(false)}>
-            <span style={rowLeft}>{icoCalendar}<span style={rowLabelTxt}>Дата</span></span>
-            <span style={valuePill('#e35914')}>{date === todayStr ? 'Сегодня' : date === tomorrowStr ? 'Завтра' : datePillLabel()}</span>
+            <span style={rowLeft}>{icoCalendar}<span style={rowLabelTxt}>Date</span></span>
+            <span style={valuePill('#e35914')}>{date === todayStr ? 'Today' : date === tomorrowStr ? 'Tomorrow' : datePillLabel()}</span>
           </button>
           <div style={expandWrap(expandedRow === 'date')}>
             <div style={expandInner}>
-              {([{ label: 'Сегодня', value: todayStr }, { label: 'Завтра', value: tomorrowStr }, { label: 'След. неделя', value: nextWeekStr }] as const).map(({ label: l, value: v }) => (
+              {([{ label: 'Today', value: todayStr }, { label: 'Tomorrow', value: tomorrowStr }, { label: 'Next week', value: nextWeekStr }] as const).map(({ label: l, value: v }) => (
                 <button key={v} onClick={() => setDate(v)} style={pill(date === v)}>{l}</button>
               ))}
               <div style={{ position: 'relative', display: 'inline-flex' }}>
-                <span style={{ ...pill(!isPreset), pointerEvents: 'none' }}>{isPreset ? 'Другая…' : datePillLabel()}</span>
+                <span style={{ ...pill(!isPreset), pointerEvents: 'none' }}>{isPreset ? 'Pick…' : datePillLabel()}</span>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
               </div>
             </div>
@@ -332,8 +332,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 6 — Time */}
           <button onClick={() => toggleRow('time')} style={rowBtn(true)}>
-            <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Время</span></span>
-            <span style={valuePill(time && !isAllDay ? '#e35914' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'Весь день' : (time ? time.slice(0,5) : '—')}</span>
+            <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Time</span></span>
+            <span style={valuePill(time && !isAllDay ? '#e35914' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'All day' : (time ? time.slice(0,5) : '—')}</span>
           </button>
           <div style={expandWrap(expandedRow === 'time')}>
             <div style={expandInner}>
@@ -344,16 +344,16 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
                   setIsAllDay(!isAllDay)
                 }}
                 style={pill(isAllDay)}
-              >Весь день</button>
+              >All day</button>
               {!isAllDay && (
                 <>
                   <div style={{ position: 'relative', display: 'inline-flex' }}>
-                    <span style={{ ...pill(!!time), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{time ? time.slice(0,5) : 'Начало'}</span>
+                    <span style={{ ...pill(!!time), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{time ? time.slice(0,5) : 'Start'}</span>
                     <input type="time" value={time} onChange={e => handleTimeChange(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
                   </div>
                   {time && (
                     <div style={{ position: 'relative', display: 'inline-flex' }}>
-                      <span style={{ ...pill(!!timeEnd), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{timeEnd ? timeEnd.slice(0,5) : 'Конец'}</span>
+                      <span style={{ ...pill(!!timeEnd), pointerEvents: 'none', minWidth: 72, justifyContent: 'center' }}>{timeEnd ? timeEnd.slice(0,5) : 'End'}</span>
                       <input type="time" value={timeEnd} onChange={e => setTimeEnd(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
                     </div>
                   )}
@@ -371,7 +371,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             </div>
           )}
           <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#e35914', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-            {saving ? (isEditMode ? 'Сохранение…' : 'Добавление…') : (isEditMode ? 'Сохранить' : 'Добавить задачу')}
+            {saving ? (isEditMode ? 'Saving…' : 'Adding…') : (isEditMode ? 'Save' : 'Add task')}
           </button>
         </div>
       </div>
@@ -406,7 +406,7 @@ const expandInner: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'w
 
 function estimateLabel(mins: number | null): string {
   if (mins == null) return '—'
-  return mins >= 60 ? `${mins % 60 === 0 ? mins / 60 : (mins / 60).toFixed(1)}ч` : `${mins}м`
+  return mins >= 60 ? `${mins % 60 === 0 ? mins / 60 : (mins / 60).toFixed(1)}h` : `${mins}m`
 }
 
 function pill(active: boolean): React.CSSProperties {

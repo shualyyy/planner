@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { Habit, HabitLog } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
@@ -13,8 +13,10 @@ interface HabitsSheetProps {
 const dayKey = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
-const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
-const WD_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс']
+const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const WD_EN = ['Mo','Tu','We','Th','Fr','Sa','Su']
+
+const HABIT_COLORS = ['#e35914','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
 
 function startOfWeekMonday(d: Date): Date {
   const r = new Date(d)
@@ -35,6 +37,14 @@ function CheckSvg({ stroke = '#0A0A0F' }: { stroke?: string }) {
 export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: HabitsSheetProps) {
   const { addHabit } = useTaskStore()
   const [adding, setAdding] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newColor, setNewColor] = useState(HABIT_COLORS[0])
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (showForm) setTimeout(() => inputRef.current?.focus(), 80)
+  }, [showForm])
 
   const today = new Date()
   const todayKey = dayKey(today)
@@ -69,12 +79,14 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
     return s
   }
 
-  async function handleAdd() {
-    const name = window.prompt('Название привычки')
-    if (!name || !name.trim()) return
+  async function handleSave() {
+    if (!newName.trim()) return
     setAdding(true)
     try {
-      await addHabit({ name: name.trim(), icon: 'circle', color: '#e35914', frequency: 'daily', time_of_day: 'morning' })
+      await addHabit({ name: newName.trim(), icon: 'circle', color: newColor, frequency: 'daily', time_of_day: 'morning' })
+      setNewName('')
+      setNewColor(HABIT_COLORS[0])
+      setShowForm(false)
     } catch (e) { console.error(e) }
     setAdding(false)
   }
@@ -93,9 +105,9 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
         <div style={{ padding: '12px 22px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 18px' }} />
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div style={{ font: '300 28px/1 Inter', color: '#F0ECE3' }}>Привычки</div>
+            <div style={{ font: '300 28px/1 Inter', color: '#F0ECE3' }}>Habits</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)' }}>{MONTHS_RU[today.getMonth()]} {today.getFullYear()}</span>
+              <span style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)' }}>{MONTHS_EN[today.getMonth()]} {today.getFullYear()}</span>
               <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: '#16161E', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
@@ -108,9 +120,9 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
           {/* Stats row */}
           <div style={{ display: 'flex', gap: 9, marginBottom: 20 }}>
             {[
-              { icon: '🔥', label: 'Серия', value: `${streak} дн` },
-              { icon: '✓',  label: 'Месяц', value: `${doneThisMonth}/${totalThisMonth}` },
-              { icon: '⚡', label: 'Активных', value: `${habits.length}` },
+              { icon: '🔥', label: 'Streak', value: `${streak}d` },
+              { icon: '✓',  label: 'Month',  value: `${doneThisMonth}/${totalThisMonth}` },
+              { icon: '⚡', label: 'Active',  value: `${habits.length}` },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '11px 12px' }}>
                 <div style={{ fontSize: 15, marginBottom: 4 }}>{s.icon}</div>
@@ -122,15 +134,15 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
 
           {/* Habit cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {habits.length === 0 && (
+            {habits.length === 0 && !showForm && (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.4)', font: '400 13px Inter' }}>
-                Пока нет привычек.
+                No habits yet. Add your first one!
               </div>
             )}
             {habits.map(h => {
               const doneToday = isLogged(h.id, todayKey)
-              const freqRu = h.frequency === 'daily' ? 'Ежедневно' : 'Еженедельно'
-              const todRu = h.time_of_day === 'morning' ? 'Утро' : h.time_of_day === 'evening' ? 'Вечер' : 'Днём'
+              const freqLabel = h.frequency === 'daily' ? 'Daily' : 'Weekly'
+              const todLabel = h.time_of_day === 'morning' ? 'Morning' : h.time_of_day === 'evening' ? 'Evening' : 'Afternoon'
               return (
                 <div key={h.id} style={{ background: '#16161E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '14px 15px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -139,7 +151,7 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ font: '600 15px Inter', color: '#F0ECE3' }}>{h.name}</div>
-                      <div style={{ font: '400 11px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqRu} · {todRu} · серия {habitStreak(h.id)}</div>
+                      <div style={{ font: '400 11px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqLabel} · {todLabel} · streak {habitStreak(h.id)}</div>
                     </div>
                     <button
                       onClick={() => onToggle(h.id, todayKey)}
@@ -172,7 +184,7 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
                           <div style={style}>
                             {isMiss && <span style={{ width: 5, height: 5, borderRadius: 999, background: '#FF5C5C' }} />}
                           </div>
-                          <span style={{ font: '500 8px Inter', color: 'rgba(255,255,255,0.25)' }}>{WD_RU[i]}</span>
+                          <span style={{ font: '500 8px Inter', color: 'rgba(255,255,255,0.25)' }}>{WD_EN[i]}</span>
                         </div>
                       )
                     })}
@@ -181,16 +193,67 @@ export default function HabitsSheet({ habits, habitLogs, onToggle, onClose }: Ha
               )
             })}
 
-            {/* Add habit */}
-            <button
-              onClick={handleAdd}
-              disabled={adding}
-              style={{
-                height: 48, border: '1.5px dashed rgba(255,255,255,0.18)', borderRadius: 14,
-                background: 'transparent', color: 'rgba(255,255,255,0.6)', font: '500 13px Inter',
-                cursor: adding ? 'default' : 'pointer', marginTop: 4,
-              }}
-            >+ Добавить привычку</button>
+            {/* Inline add form */}
+            {showForm ? (
+              <div style={{ background: '#16161E', border: '1.5px solid rgba(227,89,20,0.3)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <input
+                  ref={inputRef}
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setShowForm(false) }}
+                  placeholder="Habit name…"
+                  style={{
+                    background: 'transparent', border: 'none', outline: 'none',
+                    color: '#F0ECE3', font: '500 15px Inter', width: '100%',
+                    borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 8,
+                  }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  {/* Color chips */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {HABIT_COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setNewColor(c)}
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%', border: 'none',
+                          background: c, cursor: 'pointer', flexShrink: 0,
+                          boxShadow: newColor === c ? `0 0 0 2px #111118, 0 0 0 4px ${c}` : 'none',
+                          transform: newColor === c ? 'scale(1.1)' : 'scale(1)',
+                          transition: 'transform 0.12s, box-shadow 0.12s',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Action buttons */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => { setShowForm(false); setNewName('') }}
+                      style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', font: '500 12px Inter', border: 'none', cursor: 'pointer' }}
+                    >Cancel</button>
+                    <button
+                      onClick={handleSave}
+                      disabled={adding || !newName.trim()}
+                      style={{
+                        padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                        background: newName.trim() ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
+                        color: newName.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                        font: '600 12px Inter', transition: 'all 0.15s',
+                      }}
+                    >{adding ? '…' : 'Add'}</button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  height: 48, border: '1.5px dashed rgba(255,255,255,0.18)', borderRadius: 14,
+                  background: 'transparent', color: 'rgba(255,255,255,0.6)', font: '500 13px Inter',
+                  cursor: 'pointer', marginTop: 4,
+                }}
+              >+ Add habit</button>
+            )}
           </div>
         </div>
       </div>

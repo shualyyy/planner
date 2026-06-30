@@ -52,10 +52,10 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
   const pct = total > 0 ? Math.round(doneCount / total * 100) : 0
 
   const metrics = [
-    { value: total, label: 'Всего', color: '#F0ECE3' },
-    { value: byStatus.in_progress.length, label: 'В работе', color: '#e35914' },
-    { value: byStatus.blocked.length, label: 'Блок', color: '#FF5C5C' },
-    { value: `${pct}%`, label: 'Готово', color: '#3DD68C' },
+    { value: total, label: 'Total', color: '#F0ECE3' },
+    { value: byStatus.in_progress.length, label: 'Active', color: '#e35914' },
+    { value: byStatus.blocked.length, label: 'Blocked', color: '#FF5C5C' },
+    { value: `${pct}%`, label: 'Done', color: '#3DD68C' },
   ]
 
   return (
@@ -64,7 +64,7 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
       <div style={{ padding: '8px 22px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={onBack} style={{ font: '500 13px Inter', color: '#e35914', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
-            ← Работа
+            ← Projects
           </button>
           <button style={{ width: 30, height: 30, borderRadius: '50%', background: '#16161E', color: 'rgba(255,255,255,0.5)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
         </div>
@@ -114,10 +114,10 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
                         <span style={{ font: '500 13px Inter', color: isDone ? 'rgba(255,255,255,0.2)' : '#F0ECE3', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.35 }}>{t.title}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                        <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#241F1C', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px Inter', color: '#C8C2B8' }}>АП</span>
+                        <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#241F1C', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px Inter', color: '#C8C2B8' }}>AP</span>
                         {t.time_estimate != null && (
                           <span style={{ font: '500 10px Inter', background: '#16161E', borderRadius: 6, padding: '3px 7px', color: 'rgba(255,255,255,0.45)' }}>
-                            {t.time_estimate >= 60 ? `${Math.round(t.time_estimate / 60)}ч` : `${t.time_estimate}м`}
+                            {t.time_estimate >= 60 ? `${Math.round(t.time_estimate / 60)}h` : `${t.time_estimate}m`}
                           </span>
                         )}
                       </div>
@@ -142,7 +142,7 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
           borderRadius: 999, background: '#e35914', color: '#fff', font: '600 14px Inter',
           boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset, 0 8px 24px var(--accent-glow)', border: 'none', zIndex: 5,
         }}
-      ><span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Задача</button>
+      ><span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Task</button>
     </div>
   )
 }
@@ -167,7 +167,7 @@ function ProjectCard({ project, stats, onTap }: {
       <div style={{ position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, borderRadius: '0 3px 3px 0', background: project.color }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ font: '600 15px Inter', color: '#F0ECE3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</div>
-        <div style={{ font: '400 11px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>{stats.total} задач</div>
+        <div style={{ font: '400 11px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>{stats.total} task{stats.total !== 1 ? 's' : ''}</div>
       </div>
 
       <div style={{ flexShrink: 0 }}>
@@ -225,12 +225,12 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
       {/* Header */}
       <div style={{ padding: '8px 22px 14px', flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ font: '300 34px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Работа</div>
-          <div style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 7 }}>{visibleProjects.length} проектов · {totalTasks} задачи</div>
+          <div style={{ font: '300 34px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Projects</div>
+          <div style={{ font: '400 12px Inter', color: 'rgba(255,255,255,0.4)', marginTop: 7 }}>{visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {totalTasks} task{totalTasks !== 1 ? 's' : ''}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 12px', background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-          <span style={{ font: '500 12px Inter', color: 'rgba(255,255,255,0.6)' }}>Все</span>
+          <span style={{ font: '500 12px Inter', color: 'rgba(255,255,255,0.6)' }}>All</span>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px', paddingBottom: 120 }}>
         {visibleProjects.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: 'rgba(255,255,255,0.4)', font: '400 13.5px Inter' }}>
-            Нет проектов. Создай первый.
+            No projects yet. Tap + to create one.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>

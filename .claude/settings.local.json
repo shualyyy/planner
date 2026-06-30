@@ -7,7 +7,9 @@
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(grep -n 'key={`${t.id}' src/components/TasksScreen.tsx src/components/CalendarScreen.tsx)",
-      "Bash(./install.sh)"
+      "Bash(./install.sh)",
+      "Bash(npm run *)",
+      "Bash(git add *)"
     ]
   }
 }

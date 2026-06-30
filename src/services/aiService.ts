@@ -2,7 +2,7 @@ import { format, addDays, nextMonday, nextTuesday, nextWednesday, nextThursday, 
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type ActionType = 'add' | 'delete' | 'reschedule' | 'done' | 'undone' | 'edit' | 'list'
+export type ActionType = 'add' | 'delete' | 'reschedule' | 'done' | 'undone' | 'edit' | 'list' | 'set_status' | 'set_priority' | 'set_project'
 
 export interface ParsedAction {
   type: ActionType
@@ -12,6 +12,9 @@ export interface ParsedAction {
   task_time?: string | null
   task_time_end?: string | null
   description?: string | null
+  project_id?: string | null
+  status?: string | null
+  priority?: string | null
   // Reference (delete / done / undone / reschedule / edit)
   task_id?: string
   task_title?: string
@@ -21,6 +24,10 @@ export interface ParsedAction {
   // EDIT
   new_title?: string
   new_description?: string | null
+  // STATUS / PRIORITY / PROJECT
+  new_status?: string | null
+  new_priority?: string | null
+  new_project_id?: string | null
 }
 
 export interface ChatMessage {
@@ -34,6 +41,16 @@ export interface TaskSummary {
   task_date: string
   task_time: string | null
   is_done: boolean
+  status?: string | null
+  priority?: string | null
+  project_id?: string | null
+}
+
+export interface ProjectSummary {
+  id: string
+  name: string
+  color: string
+  is_archived: boolean
 }
 
 interface GroqChatResponse {
@@ -42,7 +59,7 @@ interface GroqChatResponse {
 
 // ── System prompt ─────────────────────────────────────────────────────────
 
-function buildSystemPrompt(tasks: TaskSummary[]): string {
+function buildSystemPrompt(tasks: TaskSummary[], projects: ProjectSummary[] = []): string {
   const now = new Date()
 
   const taskListJson = tasks.length
@@ -53,30 +70,39 @@ function buildSystemPrompt(tasks: TaskSummary[]): string {
           date: t.task_date,
           time: t.task_time ?? null,
           done: t.is_done,
+          status: t.status ?? 'not_started',
+          priority: t.priority ?? 'medium',
+          project_id: t.project_id ?? null,
         })),
-        null,
-        2
+        null, 2
       )
+    : '[]'
+
+  const projectListJson = projects.length
+    ? JSON.stringify(projects.map(p => ({ id: p.id, name: p.name, archived: p.is_archived })), null, 2)
     : '[]'
 
   const timeStr = format(now, 'HH:mm')
   const todayStr = format(now, 'yyyy-MM-dd')
   const tomorrowStr = format(addDays(now, 1), 'yyyy-MM-dd')
 
-  return `You are Dino — a smart, friendly calendar assistant built into a task planner app.
+  return `You are a smart work assistant built into a task planner app.
 Today: ${format(now, 'EEEE, MMMM d, yyyy')} · Current time: ${timeStr}
 
-CURRENT TASKS:
+PROJECTS:
+${projectListJson}
+
+TASKS:
 ${taskListJson}
 
 ━━━━━━━━━━━━━━━━━━━━━━━
-ACTIONS — put JSON on FIRST line, then 1 short reply in Russian (or English if user writes English).
+ACTIONS — put JSON on FIRST line, then 1 short reply (match user's language — Russian or English).
 
 ADD task:
-ACTION:{"type":"add","title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","description":"null"}
+ACTION:{"type":"add","title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","priority":"high|medium|low","project_id":"ID or null","description":null}
 
-ADD recurring task (повторяющаяся):
-ACTION:{"type":"add","title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","recurrence":"daily|weekly|monthly","description":"null"}
+ADD recurring task:
+ACTION:{"type":"add","title":"...","task_date":"YYYY-MM-DD","task_time":"HH:MM or null","recurrence":"daily|weekly|monthly","project_id":"ID or null","description":null}
 
 DELETE:
 ACTION:{"type":"delete","task_id":"ID","task_title":"..."}
@@ -89,6 +115,15 @@ ACTION:{"type":"done","task_id":"ID","task_title":"..."}
 
 MARK UNDONE:
 ACTION:{"type":"undone","task_id":"ID","task_title":"..."}
+
+SET STATUS (in_progress / blocked / not_started):
+ACTION:{"type":"set_status","task_id":"ID","task_title":"...","new_status":"in_progress|blocked|not_started"}
+
+SET PRIORITY (high / medium / low):
+ACTION:{"type":"set_priority","task_id":"ID","task_title":"...","new_priority":"high|medium|low"}
+
+ASSIGN TO PROJECT:
+ACTION:{"type":"set_project","task_id":"ID","task_title":"...","new_project_id":"PROJECT_ID"}
 
 EDIT:
 ACTION:{"type":"edit","task_id":"ID","task_title":"...","new_title":"... or null","new_description":"... or null"}
@@ -109,14 +144,16 @@ DATE SHORTCUTS:
 - в обед = 13:00
 
 SMART RULES:
-- NEVER ask for confirmation — just do it immediately
-- Infer missing time from context ("вечером" → 19:00, "утром" → 09:00)
-- If only a weekday mentioned (пятница, Monday), use the NEXT occurrence
-- If task not found by name, say so briefly and list similar tasks
-- For LIST requests, group by date and show time if available
-- Recurring words: каждый день=daily, каждую неделю=weekly, каждый месяц=monthly, ежедневно=daily, еженедельно=weekly
-- Keep replies SHORT — max 2 sentences
-- Be warm and friendly like a helpful assistant, not robotic`
+- NEVER ask for confirmation — act immediately
+- Infer missing time ("вечером/evening" → 19:00, "утром/morning" → 09:00, "днём/noon" → 13:00)
+- If only weekday mentioned, use NEXT occurrence of that day
+- If task not found by name, say so and list similar
+- For LIST: group by project or date, show status/priority if set
+- When user says "add X to [project name]" — find project_id from PROJECTS and include it
+- When user asks what's blocked / in progress — filter TASKS by status
+- Recurring: "every day/ежедневно"=daily, "every week/еженедельно"=weekly, "every month"=monthly
+- Replies: max 2 sentences, warm and direct
+- Projects: always use project name in replies, never raw IDs`
 }
 
 // ── Date resolver ─────────────────────────────────────────────────────────
@@ -140,13 +177,16 @@ function resolveRelativeDate(text: string): string {
 
 function confirmationFor(action: ParsedAction): string {
   switch (action.type) {
-    case 'add':        return `Добавил «${action.title}» ✓`
-    case 'delete':     return `Удалил «${action.task_title}» ✓`
-    case 'reschedule': return `Перенёс «${action.task_title}» ✓`
-    case 'done':       return `Отметил «${action.task_title}» как выполненную ✓`
-    case 'undone':     return `Снял отметку с «${action.task_title}» ✓`
-    case 'edit':       return `Обновил «${action.task_title}» ✓`
-    default:           return '✓'
+    case 'add':          return `Added "${action.title}" ✓`
+    case 'delete':       return `Deleted "${action.task_title}" ✓`
+    case 'reschedule':   return `Rescheduled "${action.task_title}" ✓`
+    case 'done':         return `Marked "${action.task_title}" done ✓`
+    case 'undone':       return `Unmarked "${action.task_title}" ✓`
+    case 'edit':         return `Updated "${action.task_title}" ✓`
+    case 'set_status':   return `Status updated ✓`
+    case 'set_priority': return `Priority updated ✓`
+    case 'set_project':  return `Assigned to project ✓`
+    default:             return '✓'
   }
 }
 
@@ -155,10 +195,11 @@ function confirmationFor(action: ParsedAction): string {
 export async function sendMessage(
   history: ChatMessage[],
   userMessage: string,
-  tasks: TaskSummary[] = []
+  tasks: TaskSummary[] = [],
+  projects: ProjectSummary[] = []
 ): Promise<{ reply: string; action: ParsedAction | null }> {
   const messages = [
-    { role: 'system' as const, content: buildSystemPrompt(tasks) },
+    { role: 'system' as const, content: buildSystemPrompt(tasks, projects) },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: 'user' as const, content: userMessage },
   ]
