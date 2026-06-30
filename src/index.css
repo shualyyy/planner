@@ -1,14 +1,14 @@
-/* ── Design tokens — Dino Task v2: dark-first ── */
+/* ── Design tokens — Claude palette ── */
 :root {
-  --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-serif: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans:  ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-serif: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
   /* ── Backgrounds ── */
-  --bg:         #0A0A0F;
-  --surface:    #111118;
-  --surface2:   #16161E;
-  --surface3:   #241F1C;
-  --border:     rgba(255,255,255,0.07);
+  --bg:         #1C1917;
+  --surface:    #242120;
+  --surface2:   #2D2926;
+  --surface3:   #35302C;
+  --border:     rgba(255,255,255,0.08);
   --border-2:   rgba(255,255,255,0.10);
   --hairline:   rgba(255,255,255,0.06);
 
@@ -19,11 +19,11 @@
   --text-faint: rgba(255,255,255,0.25);
 
   /* ── Accent ── */
-  --accent:      #e35914;
-  --accent-soft: rgba(227,89,20,0.12);
-  --accent-2:    rgba(227,89,20,0.30);
+  --accent:      #D97757;
+  --accent-soft: rgba(217,119,87,0.15);
+  --accent-2:    rgba(217,119,87,0.35);
   --accent-ink:  #fff;
-  --accent-glow: rgba(227,89,20,0.35);
+  --accent-glow: rgba(217,119,87,0.30);
 
   /* ── Brand (keep for logo/icon only) ── */
   --brand:      #D97757;
@@ -38,8 +38,8 @@
   --danger-text:  #FF5C5C;
   --warning:      #E8A24A;
   --warning-soft: rgba(232,162,74,0.12);
-  --info:         #e35914;
-  --info-hover:   #f07840;
+  --info:         #D97757;
+  --info-hover:   #E8896A;
 
   /* ── Project colors ── */
   --pc-blue:   #4A9EFF;
@@ -74,14 +74,14 @@
   --t-sheet:   0.32s;
 
   /* ── Shadows ── */
-  --shadow:      rgba(0,0,0,0.30);
+  --shadow:      rgba(0,0,0,0.45);
   --shadow-lg:   0 30px 80px rgba(0,0,0,0.5);
   --card-shadow: 0 0 0 1px var(--border);
   --sheet-shadow: 0 -8px 40px rgba(0,0,0,0.4);
 
   /* ── Tab bar ── */
-  --tabbar-bg:     rgba(10,10,15,0.85);
-  --tabbar-stroke: rgba(255,255,255,0.06);
+  --tabbar-bg:     rgba(28,25,23,0.95);
+  --tabbar-stroke: rgba(255,255,255,0.08);
   --tabbar-shadow: none;
 
   /* ── Misc ── */
@@ -93,11 +93,11 @@
   --danger-soft-2: rgba(255,92,92,0.10);
 
   /* ── Calendar card ── */
-  --cal-bg: #0A0A0F;
+  --cal-bg: #1C1917;
 
   /* ── Legacy (still referenced by older screens) ── */
-  --bg-2:   #16161E;
-  --ev-ink: #0A0A0F;
+  --bg-2:   #2D2926;
+  --ev-ink: #1C1917;
 }
 
 /* ── Base ── */
@@ -126,7 +126,7 @@ input, textarea { font-family: inherit; color: inherit; }
   transform: translateX(-50%);
   width: 320px;
   height: 58px;
-  background: rgba(12,12,12,0.96);
+  background: rgba(28,25,23,0.96);
   backdrop-filter: blur(24px) saturate(1.8);
   -webkit-backdrop-filter: blur(24px) saturate(1.8);
   border-radius: 40px;
@@ -152,7 +152,7 @@ input, textarea { font-family: inherit; color: inherit; }
   color: rgba(255,255,255,0.35);
   transition: color 0.15s;
 }
-.tab.on { color: #e35914; }
+.tab.on { color: #D97757; }
 .tab:active { transform: scale(0.88); }
 .tab .tab-label {
   font-size: 9.5px;
@@ -211,7 +211,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Calendar (dark card) ── */
 .cal-card {
   margin: 0 14px 0;
-  background: #1C1C26;
+  background: #242120;
   border-radius: 24px;
   padding: 8px 4px 14px;
   flex-shrink: 0;
@@ -249,7 +249,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Expanded calendar fullscreen ── */
 .cal-expanded {
   position: fixed; inset: 0; z-index: 700;
-  background: #0f0f11;
+  background: #1C1917;
   display: flex; flex-direction: column;
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);

@@ -237,14 +237,14 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
             placeholder="Task title…"
-            style={{ font: '300 24px Inter', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
+            style={{ font: '300 24px/1.2 var(--font-sans)', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Description (optional)"
             rows={1}
-            style={{ font: '400 13px Inter', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
+            style={{ font: '400 13px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
           />
         </div>
 
@@ -254,7 +254,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           <button onClick={() => toggleRow('project')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Project</span></span>
             {projectId
-              ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#e35914' }} />{p?.name ?? '—'}</span> })()
+              ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#D97757' }} />{p?.name ?? '—'}</span> })()
               : <span style={valuePill('rgba(255,255,255,0.4)')}>No project</span>}
           </button>
           <div style={expandWrap(expandedRow === 'project')}>
@@ -285,7 +285,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 
           {/* Row 3 — Priority */}
           <button onClick={() => toggleRow('priority')} style={rowBtn(false)}>
-            <span style={rowLeft}><span style={{ color: TASK_PRIORITIES[priority].color, font: '700 14px Inter' }}>{priority === 'high' ? '↑' : priority === 'low' ? '↓' : '–'}</span><span style={rowLabelTxt}>Priority</span></span>
+            <span style={rowLeft}><span style={{ color: TASK_PRIORITIES[priority].color, font: '700 14px/1.2 var(--font-sans)' }}>{priority === 'high' ? '↑' : priority === 'low' ? '↓' : '–'}</span><span style={rowLabelTxt}>Priority</span></span>
             <span style={valuePill(TASK_PRIORITIES[priority].color)}>{TASK_PRIORITIES[priority].name}</span>
           </button>
           <div style={expandWrap(expandedRow === 'priority')}>
@@ -301,7 +301,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 4 — Estimate */}
           <button onClick={() => toggleRow('estimate')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Estimate</span></span>
-            <span style={valuePill(timeEstimate != null ? '#e35914' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
+            <span style={valuePill(timeEstimate != null ? '#D97757' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
           </button>
           <div style={expandWrap(expandedRow === 'estimate')}>
             <div style={expandInner}>
@@ -316,7 +316,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 5 — Date */}
           <button onClick={() => toggleRow('date')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoCalendar}<span style={rowLabelTxt}>Date</span></span>
-            <span style={valuePill('#e35914')}>{date === todayStr ? 'Today' : date === tomorrowStr ? 'Tomorrow' : datePillLabel()}</span>
+            <span style={valuePill('#D97757')}>{date === todayStr ? 'Today' : date === tomorrowStr ? 'Tomorrow' : datePillLabel()}</span>
           </button>
           <div style={expandWrap(expandedRow === 'date')}>
             <div style={expandInner}>
@@ -333,7 +333,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 6 — Time */}
           <button onClick={() => toggleRow('time')} style={rowBtn(true)}>
             <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Time</span></span>
-            <span style={valuePill(time && !isAllDay ? '#e35914' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'All day' : (time ? time.slice(0,5) : '—')}</span>
+            <span style={valuePill(time && !isAllDay ? '#D97757' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'All day' : (time ? time.slice(0,5) : '—')}</span>
           </button>
           <div style={expandWrap(expandedRow === 'time')}>
             <div style={expandInner}>
@@ -370,7 +370,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               ⚠ {error}
             </div>
           )}
-          <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#e35914', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px Inter', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          <button onClick={handleSubmit} style={{ width: '100%', height: 52, background: '#D97757', borderRadius: 12, border: 'none', color: '#fff', font: '600 14px/1.2 var(--font-sans)', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? (isEditMode ? 'Saving…' : 'Adding…') : (isEditMode ? 'Save' : 'Add task')}
           </button>
         </div>
@@ -389,13 +389,13 @@ function rowBtn(last: boolean): React.CSSProperties {
 }
 
 const rowLeft: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12 }
-const rowLabelTxt: React.CSSProperties = { font: '500 14px Inter', color: '#F0ECE3' }
+const rowLabelTxt: React.CSSProperties = { font: '500 14px/1.2 var(--font-sans)', color: '#F0ECE3' }
 
 function valuePill(color = 'rgba(255,255,255,0.7)'): React.CSSProperties {
   return {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '5px 12px', borderRadius: 999, background: '#16161E',
-    font: '500 13px Inter', color, whiteSpace: 'nowrap',
+    padding: '5px 12px', borderRadius: 999, background: '#2D2926',
+    font: '500 13px/1.2 var(--font-sans)', color, whiteSpace: 'nowrap',
   }
 }
 

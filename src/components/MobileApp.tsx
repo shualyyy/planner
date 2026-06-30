@@ -97,7 +97,7 @@ export default function MobileApp() {
         return (
           <button key={id} className={`tab${active ? ' on' : ''}`} onClick={() => setTab(id)}>
             <span className="tab-icon">
-              <Icon color={active ? '#e35914' : 'rgba(255,255,255,0.35)'} />
+              <Icon color={active ? '#D97757' : 'rgba(255,255,255,0.35)'} />
             </span>
             <span className="tab-label">{label}</span>
           </button>

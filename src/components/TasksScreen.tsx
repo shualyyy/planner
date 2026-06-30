@@ -46,12 +46,12 @@ function StatusCircle({ task }: { task: Task & { done: boolean } }) {
   const base: React.CSSProperties = { width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   if (task.done) {
     return (
-      <div style={{ ...base, background: '#e35914' }}>
+      <div style={{ ...base, background: '#D97757' }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
     )
   }
-  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #e35914', background: 'linear-gradient(90deg,#e35914 50%,transparent 50%)' }} />
+  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #D97757', background: 'linear-gradient(90deg,#D97757 50%,transparent 50%)' }} />
   if (task.status === 'blocked')     return <div style={{ ...base, border: '2px solid #FF5C5C' }} />
   return <div style={{ ...base, border: '2px solid rgba(255,255,255,0.25)' }} />
 }
@@ -107,7 +107,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
         onClick={() => { if (swipeLocked) { resetSwipe(); return } onToggle() }}
         style={{
           display: 'flex', alignItems: 'center', gap: 13,
-          padding: '14px 15px', background: '#111118',
+          padding: '14px 15px', background: '#242120',
           border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14,
           transform: `translateX(${swipeX}px)`,
           transition: swipeLocked || swipeX === 0 ? 'transform 0.2s ease' : 'none',
@@ -118,18 +118,18 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            font: '500 14px Inter', letterSpacing: '-0.005em',
+            font: '500 14px/1.2 var(--font-sans)', letterSpacing: '-0.005em',
             color: task.done ? 'rgba(255,255,255,0.3)' : '#F0ECE3',
             textDecoration: task.done ? 'line-through' : 'none',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{task.title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
             {task.task_time && (
-              <span style={{ background: near ? 'var(--accent-soft)' : '#16161E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: near ? '#e35914' : 'rgba(255,255,255,0.35)' }}>
+              <span style={{ background: near ? 'var(--accent-soft)' : '#2D2926', borderRadius: 6, padding: '3px 7px', font: '500 11px/1.2 var(--font-sans)', color: near ? '#D97757' : 'rgba(255,255,255,0.35)' }}>
                 {task.task_time.slice(0,5)}
               </span>
             )}
-            <span className="label-chip" style={{ background: chipColor + '1E', borderRadius: 6, padding: '3px 7px', font: '500 11px Inter', color: chipColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
+            <span className="label-chip" style={{ background: chipColor + '1E', borderRadius: 6, padding: '3px 7px', font: '500 11px/1.2 var(--font-sans)', color: chipColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
               {chipName}
             </span>
           </div>
@@ -137,7 +137,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {task.priority === 'high' && (
-            <span style={{ color: TASK_PRIORITIES.high.color, font: '700 13px Inter' }}>↑</span>
+            <span style={{ color: TASK_PRIORITIES.high.color, font: '700 13px/1.2 var(--font-sans)' }}>↑</span>
           )}
           <span className="color-dot" style={{ width: 5, height: 5, borderRadius: '50%', background: chipColor }} />
         </div>
@@ -158,11 +158,11 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
 }) {
   return createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#111118', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#242120', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ font: '300 24px Inter', color: '#F0ECE3' }}>History</span>
+            <span style={{ font: '300 24px/1.2 var(--font-sans)', color: '#F0ECE3' }}>History</span>
             <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Close</button>
           </div>
         </div>
@@ -176,8 +176,8 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
               return (
                 <div key={dk} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
-                    <span style={{ font: '600 12px Inter', color: 'rgba(255,255,255,0.4)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
-                    <span style={{ font: '500 11px Inter', color: 'rgba(255,255,255,0.25)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
+                    <span style={{ font: '600 12px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
+                    <span style={{ font: '500 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.25)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {dayTasks.map(t => (
@@ -236,14 +236,14 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
-        <div style={{ font: '600 11px Inter', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
-        <div style={{ font: '300 32px/1 Inter', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
+        <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
+        <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>{format(today, 'EEEE')},<br/>{format(today, 'd MMMM')}</div>
       </div>
 
       {/* Habits strip — always visible so user can open sheet even with 0 habits */}
       <div style={{ flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: habits.length > 0 ? 10 : 14, padding: '0 22px' }}>
-          <button onClick={() => setShowHabits(true)} style={{ font: '500 11px Inter', color: '#e35914', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => setShowHabits(true)} style={{ font: '500 11px/1.2 var(--font-sans)', color: '#D97757', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
             {habits.length > 0
               ? <>Habits · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span></>
               : <>Habits <span style={{ fontSize: 13 }}>→</span></>
@@ -256,10 +256,10 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
               const done = habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)
               return (
                 <button key={h.id} onClick={() => toggleHabitLog(h.id, todayKey)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 13px', background: '#16161E', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}>
-                  <span style={{ font: '500 12px Inter', color: '#F0ECE3' }}>{h.name}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 13px', background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}>
+                  <span style={{ font: '500 12px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{h.name}</span>
                   {done
-                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3DD68C"/><path d="M8 12.5l2.5 2.5L16 9" stroke="#0A0A0F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3DD68C"/><path d="M8 12.5l2.5 2.5L16 9" stroke="#1C1917" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     : <span style={{ width: 16, height: 16, borderRadius: 999, border: '1.5px solid rgba(255,255,255,0.25)' }} />
                   }
                 </button>
@@ -277,7 +277,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             title={`History (${historyCount})`}
             style={{
               width: 32, height: 32, borderRadius: '50%',
-              background: '#16161E', border: '1px solid rgba(255,255,255,0.08)',
+              background: '#2D2926', border: '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'rgba(255,255,255,0.55)', cursor: 'pointer', flexShrink: 0,
               position: 'relative',
@@ -304,7 +304,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
         {activeDays.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
-            <span style={{ font: '450 13.5px Inter', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
+            <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
           </div>
         ) : (
           activeDays.map(dk => {
@@ -313,7 +313,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             const isTomorrowOrLater = dk !== todayKey
             return (
               <div key={dk} style={{ marginBottom: 24 }}>
-                <div style={{ font: '600 10px Inter', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)', marginBottom: 11 }}>
+                <div style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)', marginBottom: 11 }}>
                   {dayLabel(dk)}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.55 : 1 }}>
