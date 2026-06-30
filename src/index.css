@@ -1,7 +1,7 @@
 /* ── Design tokens — Dino Task v2: dark-first ── */
 :root {
-  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: 'Inter', -apple-system, sans-serif;
+  --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* ── Backgrounds ── */
   --bg:         #0A0A0F;
@@ -225,7 +225,9 @@ input, textarea { font-family: inherit; color: inherit; }
   border-radius: 12px;
   display: flex; flex-direction: column;
   align-items: center;
-  padding: 6px 2px 5px;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px;
   background: transparent;
   position: relative;
   transition: background 0.15s, transform 0.15s;
@@ -238,7 +240,7 @@ input, textarea { font-family: inherit; color: inherit; }
 .d30.other .d-num { color: rgba(255,255,255,0.15); }
 .d30.today { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); }
 .d30.today .d-num { color: #fff; font-weight: 700; }
-.d-dots { display: flex; gap: 2px; margin-top: auto; justify-content: center; }
+.d-dots { display: flex; gap: 2px; justify-content: center; height: 4px; align-items: center; flex-shrink: 0; }
 .d-dot {
   width: 4px; height: 4px; border-radius: 50%;
   box-shadow: 0 0 5px 1.5px rgba(255,255,255,0.22);

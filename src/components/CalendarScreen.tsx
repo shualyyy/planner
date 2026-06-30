@@ -179,13 +179,11 @@ function Calendar30({ anchor, tasks, onDayTap }: {
               onClick={() => !isOther && onDayTap(d)}
             >
               <span className="d-num">{d.getDate()}</span>
-              {dotColors.length > 0 && (
-                <div className="d-dots">
-                  {dotColors.map((c, j) => (
-                    <div key={j} className="d-dot" style={{ background: c }} />
-                  ))}
-                </div>
-              )}
+              <div className="d-dots">
+                {dotColors.map((c, j) => (
+                  <div key={j} className="d-dot" style={{ background: c }} />
+                ))}
+              </div>
             </button>
           )
         })}
