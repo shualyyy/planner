@@ -210,14 +210,17 @@ input, textarea { font-family: inherit; color: inherit; }
 
 /* ── Calendar (dark card) ── */
 .cal-card {
-  margin: 0 14px 0;
+  margin: 0 14px;
   background: #242120;
   border-radius: 24px;
-  padding: 8px 4px 14px;
+  padding: 12px 4px 16px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
-.cal-body { flex: none; padding: 0 4px 0; display: flex; flex-direction: column; }
-.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px 8px; gap: 2px; }
+.cal-body { flex: none; width: 100%; padding: 0 4px; display: flex; flex-direction: column; }
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px 6px; gap: 2px; }
 .wd { text-align: center; color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px; gap: 2px; }
 .d30 {

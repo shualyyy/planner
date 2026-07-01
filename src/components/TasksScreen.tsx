@@ -597,26 +597,17 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 22px 8px', flexShrink: 0 }}>
           <button
             onClick={() => setShowHistory(true)}
-            title={`History (${historyCount})`}
             style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: '#2D2926', border: '1px solid rgba(255,255,255,0.08)',
+              width: 30, height: 30, borderRadius: '50%',
+              background: 'var(--surface2)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,255,255,0.55)', cursor: 'pointer', flexShrink: 0,
-              position: 'relative',
+              color: 'var(--text-muted)', cursor: 'pointer',
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            <span style={{
-              position: 'absolute', top: -3, right: -3,
-              minWidth: 14, height: 14, borderRadius: 999,
-              background: 'var(--accent)', color: '#fff',
-              fontSize: '8.5px', fontWeight: 700, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', padding: '0 3px',
-            }}>{historyCount > 9 ? '9+' : historyCount}</span>
           </button>
         </div>
       )}
