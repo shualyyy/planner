@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 export default function App() {
-  const { fetchTasks, fetchProjects, fetchHabits, theme } = useTaskStore()
+  const { fetchTasks, fetchProjects, fetchHabits, fetchProfile, theme } = useTaskStore()
   const [session, setSession] = useState<boolean | null>(null)
   const isMobile = useIsMobile()
 
@@ -58,8 +58,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (session) { fetchTasks(); fetchProjects(); fetchHabits() }
-  }, [session, fetchTasks, fetchProjects, fetchHabits])
+    if (session) { fetchTasks(); fetchProjects(); fetchHabits(); fetchProfile() }
+  }, [session, fetchTasks, fetchProjects, fetchHabits, fetchProfile])
 
   // Loading
   if (session === null) {

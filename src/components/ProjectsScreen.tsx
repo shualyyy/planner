@@ -35,7 +35,17 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
   onBack: () => void
   onAddTask: (projectId?: string) => void
 }) {
-  const { tasks, donIds } = useTaskStore()
+  const { tasks, donIds, members, fetchMembers, inviteMember, removeMember, profile } = useTaskStore()
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteId, setInviteId] = useState('')
+  const [inviteRole, setInviteRole] = useState<'editor'|'viewer'>('editor')
+  const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState('')
+
+  useEffect(() => {
+    if (project?.id) fetchMembers(project.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id])
 
   const byStatus = useMemo(() => {
     const g: Record<TaskStatus, (Task & { done: boolean })[]> = { not_started: [], in_progress: [], blocked: [], done: [] }
@@ -91,9 +101,10 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
         <span style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D97757' }}>Board</span>
       </div>
 
-      {/* Kanban */}
-      <div style={{ flex: 1, overflowY: 'hidden', overflowX: 'auto', padding: '0 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 70px)' }}>
-        <div style={{ display: 'flex', gap: 12, height: '100%' }}>
+      {/* Kanban + Members (vertical scroll) */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 70px)' }}>
+      <div style={{ overflowX: 'auto', padding: '0 22px' }}>
+        <div style={{ display: 'flex', gap: 12, minHeight: 400 }}>
           {STATUS_ORDER.map(st => {
             const list = byStatus[st]
             const blocked = st === 'blocked'
@@ -131,6 +142,80 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
             )
           })}
         </div>
+      </div>
+
+      {/* Members panel */}
+      <div style={{ padding: '24px 22px 24px' }}>
+        <div style={{ font: '600 10px/1 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
+          Members
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(members[project.id] || []).map(m => {
+            const isMe = m.user_id === profile?.id
+            return (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: m.profile?.avatar_color ?? 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 13px/1 var(--font-sans)', color: '#fff', flexShrink: 0 }}>
+                  {(m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ font: '600 13px/1.2 var(--font-sans)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isMe ? 'You' : (m.profile?.display_name ?? m.profile?.email ?? m.profile?.planer_id ?? '—')}
+                  </div>
+                  <div style={{ font: '400 10px/1.2 var(--font-sans)', color: 'var(--text-muted)', marginTop: 2, textTransform: 'capitalize' }}>{m.role}</div>
+                </div>
+                {m.role !== 'owner' && !isMe && (
+                  <button onClick={() => removeMember(project.id, m.user_id)} style={{ font: '500 11px/1 var(--font-sans)', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>Remove</button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {!showInvite ? (
+          <button
+            onClick={() => setShowInvite(true)}
+            style={{ marginTop: 10, width: '100%', height: 44, border: '1.5px dashed var(--border)', borderRadius: 12, background: 'transparent', color: 'var(--text-muted)', font: '500 13px/1 var(--font-sans)', cursor: 'pointer' }}
+          >+ Invite by Planer ID</button>
+        ) : (
+          <div style={{ marginTop: 10, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <input
+              value={inviteId}
+              onChange={e => setInviteId(e.target.value.toUpperCase())}
+              placeholder="Planer ID (e.g. X7K-2M9)"
+              style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)', font: '600 14px/1 ui-monospace, monospace', outline: 'none', letterSpacing: '0.05em' }}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['editor','viewer'] as const).map(r => (
+                <button key={r} onClick={() => setInviteRole(r)}
+                  style={{ flex: 1, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: inviteRole === r ? 'var(--accent-soft)' : 'transparent', color: inviteRole === r ? 'var(--accent)' : 'var(--text-muted)', font: '600 11px/1 var(--font-sans)', cursor: 'pointer', textTransform: 'capitalize' }}
+                >{r}</button>
+              ))}
+            </div>
+            {inviteError && <div style={{ font: '400 11px/1.4 var(--font-sans)', color: 'var(--danger)' }}>{inviteError}</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setShowInvite(false); setInviteId(''); setInviteError('') }}
+                style={{ flex: 1, height: 38, borderRadius: 10, border: 'none', background: 'var(--surface2)', color: 'var(--text-muted)', font: '600 12px/1 var(--font-sans)', cursor: 'pointer' }}
+              >Cancel</button>
+              <button
+                onClick={async () => {
+                  if (!inviteId.trim()) return
+                  setInviting(true); setInviteError('')
+                  try {
+                    await inviteMember(project.id, inviteId.trim(), inviteRole)
+                    await fetchMembers(project.id)
+                    setShowInvite(false); setInviteId('')
+                  } catch (e) {
+                    setInviteError(e instanceof Error ? e.message : 'Failed to invite')
+                  }
+                  setInviting(false)
+                }}
+                disabled={inviting || !inviteId.trim()}
+                style={{ flex: 1, height: 38, borderRadius: 10, border: 'none', background: inviteId.trim() ? 'var(--accent)' : 'var(--surface2)', color: inviteId.trim() ? '#fff' : 'var(--text-muted)', font: '600 12px/1 var(--font-sans)', cursor: inviteId.trim() ? 'pointer' : 'not-allowed' }}
+              >{inviting ? 'Adding…' : 'Add member'}</button>
+            </div>
+          </div>
+        )}
+      </div>
       </div>
 
       {/* FAB */}

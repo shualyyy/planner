@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
+import { useTaskStore } from '../store/taskStore'
 import { IcoLock, IcoHelp, SignOutIcon, ChevronRight } from './icons'
 
 export default function SettingsScreen() {
+  const { profile } = useTaskStore()
   const [email, setEmail] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function copyId() {
+    if (!profile?.planer_id) return
+    navigator.clipboard.writeText(profile.planer_id)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -52,6 +62,36 @@ export default function SettingsScreen() {
                 Free
               </span>
             </div>
+            {profile?.planer_id && (
+              <div style={{
+                marginTop: 14, background: 'var(--surface2)',
+                borderRadius: 12, padding: '10px 14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ font: '600 9px/1 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
+                    Planer ID
+                  </div>
+                  <div style={{ font: '700 18px/1 var(--font-sans)', color: 'var(--accent)', letterSpacing: '0.06em', fontFamily: 'ui-monospace, monospace' }}>
+                    {profile.planer_id}
+                  </div>
+                </div>
+                <button
+                  onClick={copyId}
+                  style={{
+                    padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    background: copied ? 'var(--success-soft)' : 'var(--surface3)',
+                    color: copied ? 'var(--success)' : 'var(--text-2)',
+                    font: '600 11px/1 var(--font-sans)', transition: 'all 0.2s',
+                  }}
+                >{copied ? 'Copied!' : 'Copy'}</button>
+              </div>
+            )}
+            {profile?.planer_id && (
+              <div style={{ marginTop: 10, font: '400 11px/1.5 var(--font-sans)', color: 'var(--text-muted)' }}>
+                Share your Planer ID with teammates so they can add you to shared projects.
+              </div>
+            )}
           </div>
         </div>
 

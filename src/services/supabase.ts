@@ -44,6 +44,36 @@ export interface Task {
   status?: TaskStatus
   priority?: TaskPriority
   time_estimate?: number | null  // minutes
+  assigned_to?: string | null
+  assigned_by?: string | null
+}
+
+export interface UserProfile {
+  id: string
+  display_name: string | null
+  email: string | null
+  planer_id: string
+  avatar_color: string
+  created_at: string
+}
+
+export interface ProjectMember {
+  id: string
+  project_id: string
+  user_id: string
+  role: 'owner' | 'editor' | 'viewer'
+  joined_at: string
+  profile?: UserProfile
+}
+
+export interface ProjectInvite {
+  id: string
+  project_id: string
+  invited_by: string
+  planer_id: string
+  role: 'editor' | 'viewer'
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
 }
 
 export type TaskStatus = 'not_started' | 'in_progress' | 'blocked' | 'done'

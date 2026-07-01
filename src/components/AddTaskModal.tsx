@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, addDays } from 'date-fns'
 import { useTaskStore } from '../store/taskStore'
+import { supabase } from '../services/supabase'
 import type { Task, TaskLabel, RecurrenceType, TaskStatus, TaskPriority } from '../services/supabase'
 import { TASK_STATUSES, TASK_PRIORITIES, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
 import { IcoChevronDown } from './icons'
@@ -27,7 +28,7 @@ function fmtDate(d: Date): string {
 }
 
 export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime = '', defaultProjectId = null, editTask }: Props) {
-  const { addTask, updateTask, projects } = useTaskStore()
+  const { addTask, updateTask, projects, profile, members, fetchMembers } = useTaskStore()
   const isEditMode = !!editTask
 
   const [title, setTitle]         = useState('')
@@ -43,6 +44,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [status, setStatus]       = useState<TaskStatus>('not_started')
   const [priority, setPriority]   = useState<TaskPriority>('medium')
   const [timeEstimate, setTimeEstimate] = useState<number | null>(null)
+  const [assignedTo, setAssignedTo] = useState<string | null>(null)
   const [description, setDescription] = useState('')
   const [saving, setSaving]       = useState(false)
   const [visible, setVisible]     = useState(false)
@@ -72,8 +74,15 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       setStatus(editTask.status ?? 'not_started')
       setPriority(editTask.priority ?? 'medium')
       setTimeEstimate(editTask.time_estimate ?? null)
+      setAssignedTo(editTask.assigned_to ?? null)
     }
   }, [isOpen, editTask])
+
+  // Fetch members whenever project changes and there is a project
+  useEffect(() => {
+    if (projectId) fetchMembers(projectId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
 
   // Sync defaultDate + defaultTime only when modal first opens in add mode
   useEffect(() => {
@@ -116,7 +125,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
         setLabel('personal'); setRecurrence(null); setIsPinned(false); setPinDuration('week'); setDescription(''); setSaving(false); setError('')
-        setProjectId(null); setStatus('not_started'); setPriority('medium'); setTimeEstimate(null)
+        setProjectId(null); setStatus('not_started'); setPriority('medium'); setTimeEstimate(null); setAssignedTo(null)
         setExpandedRow(null)
         setVisible(false)
       }, 300)
@@ -144,6 +153,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
     setError('')
     try {
       const encodedDesc = encodeLabelInDescription(label, description.trim())
+      const { data: { user } } = await supabase.auth.getUser()
       const payload = {
         title: title.trim(),
         task_date: date,
@@ -159,6 +169,8 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         status,
         priority,
         time_estimate: timeEstimate ?? null,
+        assigned_to: assignedTo ?? null,
+        assigned_by: assignedTo ? user?.id ?? null : null,
       }
       if (isEditMode && editTask) {
         await updateTask(editTask.id, payload)
@@ -267,6 +279,52 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               ))}
             </div>
           </div>
+
+          {/* Row: Assignee — only when project has other members */}
+          {projectId && (members[projectId]?.length ?? 0) > 1 && (
+            <>
+              <button onClick={() => toggleRow('assignee')} style={rowBtn(false)}>
+                <span style={rowLeft}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span style={rowLabelTxt}>Assign to</span>
+                </span>
+                {assignedTo
+                  ? (() => {
+                      const m = (members[projectId] || []).find(x => x.user_id === assignedTo)
+                      const name = m?.user_id === profile?.id ? 'Me' : (m?.profile?.display_name ?? m?.profile?.email ?? m?.profile?.planer_id ?? '—')
+                      return <span style={valuePill('#D97757')}>{name}</span>
+                    })()
+                  : <span style={valuePill('rgba(255,255,255,0.4)')}>Unassigned</span>}
+              </button>
+              <div style={expandWrap(expandedRow === 'assignee')}>
+                <div style={expandInner}>
+                  <button onClick={() => setAssignedTo(null)} style={pill(assignedTo === null)}>Unassigned</button>
+                  {(members[projectId] || []).map(m => {
+                    const isSelected = assignedTo === m.user_id
+                    const isMe = m.user_id === profile?.id
+                    const name = isMe ? 'Me' : (m.profile?.display_name ?? m.profile?.email ?? m.profile?.planer_id ?? '—')
+                    return (
+                      <button
+                        key={m.user_id}
+                        onClick={() => setAssignedTo(isSelected ? null : m.user_id)}
+                        style={{ ...pill(isSelected), gap: 6 }}
+                      >
+                        <span style={{
+                          width: 16, height: 16, borderRadius: '50%',
+                          background: m.profile?.avatar_color ?? 'var(--accent)',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          font: '700 8px/1 var(--font-sans)', color: '#fff', flexShrink: 0,
+                        }}>
+                          {(m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()}
+                        </span>
+                        {name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Row 2 — Status */}
           <button onClick={() => toggleRow('status')} style={rowBtn(false)}>

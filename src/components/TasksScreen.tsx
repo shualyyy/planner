@@ -1,10 +1,21 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { format, parseISO } from 'date-fns'
-import type { Task, Project } from '../services/supabase'
+import type { Task, Project, Habit, HabitLog } from '../services/supabase'
 import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
-import HabitsSheet from './HabitsSheet'
+
+const HABIT_COLORS = ['#D97757','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
+const HABIT_EMOJIS = ['⭕','🏃','📚','💧','🧘','💪','🥗','😴','✍️','🎯']
+const WD_EN = ['Mo','Tu','We','Th','Fr','Sa','Su']
+
+function startOfWeekMonday(d: Date): Date {
+  const r = new Date(d)
+  const dow = (r.getDay() + 6) % 7
+  r.setDate(r.getDate() - dow)
+  r.setHours(12, 0, 0, 0)
+  return r
+}
 
 interface TasksScreenProps {
   tasks: Record<string, (Task & { done: boolean })[]>
@@ -222,22 +233,289 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
   )
 }
 
+/* ─── Habits inline (segment content) ─── */
+function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd }: {
+  habits: Habit[]
+  habitLogs: HabitLog[]
+  todayKey: string
+  onToggle: (habitId: string, dk: string) => void
+  onAdd: (h: Omit<Habit, 'id' | 'created_at'>) => Promise<void>
+}) {
+  const today = new Date()
+  const weekStart = startOfWeekMonday(today)
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d
+  })
+
+  const isLogged = (habitId: string, dk: string) =>
+    habitLogs.some(l => l.habit_id === habitId && l.completed_date === dk)
+
+  const streak = (() => {
+    if (habits.length === 0) return 0
+    let s = 0
+    const d = new Date(today)
+    while (true) {
+      const dk = dk_(d)
+      const allDone = habits.every(h => habitLogs.some(l => l.habit_id === h.id && l.completed_date === dk))
+      if (allDone) { s++; d.setDate(d.getDate() - 1) }
+      else break
+    }
+    return s
+  })()
+
+  const monthPrefix = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`
+  const doneThisMonth = habitLogs.filter(l => l.completed_date.startsWith(monthPrefix)).length
+  const totalThisMonth = habits.length * today.getDate()
+
+  function habitStreak(habitId: string): number {
+    let s = 0
+    const d = new Date(today)
+    while (isLogged(habitId, dk_(d))) { s++; d.setDate(d.getDate() - 1) }
+    return s
+  }
+
+  const [showForm, setShowForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newColor, setNewColor] = useState(HABIT_COLORS[0])
+  const [newEmoji, setNewEmoji] = useState('⭕')
+  const [adding, setAdding] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (showForm) setTimeout(() => inputRef.current?.focus(), 80)
+  }, [showForm])
+
+  async function handleSave() {
+    if (!newName.trim()) return
+    setAdding(true)
+    try {
+      await onAdd({ name: newName.trim(), icon: newEmoji, color: newColor, frequency: 'daily', time_of_day: 'morning' })
+      setNewName(''); setNewColor(HABIT_COLORS[0]); setNewEmoji('⭕'); setShowForm(false)
+    } catch (e) { console.error(e) }
+    setAdding(false)
+  }
+
+  return (
+    <div>
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 9, marginBottom: 20 }}>
+        {[
+          { icon: '🔥', label: 'Streak', value: `${streak}d` },
+          { icon: '✓',  label: 'Month',  value: `${doneThisMonth}/${totalThisMonth}` },
+          { icon: '⚡', label: 'Active',  value: `${habits.length}` },
+        ].map((s, i) => (
+          <div key={i} style={{ flex: 1, background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '11px 12px' }}>
+            <div style={{ fontSize: 15, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ font: '600 16px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{s.value}</div>
+            <div style={{ font: '500 10px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Habit cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {habits.length === 0 && !showForm && (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.4)', font: '400 13px/1.2 var(--font-sans)' }}>
+            No habits yet. Add your first one!
+          </div>
+        )}
+        {habits.map(h => {
+          const doneToday = isLogged(h.id, todayKey)
+          const freqLabel = h.frequency === 'daily' ? 'Daily' : 'Weekly'
+          const todLabel = h.time_of_day === 'morning' ? 'Morning' : h.time_of_day === 'evening' ? 'Evening' : 'Afternoon'
+          return (
+            <div key={h.id} style={{ background: '#2D2926', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '14px 15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 9, background: h.color + '26',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, fontSize: 18, lineHeight: 1,
+                }}>
+                  {h.icon && h.icon !== 'circle' ? h.icon : '⭕'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ font: '600 15px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{h.name}</div>
+                  <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqLabel} · {todLabel} · streak {habitStreak(h.id)}</div>
+                </div>
+                <button
+                  onClick={() => onToggle(h.id, todayKey)}
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                    background: doneToday ? h.color : 'transparent',
+                    border: doneToday ? 'none' : '1.5px solid rgba(255,255,255,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}
+                >
+                  {doneToday && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 12.5l4 4L19 7" stroke="#1C1917" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingLeft: 46 }}>
+                {weekDays.map((d, i) => {
+                  const dk = dk_(d)
+                  const done = isLogged(h.id, dk)
+                  const isToday = dk === todayKey
+                  const isFuture = dk > todayKey
+                  const isMiss = !done && !isFuture && !isToday
+                  let style: React.CSSProperties = { width: 15, height: 15, borderRadius: 999, flexShrink: 0 }
+                  if (done) style = { ...style, background: h.color }
+                  else if (isToday) style = { ...style, border: `1.5px solid ${h.color}`, boxShadow: `0 0 0 3px ${h.color}2E` }
+                  else if (isMiss) style = { ...style, background: 'rgba(255,92,92,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                  else style = { ...style, border: '1.5px solid rgba(255,255,255,0.15)' }
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={style}>{isMiss && <span style={{ width: 5, height: 5, borderRadius: 999, background: '#FF5C5C' }} />}</div>
+                      <span style={{ font: '500 8px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.25)' }}>{WD_EN[i]}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        {showForm ? (
+          <div style={{ background: '#2D2926', border: '1.5px solid rgba(217,119,87,0.3)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input
+              ref={inputRef}
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setShowForm(false) }}
+              placeholder="Habit name…"
+              style={{
+                background: 'transparent', border: 'none', outline: 'none',
+                color: '#F0ECE3', font: '500 15px/1.2 var(--font-sans)', width: '100%',
+                borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 8,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {HABIT_EMOJIS.map(e => (
+                <button key={e} onClick={() => setNewEmoji(e)}
+                  style={{
+                    width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: 16, lineHeight: 1,
+                    background: newEmoji === e ? 'var(--accent-soft)' : 'rgba(255,255,255,0.06)',
+                    outline: newEmoji === e ? `1.5px solid var(--accent)` : 'none',
+                    outlineOffset: 1,
+                    transition: 'background 0.12s, outline 0.12s',
+                  }}
+                >{e}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {HABIT_COLORS.map(c => (
+                  <button key={c} onClick={() => setNewColor(c)}
+                    style={{
+                      width: 22, height: 22, borderRadius: '50%', border: 'none',
+                      background: c, cursor: 'pointer', flexShrink: 0,
+                      boxShadow: newColor === c ? `0 0 0 2px #242120, 0 0 0 4px ${c}` : 'none',
+                      transform: newColor === c ? 'scale(1.1)' : 'scale(1)',
+                      transition: 'transform 0.12s, box-shadow 0.12s',
+                    }}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { setShowForm(false); setNewName('') }}
+                  style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', font: '500 12px/1.2 var(--font-sans)', border: 'none', cursor: 'pointer' }}
+                >Cancel</button>
+                <button onClick={handleSave} disabled={adding || !newName.trim()}
+                  style={{
+                    padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    background: newName.trim() ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
+                    color: newName.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                    font: '600 12px/1.2 var(--font-sans)', transition: 'all 0.15s',
+                  }}
+                >{adding ? '…' : 'Add'}</button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowForm(true)}
+            style={{
+              height: 48, border: '1.5px dashed rgba(255,255,255,0.18)', borderRadius: 14,
+              background: 'transparent', color: 'rgba(255,255,255,0.6)', font: '500 13px/1.2 var(--font-sans)',
+              cursor: 'pointer', marginTop: 4,
+            }}
+          >+ Add habit</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const dk_ = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
+/* ─── Coop task list (segment content) ─── */
+function CoopTaskList({ tasks, projectMap, currentUserId, onToggle, onDelete, onEdit }: {
+  tasks: Record<string, (Task & { done: boolean })[]>
+  projectMap: Record<string, Project>
+  currentUserId: string
+  onToggle: (dk: string, id: string) => void
+  onDelete: (dk: string, id: string) => void
+  onEdit: (t: Task) => void
+}) {
+  const allFlat: { dk: string; t: Task & { done: boolean } }[] = []
+  for (const dk of Object.keys(tasks)) {
+    for (const t of tasks[dk] || []) allFlat.push({ dk, t })
+  }
+  const assignedToMe = allFlat.filter(x => x.t.assigned_to === currentUserId && !x.t.done)
+  const assignedByMe = allFlat.filter(x => x.t.assigned_by === currentUserId)
+
+  if (!allFlat.some(x => x.t.assigned_to === currentUserId || x.t.assigned_by === currentUserId)) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 12px', color: 'rgba(255,255,255,0.4)', font: '400 13px/1.5 var(--font-sans)' }}>
+        No shared tasks yet. Get started by inviting someone to a project.
+      </div>
+    )
+  }
+
+  const Section = ({ label, items }: { label: string; items: typeof allFlat }) =>
+    items.length === 0 ? null : (
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 11 }}>{label}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map(({ dk, t }) => (
+            <TaskRow
+              key={`coop-${t.id}-${dk}`}
+              task={t}
+              project={t.project_id ? projectMap[t.project_id] : undefined}
+              onToggle={() => onToggle(dk, t.id)}
+              onDelete={() => onDelete(dk, t.id)}
+              onEdit={() => onEdit(t)}
+            />
+          ))}
+        </div>
+      </div>
+    )
+
+  return (
+    <>
+      <Section label="Assigned to me" items={assignedToMe} />
+      <Section label="Assigned by me" items={assignedByMe} />
+    </>
+  )
+}
+
 /* ─── Main ─── */
 export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: TasksScreenProps) {
-  const { projects, habits, habitLogs, toggleHabitLog } = useTaskStore()
+  const { projects, habits, habitLogs, toggleHabitLog, addHabit, profile } = useTaskStore()
   const today = new Date()
   const todayKey = dayKey(today)
   const tomorrowKey = dayKey(addDays(today, 1))
   const [showHistory, setShowHistory] = useState(false)
-  const [showHabits, setShowHabits] = useState(false)
+  const [segment, setSegment] = useState<'tasks' | 'habits' | 'coop'>('tasks')
 
   const projectMap = useMemo(() => {
     const m: Record<string, Project> = {}
     for (const p of projects) m[p.id] = p
     return m
   }, [projects])
-
-  const habitsDone = habits.filter(h => habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)).length
 
   const { activeDays, historyDays } = useMemo(() => {
     const sorted = Object.keys(tasks).sort()
@@ -293,37 +571,29 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         </div>
       </div>
 
-      {/* Habits strip — always visible so user can open sheet even with 0 habits */}
-      <div style={{ flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: habits.length > 0 ? 10 : 14, padding: '0 22px' }}>
-          <button onClick={() => setShowHabits(true)} style={{ font: '500 11px/1.2 var(--font-sans)', color: '#D97757', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-            {habits.length > 0
-              ? <>Habits · {habitsDone}/{habits.length} <span style={{ fontSize: 13 }}>→</span></>
-              : <>Habits <span style={{ fontSize: 13 }}>→</span></>
-            }
-          </button>
-        </div>
-        {habits.length > 0 && (
-          <div style={{ display: 'flex', gap: 9, overflowX: 'auto', marginBottom: 22, padding: '0 22px 2px' }}>
-            {habits.map(h => {
-              const done = habitLogs.some(l => l.habit_id === h.id && l.completed_date === todayKey)
-              return (
-                <button key={h.id} onClick={() => toggleHabitLog(h.id, todayKey)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, height: 36, padding: '0 13px', background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}>
-                  <span style={{ font: '500 12px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{h.name}</span>
-                  {done
-                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3DD68C"/><path d="M8 12.5l2.5 2.5L16 9" stroke="#1C1917" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    : <span style={{ width: 16, height: 16, borderRadius: 999, border: '1.5px solid rgba(255,255,255,0.25)' }} />
-                  }
-                </button>
-              )
-            })}
-          </div>
-        )}
+      {/* Segment selector */}
+      <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 14, padding: 3, margin: '0 22px 18px', gap: 2 }}>
+        {([
+          { id: 'tasks',  label: 'Tasks'  },
+          { id: 'habits', label: 'Habits' },
+          { id: 'coop',   label: 'Coop'   },
+        ] as const).map(s => (
+          <button
+            key={s.id}
+            onClick={() => setSegment(s.id)}
+            style={{
+              flex: 1, height: 34, borderRadius: 11, border: 'none', cursor: 'pointer',
+              font: '600 12px/1 var(--font-sans)', letterSpacing: '-0.01em',
+              background: segment === s.id ? 'var(--accent)' : 'transparent',
+              color: segment === s.id ? '#fff' : 'var(--text-muted)',
+              transition: 'all 0.15s',
+            }}
+          >{s.label}</button>
+        ))}
       </div>
 
-      {/* History icon button */}
-      {historyCount > 0 && (
+      {/* History icon button — only in Tasks segment */}
+      {segment === 'tasks' && historyCount > 0 && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 22px 8px', flexShrink: 0 }}>
           <button
             onClick={() => setShowHistory(true)}
@@ -340,22 +610,48 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            {historyCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -3, right: -3,
-                minWidth: 14, height: 14, borderRadius: 999,
-                background: 'var(--accent)', color: '#fff',
-                fontSize: '8.5px', fontWeight: 700, display: 'flex',
-                alignItems: 'center', justifyContent: 'center', padding: '0 3px',
-              }}>{historyCount > 9 ? '9+' : historyCount}</span>
-            )}
+            <span style={{
+              position: 'absolute', top: -3, right: -3,
+              minWidth: 14, height: 14, borderRadius: 999,
+              background: 'var(--accent)', color: '#fff',
+              fontSize: '8.5px', fontWeight: 700, display: 'flex',
+              alignItems: 'center', justifyContent: 'center', padding: '0 3px',
+            }}>{historyCount > 9 ? '9+' : historyCount}</span>
           </button>
         </div>
       )}
 
-      {/* Content */}
+      {/* Segment: Habits */}
+      {segment === 'habits' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
+          <HabitsInline
+            habits={habits}
+            habitLogs={habitLogs}
+            todayKey={todayKey}
+            onToggle={toggleHabitLog}
+            onAdd={addHabit}
+          />
+        </div>
+      )}
+
+      {/* Segment: Coop */}
+      {segment === 'coop' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
+          <CoopTaskList
+            tasks={tasks}
+            projectMap={projectMap}
+            currentUserId={profile?.id ?? ''}
+            onToggle={onToggle}
+            onDelete={onDelete}
+            onEdit={onEdit}
+          />
+        </div>
+      )}
+
+      {/* Segment: Tasks */}
+      {segment === 'tasks' && (
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
-        {activeDays.length === 0 ? (
+        {activeDays.length === 0 && overdueTasks.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
             <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
           </div>
@@ -412,6 +708,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           </>
         )}
       </div>
+      )}
 
       {showHistory && (
         <HistorySheet
@@ -422,15 +719,6 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           onDelete={onDelete}
           onEdit={onEdit}
           onClose={() => setShowHistory(false)}
-        />
-      )}
-
-      {showHabits && (
-        <HabitsSheet
-          habits={habits}
-          habitLogs={habitLogs}
-          onToggle={toggleHabitLog}
-          onClose={() => setShowHabits(false)}
         />
       )}
     </div>

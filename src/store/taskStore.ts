@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase, type Task, type Project, type Habit, type HabitLog } from '../services/supabase'
+import { supabase, type Task, type Project, type Habit, type HabitLog, type UserProfile, type ProjectMember, type ProjectInvite } from '../services/supabase'
 
 interface TaskStore {
   tasks: Task[]
@@ -9,6 +9,9 @@ interface TaskStore {
   loading: boolean
   donIds: Set<string>
   theme: 'light' | 'dark'
+  profile: UserProfile | null
+  members: Record<string, ProjectMember[]>
+  pendingInvites: ProjectInvite[]
   fetchTasks: () => Promise<void>
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>) => Promise<void>
@@ -22,6 +25,12 @@ interface TaskStore {
   addHabit: (h: Omit<Habit, 'id' | 'created_at'>) => Promise<void>
   toggleHabitLog: (habitId: string, date: string) => Promise<void>
   setTheme: (t: 'light' | 'dark') => void
+  fetchProfile: () => Promise<void>
+  fetchMembers: (projectId: string) => Promise<void>
+  inviteMember: (projectId: string, planerId: string, role: 'editor' | 'viewer') => Promise<void>
+  removeMember: (projectId: string, userId: string) => Promise<void>
+  fetchPendingInvites: () => Promise<void>
+  acceptInvite: (inviteId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -32,6 +41,87 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   loading: false,
   donIds: new Set(),
   theme: 'dark',
+  profile: null,
+  members: {},
+  pendingInvites: [],
+
+  fetchProfile: async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    if (data) set({ profile: data as UserProfile })
+  },
+
+  fetchMembers: async (projectId) => {
+    const { data } = await supabase
+      .from('project_members')
+      .select('*, profile:user_profiles(*)')
+      .eq('project_id', projectId)
+    if (data) set(state => ({ members: { ...state.members, [projectId]: data as ProjectMember[] } }))
+  },
+
+  inviteMember: async (projectId, planerId, role) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('planer_id', planerId.toUpperCase())
+      .single()
+    if (!profile) throw new Error(`No user found with ID "${planerId}"`)
+    const { error } = await supabase
+      .from('project_members')
+      .insert([{ project_id: projectId, user_id: profile.id, role }])
+    if (error) throw new Error(error.message)
+    await supabase.from('project_invites').insert([{
+      project_id: projectId,
+      invited_by: user.id,
+      planer_id: planerId.toUpperCase(),
+      role,
+      status: 'accepted',
+    }])
+  },
+
+  removeMember: async (projectId, userId) => {
+    const { error } = await supabase
+      .from('project_members')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('user_id', userId)
+    if (error) throw error
+    set(state => ({
+      members: {
+        ...state.members,
+        [projectId]: (state.members[projectId] || []).filter(m => m.user_id !== userId),
+      },
+    }))
+  },
+
+  fetchPendingInvites: async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('planer_id')
+      .eq('id', user.id)
+      .single()
+    if (!profile) return
+    const { data } = await supabase
+      .from('project_invites')
+      .select('*')
+      .eq('planer_id', profile.planer_id)
+      .eq('status', 'pending')
+    if (data) set({ pendingInvites: data as ProjectInvite[] })
+  },
+
+  acceptInvite: async (inviteId) => {
+    await supabase.from('project_invites').update({ status: 'accepted' }).eq('id', inviteId)
+    set(state => ({ pendingInvites: state.pendingInvites.filter(i => i.id !== inviteId) }))
+  },
 
   setTheme: (t) => {
     document.documentElement.setAttribute('data-theme', t)
