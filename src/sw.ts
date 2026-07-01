@@ -17,8 +17,9 @@ self.addEventListener('push', (event: PushEvent) => {
       body: data.body ?? '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      vibrate: [100, 50, 100],
       data: { url: data.url ?? '/' },
+      // vibrate is non-standard in TS types but supported at runtime on Android
+      ...({ vibrate: [100, 50, 100] } as Record<string, unknown>),
     })
   )
 })

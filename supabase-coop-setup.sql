@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   display_name TEXT,
   email        TEXT,
   planer_id    TEXT    UNIQUE NOT NULL,
-  avatar_color TEXT    NOT NULL DEFAULT '#D97757',
+  avatar_color TEXT    NOT NULL DEFAULT '#CC785C',
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 

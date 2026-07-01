@@ -2,16 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import { IcoLock, IcoHelp, SignOutIcon, ChevronRight, SunIcon, MoonIcon } from './icons'
 import StatsScreen from './StatsScreen'
 import PaywallSheet from './PaywallSheet'
 
-const AVATAR_COLORS = ['#D97757', '#4A9EFF', '#3DD68C', '#A78BFA', '#F5BDD0', '#E8A24A', '#FF5C5C', '#8ED4C8']
+const AVATAR_COLORS = ['#CC785C', '#61AAF2', '#3DD68C', '#A78BFA', '#F5BDD0', '#D4A27F', '#CC5247', '#8ED4C8']
 
 function EditProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile, fetchProfile } = useTaskStore()
   const [name, setName] = useState('')
-  const [color, setColor] = useState('#D97757')
+  const [color, setColor] = useState('#CC785C')
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
 
@@ -22,7 +23,7 @@ function EditProfileSheet({ open, onClose }: { open: boolean; onClose: () => voi
   useEffect(() => {
     if (open && profile) {
       setName(profile.display_name ?? '')
-      setColor(profile.avatar_color ?? '#D97757')
+      setColor(profile.avatar_color ?? '#CC785C')
       setVisible(true)
     } else if (!open) {
       const t = setTimeout(() => setVisible(false), 300)
@@ -149,6 +150,7 @@ function EditProfileSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
 export default function SettingsScreen() {
   const { profile, pendingInvites, fetchPendingInvites, acceptInvite, declineInvite, fetchProjects, theme, setTheme } = useTaskStore()
+  const { subscribed, supported, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications()
   const [email, setEmail] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -188,7 +190,7 @@ export default function SettingsScreen() {
 
   const displayName = profile?.display_name?.trim()
   const initial = (displayName ?? email ?? '?')[0]?.toUpperCase() ?? '?'
-  const avatarColor = profile?.avatar_color ?? '#D97757'
+  const avatarColor = profile?.avatar_color ?? '#CC785C'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '90px' }}>
@@ -333,6 +335,34 @@ export default function SettingsScreen() {
               {theme === 'dark' ? 'Dark' : 'Light'}
             </span>
           </button>
+          {supported && (
+            <button
+              className="settings-row"
+              onClick={() => subscribed ? unsubscribe() : subscribe()}
+              disabled={pushLoading}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', opacity: pushLoading ? 0.6 : 1 }}
+            >
+              <div className="set-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </div>
+              <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>Notifications</span>
+              <div style={{
+                width: 44, height: 26, borderRadius: 13,
+                background: subscribed ? 'var(--accent)' : 'var(--surface3)',
+                position: 'relative', transition: 'background 0.2s',
+                flexShrink: 0,
+              }}>
+                <div style={{
+                  position: 'absolute', top: 3, left: subscribed ? 21 : 3,
+                  width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                  transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                }} />
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Account */}
