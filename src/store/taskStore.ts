@@ -53,13 +53,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   addTask: async (task) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not logged in — cannot create task')
     const { data, error } = await supabase
       .from('tasks')
-      .insert([{ ...task, is_done: false }])
+      .insert([{ ...task, is_done: false, user_id: user.id }])
       .select()
     if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
     const inserted = data?.[0] as Task | undefined
-    if (!inserted) throw new Error('Task not saved — check Supabase RLS: anon insert may be blocked')
+    if (!inserted) throw new Error('Task not saved — check Supabase RLS policies')
     set((state) => ({
       tasks: [...state.tasks, inserted].sort((a, b) => {
         const dc = a.task_date.localeCompare(b.task_date)
@@ -124,13 +126,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   addProject: async (p) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not logged in — cannot create project')
     const { data, error } = await supabase
       .from('projects')
-      .insert([p])
+      .insert([{ ...p, user_id: user.id }])
       .select()
     if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
     const inserted = data?.[0] as Project | undefined
-    if (!inserted) throw new Error('Project not saved — check Supabase RLS: anon insert may be blocked')
+    if (!inserted) throw new Error('Project not saved — check Supabase RLS policies')
     set((state) => ({ projects: [...state.projects, inserted] }))
     return inserted
   },
@@ -163,10 +167,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   addHabit: async (h) => {
-    const { data, error } = await supabase.from('habits').insert([h]).select()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not logged in — cannot create habit')
+    const { data, error } = await supabase.from('habits').insert([{ ...h, user_id: user.id }]).select()
     if (error) throw new Error(`Supabase insert error: ${error.message} (code: ${error.code})`)
     const inserted = data?.[0] as Habit | undefined
-    if (!inserted) throw new Error('Habit not saved — check Supabase RLS: anon insert may be blocked')
+    if (!inserted) throw new Error('Habit not saved — check Supabase RLS policies')
     set((state) => ({ habits: [...state.habits, inserted] }))
   },
 

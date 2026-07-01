@@ -1,20 +1,45 @@
-import { useEffect, useState } from 'react'
-import Calendar from './components/Calendar'
-import ChatPanel from './components/ChatPanel'
-import TodayTasks from './components/TodayTasks'
+import { useEffect, useState, Component, type ReactNode } from 'react'
 import LoginPage, { MobileLoginPage } from './components/LoginPage'
 import MobileApp from './components/MobileApp'
-import SettingsModal from './components/SettingsModal'
 import { useTaskStore } from './store/taskStore'
 import { supabase } from './services/supabase'
 import { useIsMobile } from './hooks/useIsMobile'
-import { GearIcon } from './components/icons'
+
+/* ── Error Boundary ── */
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{
+          width: '100vw', height: '100vh', background: 'var(--bg)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 16, padding: 24, textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 32 }}>⚠️</div>
+          <div style={{ font: '600 16px/1.4 var(--font-sans)', color: 'var(--text)' }}>Something went wrong</div>
+          <div style={{ font: '400 12px/1.5 var(--font-sans)', color: 'var(--text-muted)', maxWidth: 280 }}>
+            {(this.state.error as Error).message}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 24px', borderRadius: 999, border: 'none',
+              background: 'var(--accent)', color: '#fff',
+              font: '600 13px/1 var(--font-sans)', cursor: 'pointer',
+            }}
+          >Reload app</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 export default function App() {
   const { fetchTasks, fetchProjects, fetchHabits, theme } = useTaskStore()
-  const [selectedDate, setSelectedDate] = useState(new Date())
   const [session, setSession] = useState<boolean | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const isMobile = useIsMobile()
 
   // Sync theme to DOM
@@ -36,7 +61,7 @@ export default function App() {
     if (session) { fetchTasks(); fetchProjects(); fetchHabits() }
   }, [session, fetchTasks, fetchProjects, fetchHabits])
 
-  // Loading spinner
+  // Loading
   if (session === null) {
     return (
       <div style={{ width: '100vw', height: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -51,54 +76,9 @@ export default function App() {
       : <LoginPage onLogin={() => setSession(true)} />
   }
 
-  // Mobile layout — 5-tab floating pill
-  if (isMobile) {
-    return <MobileApp />
-  }
-
-  // Desktop layout — 3-column grid
   return (
-    <>
-      <div style={{
-        width: '100vw',
-        height: '100vh',
-        background: 'var(--surface)',
-        overflow: 'hidden',
-        display: 'grid',
-        gridTemplateColumns: '300px 1fr 320px',
-      }}>
-        <ChatPanel />
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-          <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        </div>
-        <TodayTasks selectedDate={selectedDate} />
-      </div>
-
-      {/* Settings button — desktop */}
-      <button
-        onClick={() => setSettingsOpen(true)}
-        title="Settings"
-        style={{
-          position: 'fixed', top: '14px', right: '16px', zIndex: 50,
-          width: '32px', height: '32px', borderRadius: '9px',
-          background: 'transparent', border: '1px solid var(--border)',
-          color: 'var(--text-muted)', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'all 0.15s',
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.background = 'var(--surface2)'
-          ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.background = 'transparent'
-          ;(e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'
-        }}
-      >
-        <GearIcon size={16} />
-      </button>
-
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-    </>
+    <ErrorBoundary>
+      <MobileApp />
+    </ErrorBoundary>
   )
 }
