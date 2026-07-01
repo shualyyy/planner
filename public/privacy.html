@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy · Planer</title>
+  <style>
+    :root {
+      --bg: #1C1917;
+      --surface: #242120;
+      --text: #F0ECE3;
+      --text-muted: rgba(255,255,255,0.6);
+      --accent: #D97757;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+    header {
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 30px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      margin: 34px 0 12px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: -0.005em;
+    }
+    p, li {
+      color: var(--text-muted);
+      font-size: 14.5px;
+    }
+    ul { padding-left: 22px; margin: 8px 0 0; }
+    li { margin-bottom: 6px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .meta {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-top: 24px;
+    }
+    strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="eyebrow">Planer</div>
+      <h1>Privacy Policy</h1>
+      <p class="meta">Effective date: 2026-01-01</p>
+    </header>
+
+    <p>Planer is a personal task and habit planner. This policy explains what data we collect, how we use it, and your rights.</p>
+
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Account data:</strong> your email address, and — if you provide them — display name and avatar color.</li>
+      <li><strong>Content you create:</strong> tasks, habits, projects, comments, and habit completion history.</li>
+      <li><strong>Collaboration data:</strong> Planer IDs you share, project members you invite, and pending invites.</li>
+      <li><strong>Technical data:</strong> minimal server logs for reliability and debugging (IP address, browser/version).</li>
+    </ul>
+
+    <h2>How we use it</h2>
+    <p>We use your data only to make the app work for you: syncing your content across devices, showing it to your teammates in shared projects, and diagnosing issues. We do not sell your data or share it with advertisers.</p>
+
+    <h2>Where it's stored</h2>
+    <p>All data is stored with our infrastructure provider, <strong>Supabase</strong> (Postgres + object storage), on servers in the region we've configured for the deployment. Access is protected by Row-Level Security policies scoped to your user account.</p>
+
+    <h2>AI assistant</h2>
+    <p>When you use the in-app assistant, the message you send and a summary of your tasks are transmitted to our LLM provider for the sole purpose of generating a reply. We don't retain your messages beyond the conversation on your device.</p>
+
+    <h2>Analytics &amp; tracking</h2>
+    <p>We don't use third-party ad networks or behavioral trackers. If crash reporting is enabled in your build, only anonymized stack traces are sent to help fix bugs.</p>
+
+    <h2>Your rights</h2>
+    <p>You can edit or delete any of your content at any time from within the app. To request full account deletion or a copy of your data, contact us at the address below. We aim to respond within 30 days.</p>
+
+    <div class="card">
+      <strong>Contact:</strong>
+      <p style="margin-top: 6px;">Email: <a href="mailto:privacy@planer.app">privacy@planer.app</a></p>
+    </div>
+
+    <h2>Changes to this policy</h2>
+    <p>If we make material changes, we'll update the effective date above and, where appropriate, notify you inside the app.</p>
+  </div>
+</body>
+</html>

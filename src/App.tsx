@@ -1,6 +1,7 @@
 import { useEffect, useState, Component, type ReactNode } from 'react'
 import LoginPage, { MobileLoginPage } from './components/LoginPage'
 import MobileApp from './components/MobileApp'
+import OnboardingScreen from './components/OnboardingScreen'
 import { useTaskStore } from './store/taskStore'
 import { supabase } from './services/supabase'
 import { useIsMobile } from './hooks/useIsMobile'
@@ -38,7 +39,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 export default function App() {
-  const { fetchTasks, fetchProjects, fetchHabits, fetchProfile, theme } = useTaskStore()
+  const { fetchTasks, fetchProjects, fetchHabits, fetchProfile, theme, profile } = useTaskStore()
   const [session, setSession] = useState<boolean | null>(null)
   const isMobile = useIsMobile()
 
@@ -74,6 +75,14 @@ export default function App() {
     return isMobile
       ? <MobileLoginPage onLogin={() => setSession(true)} />
       : <LoginPage onLogin={() => setSession(true)} />
+  }
+
+  if (profile && !profile.onboarded) {
+    return (
+      <ErrorBoundary>
+        <OnboardingScreen onComplete={() => fetchProfile()} />
+      </ErrorBoundary>
+    )
   }
 
   return (

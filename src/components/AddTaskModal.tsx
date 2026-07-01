@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, addDays } from 'date-fns'
+import * as chrono from 'chrono-node'
 import { useTaskStore } from '../store/taskStore'
 import { supabase } from '../services/supabase'
 import type { Task, TaskLabel, RecurrenceType, TaskStatus, TaskPriority } from '../services/supabase'
@@ -50,6 +51,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
   const [visible, setVisible]     = useState(false)
   const [error, setError]         = useState('')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
+  const [datePreview, setDatePreview] = useState<string | null>(null)
 
   const titleRef = useRef<HTMLInputElement>(null)
   const prevTimeRef = useRef('')
@@ -125,13 +127,37 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       const timer = setTimeout(() => {
         setTitle(''); setTime(''); setTimeEnd(''); setIsAllDay(false)
         setLabel('personal'); setRecurrence(null); setIsPinned(false); setPinDuration('week'); setDescription(''); setSaving(false); setError('')
-        setProjectId(null); setStatus('not_started'); setPriority('medium'); setTimeEstimate(null); setAssignedTo(null)
+        setProjectId(null); setStatus('not_started'); setPriority('medium'); setTimeEstimate(null); setAssignedTo(null); setDatePreview(null)
         setExpandedRow(null)
         setVisible(false)
       }, 300)
       return () => clearTimeout(timer)
     }
   }, [isOpen])
+
+  function handleTitleChange(val: string) {
+    setTitle(val)
+    if (!val.trim()) { setDatePreview(null); return }
+    try {
+      const parsedRu = chrono.ru?.parse(val, new Date()) ?? []
+      const parsedEn = chrono.parse(val, new Date())
+      const result = parsedRu[0] ?? parsedEn[0]
+      if (result) {
+        const d = result.start.date()
+        setDate(fmtDate(d))
+        if (result.start.isCertain('hour')) {
+          const hh = String(d.getHours()).padStart(2, '0')
+          const mm = String(d.getMinutes()).padStart(2, '0')
+          setTime(`${hh}:${mm}`)
+          setDatePreview(`${format(d, 'MMM d')} · ${hh}:${mm}`)
+        } else {
+          setDatePreview(format(d, 'MMM d'))
+        }
+      } else {
+        setDatePreview(null)
+      }
+    } catch { setDatePreview(null) }
+  }
 
   function handleTimeChange(val: string) {
     setTime(val)
@@ -246,11 +272,22 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             ref={titleRef}
             type="text"
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={e => handleTitleChange(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
             placeholder="Task title…"
             style={{ font: '300 24px/1.2 var(--font-sans)', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
+          {datePreview && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '4px 10px', borderRadius: 999, marginTop: 6,
+              background: 'var(--accent-soft)', color: 'var(--accent)',
+              font: '500 11px/1 var(--font-sans)',
+              animation: 'slideUp 0.15s ease',
+            }}>
+              📅 {datePreview} detected
+            </div>
+          )}
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}

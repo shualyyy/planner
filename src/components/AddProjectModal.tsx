@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTaskStore } from '../store/taskStore'
 import type { Project } from '../services/supabase'
+import { FREE_PROJECT_LIMIT } from '../services/supabase'
 import { IcoChevronDown } from './icons'
+import PaywallSheet from './PaywallSheet'
 
 interface Props {
   isOpen: boolean
@@ -15,8 +17,11 @@ const PROJECT_COLORS = [
 ]
 
 export default function AddProjectModal({ isOpen, onClose, editProject }: Props) {
-  const { addProject, updateProject } = useTaskStore()
+  const { addProject, updateProject, projects, profile } = useTaskStore()
   const isEditMode = !!editProject
+
+  const isPaywalled = !isEditMode && (profile?.plan ?? 'free') === 'free'
+    && projects.filter(p => !p.is_archived).length >= FREE_PROJECT_LIMIT
 
   const [name, setName]               = useState('')
   const [color, setColor]             = useState(PROJECT_COLORS[0])
@@ -92,6 +97,17 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
   }
 
   if (!isOpen && !visible) return null
+
+  if (isPaywalled) {
+    return (
+      <PaywallSheet
+        open={isOpen}
+        onClose={onClose}
+        headline="Free plan uses 3 projects"
+        subhead="Upgrade to Pro for unlimited projects, unlimited habits, and Coop team features."
+      />
+    )
+  }
 
   const shown = isOpen && visible
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import CalendarScreen from './CalendarScreen'
 import TasksScreen from './TasksScreen'
@@ -40,7 +40,18 @@ const TABS: { id: Tab; Icon: React.FC<{ color: string }>; label: string }[] = [
 ]
 
 export default function MobileApp() {
-  const { tasks, donIds, toggleDone, deleteTask } = useTaskStore()
+  const { tasks, donIds, toggleDone, deleteTask, pendingInvites, fetchPendingInvites } = useTaskStore()
+
+  useEffect(() => { fetchPendingInvites() }, [fetchPendingInvites])
+
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  useEffect(() => {
+    const on = () => setIsOnline(true)
+    const off = () => setIsOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
   const [tab, setTab] = useState<Tab>('tasks')
   const [modalOpen, setModalOpen] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
@@ -96,8 +107,16 @@ export default function MobileApp() {
         const active = tab === id
         return (
           <button key={id} className={`tab${active ? ' on' : ''}`} onClick={() => setTab(id)}>
-            <span className="tab-icon">
+            <span className="tab-icon" style={{ position: 'relative' }}>
               <Icon color={active ? '#D97757' : 'rgba(255,255,255,0.35)'} />
+              {id === 'settings' && pendingInvites.length > 0 && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -3,
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: 'var(--danger)',
+                  boxShadow: '0 0 0 2px var(--tabbar-bg)',
+                }} />
+              )}
             </span>
             <span className="tab-label">{label}</span>
           </button>
@@ -109,6 +128,17 @@ export default function MobileApp() {
 
   return (
     <>
+      {!isOnline && createPortal(
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: 'var(--warning)', color: '#1C1917',
+          padding: 'calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px',
+          textAlign: 'center', font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.04em',
+        }}>
+          ⚡ Offline — changes will sync when reconnected
+        </div>,
+        document.body
+      )}
       <div style={{
         position: 'fixed', inset: 0,
         background: 'var(--bg)',

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase, type Task, type Project, type Habit, type HabitLog, type UserProfile, type ProjectMember, type ProjectInvite } from '../services/supabase'
+import { supabase, type Task, type Project, type Habit, type HabitLog, type UserProfile, type ProjectMember, type ProjectInvite, type TaskComment } from '../services/supabase'
 
 interface TaskStore {
   tasks: Task[]
@@ -31,6 +31,10 @@ interface TaskStore {
   removeMember: (projectId: string, userId: string) => Promise<void>
   fetchPendingInvites: () => Promise<void>
   acceptInvite: (inviteId: string) => Promise<void>
+  declineInvite: (inviteId: string) => Promise<void>
+  taskComments: Record<string, TaskComment[]>
+  fetchTaskComments: (taskId: string) => Promise<void>
+  addTaskComment: (taskId: string, text: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -40,7 +44,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   habitLogs: [],
   loading: false,
   donIds: new Set(),
-  theme: 'dark',
+  theme: (typeof localStorage !== 'undefined' && (localStorage.getItem('planer-theme') as 'light' | 'dark')) || 'dark',
   profile: null,
   members: {},
   pendingInvites: [],
@@ -120,7 +124,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     if (!profile) return
     const { data } = await supabase
       .from('project_invites')
-      .select('*')
+      .select('*, project:projects(name, color)')
       .eq('planer_id', profile.planer_id)
       .eq('status', 'pending')
     if (data) set({ pendingInvites: data as ProjectInvite[] })
@@ -131,8 +135,42 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set(state => ({ pendingInvites: state.pendingInvites.filter(i => i.id !== inviteId) }))
   },
 
+  declineInvite: async (inviteId) => {
+    await supabase.from('project_invites').update({ status: 'declined' }).eq('id', inviteId)
+    set(state => ({ pendingInvites: state.pendingInvites.filter(i => i.id !== inviteId) }))
+  },
+
+  taskComments: {},
+
+  fetchTaskComments: async (taskId) => {
+    const { data } = await supabase
+      .from('task_comments')
+      .select('*, profile:user_profiles(*)')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true })
+    if (data) set(state => ({ taskComments: { ...state.taskComments, [taskId]: data as TaskComment[] } }))
+  },
+
+  addTaskComment: async (taskId, text) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data, error } = await supabase
+      .from('task_comments')
+      .insert([{ task_id: taskId, user_id: user.id, text }])
+      .select('*, profile:user_profiles(*)')
+    if (error || !data?.[0]) return
+    const inserted = data[0] as TaskComment
+    set(state => ({
+      taskComments: {
+        ...state.taskComments,
+        [taskId]: [...(state.taskComments[taskId] || []), inserted],
+      },
+    }))
+  },
+
   setTheme: (t) => {
     document.documentElement.setAttribute('data-theme', t)
+    try { localStorage.setItem('planer-theme', t) } catch { /* ignore */ }
     set({ theme: t })
   },
 
@@ -301,8 +339,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 }))
 
-// Ensure data-theme="dark" is set on <html> from the very first render
-useTaskStore.getState().setTheme('dark')
+// Ensure data-theme is set on <html> from the very first render, using stored preference
+useTaskStore.getState().setTheme(useTaskStore.getState().theme)
 
 function addDaysToDate(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r

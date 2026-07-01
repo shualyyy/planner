@@ -2,8 +2,10 @@ import { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { format, parseISO } from 'date-fns'
 import type { Task, Project, Habit, HabitLog } from '../services/supabase'
-import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription } from '../services/supabase'
+import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription, FREE_HABIT_LIMIT } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
+import TaskDetailSheet from './TaskDetailSheet'
+import PaywallSheet from './PaywallSheet'
 
 const HABIT_COLORS = ['#D97757','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
 const HABIT_EMOJIS = ['⭕','🏃','📚','💧','🧘','💪','🥗','😴','✍️','🎯']
@@ -68,12 +70,13 @@ function StatusCircle({ task }: { task: Task & { done: boolean } }) {
 }
 
 /* ─── Task card ─── */
-function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
+function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
   task: Task & { done: boolean }
   project?: Project
   onToggle: () => void
   onDelete: () => void
   onEdit: () => void
+  onOpen?: () => void
 }) {
   const [swipeX, setSwipeX] = useState(0)
   const [swipeLocked, setSwipeLocked] = useState(false)
@@ -115,7 +118,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
       {/* Card */}
       <div
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-        onClick={() => { if (swipeLocked) { resetSwipe(); return } onToggle() }}
+        onClick={() => { if (swipeLocked) { resetSwipe(); return } if (onOpen) onOpen(); else onToggle() }}
         style={{
           display: 'flex', alignItems: 'center', gap: 13,
           padding: '14px 15px', background: '#242120',
@@ -125,7 +128,9 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit }: {
           cursor: 'pointer',
         }}
       >
-        <StatusCircle task={task} />
+        <div onClick={e => { e.stopPropagation(); onToggle() }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <StatusCircle task={task} />
+        </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -234,13 +239,16 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
 }
 
 /* ─── Habits inline (segment content) ─── */
-function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd }: {
+function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
   habits: Habit[]
   habitLogs: HabitLog[]
   todayKey: string
   onToggle: (habitId: string, dk: string) => void
   onAdd: (h: Omit<Habit, 'id' | 'created_at'>) => Promise<void>
+  plan: 'free' | 'pro'
 }) {
+  const [paywallOpen, setPaywallOpen] = useState(false)
+  const habitsAtLimit = plan === 'free' && habits.length >= FREE_HABIT_LIMIT
   const today = new Date()
   const weekStart = startOfWeekMonday(today)
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -297,6 +305,17 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd }: {
 
   return (
     <div>
+      {/* Best streak header */}
+      {(() => {
+        const bestStreak = habits.reduce((max, h) => Math.max(max, habitStreak(h.id)), 0)
+        if (bestStreak < 3) return null
+        return (
+          <div style={{ font: '500 12px/1.2 var(--font-sans)', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            Best streak: <span style={{ color: bestStreak >= 7 ? '#E8A24A' : 'var(--text-2)', fontWeight: 700 }}>🔥 {bestStreak} day{bestStreak === 1 ? '' : 's'}</span>
+          </div>
+        )
+      })()}
+
       {/* Stats row */}
       <div style={{ display: 'flex', gap: 9, marginBottom: 20 }}>
         {[
@@ -334,8 +353,17 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd }: {
                   {h.icon && h.icon !== 'circle' ? h.icon : '⭕'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: '600 15px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{h.name}</div>
-                  <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqLabel} · {todLabel} · streak {habitStreak(h.id)}</div>
+                  <div style={{ font: '600 15px/1.2 var(--font-sans)', color: '#F0ECE3', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</span>
+                    {(() => {
+                      const s = habitStreak(h.id)
+                      if (s < 1) return null
+                      if (s === 1) return <span style={{ font: '500 10.5px/1 var(--font-sans)', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>1 day</span>
+                      const gold = s >= 7
+                      return <span style={{ font: '600 11px/1 var(--font-sans)', color: gold ? '#E8A24A' : 'rgba(255,255,255,0.7)', flexShrink: 0 }}>🔥 {s}</span>
+                    })()}
+                  </div>
+                  <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqLabel} · {todLabel}</div>
                 </div>
                 <button
                   onClick={() => onToggle(h.id, todayKey)}
@@ -435,15 +463,21 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd }: {
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowForm(true)}
+          <button onClick={() => habitsAtLimit ? setPaywallOpen(true) : setShowForm(true)}
             style={{
               height: 48, border: '1.5px dashed rgba(255,255,255,0.18)', borderRadius: 14,
               background: 'transparent', color: 'rgba(255,255,255,0.6)', font: '500 13px/1.2 var(--font-sans)',
               cursor: 'pointer', marginTop: 4,
             }}
-          >+ Add habit</button>
+          >{habitsAtLimit ? '🔒 Upgrade for more habits' : '+ Add habit'}</button>
         )}
       </div>
+      <PaywallSheet
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        headline="Free plan uses 5 habits"
+        subhead="Upgrade to Pro for unlimited habits and Coop team features."
+      />
     </div>
   )
 }
@@ -510,6 +544,11 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   const tomorrowKey = dayKey(addDays(today, 1))
   const [showHistory, setShowHistory] = useState(false)
   const [segment, setSegment] = useState<'tasks' | 'habits' | 'coop'>('tasks')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+  const [detailTask, setDetailTask] = useState<(Task & { done: boolean }) | null>(null)
+  const [coopPaywallOpen, setCoopPaywallOpen] = useState(false)
 
   const projectMap = useMemo(() => {
     const m: Record<string, Project> = {}
@@ -541,6 +580,25 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   const todayDone = todayTasks.filter(t => t.done).length
   const todayTotal = todayTasks.length
 
+  // Search — flat filtered list across all dates
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return []
+    const out: { dk: string; t: Task & { done: boolean } }[] = []
+    for (const dk of Object.keys(tasks)) {
+      for (const t of tasks[dk] || []) {
+        if (t.title.toLowerCase().includes(q)) out.push({ dk, t })
+      }
+    }
+    return out
+  }, [tasks, searchQuery])
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchRef.current?.focus(), 60)
+  }, [searchOpen])
+
+  function closeSearch() { setSearchOpen(false); setSearchQuery('') }
+
   function dayLabel(dk: string): string {
     if (dk === todayKey) return 'Today'
     if (dk === tomorrowKey) return 'Tomorrow'
@@ -551,27 +609,79 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ marginBottom: 18, padding: '8px 22px 0', flexShrink: 0 }}>
-        <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Tasks</div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>
-            {format(today, 'EEEE')},<br />{format(today, 'd MMMM')}
+        {searchOpen ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 46, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '0 12px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input
+              ref={searchRef}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') closeSearch() }}
+              placeholder="Search tasks…"
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', font: '500 14px/1.2 var(--font-sans)' }}
+            />
+            <button onClick={closeSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          {todayTotal > 0 && (
-            <div style={{ textAlign: 'right', paddingBottom: 4 }}>
-              {todayDone === todayTotal ? (
-                <span style={{ font: '600 13px/1.2 var(--font-sans)', color: 'var(--success)' }}>All done ✓</span>
-              ) : (
-                <>
-                  <span style={{ font: '700 26px/1 var(--font-sans)', color: 'var(--accent)' }}>{todayDone}</span>
-                  <span style={{ font: '400 14px/1 var(--font-sans)', color: 'rgba(255,255,255,0.3)' }}>/{todayTotal}</span>
-                </>
+        ) : (
+          <>
+            <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Tasks</span>
+              {segment === 'tasks' && (
+                <button onClick={() => setSearchOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }} title="Search">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
               )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>
+                {format(today, 'EEEE')},<br />{format(today, 'd MMMM')}
+              </div>
+              {todayTotal > 0 && (
+                <div style={{ textAlign: 'right', paddingBottom: 4 }}>
+                  {todayDone === todayTotal ? (
+                    <span style={{ font: '600 13px/1.2 var(--font-sans)', color: 'var(--success)' }}>All done ✓</span>
+                  ) : (
+                    <>
+                      <span style={{ font: '700 26px/1 var(--font-sans)', color: 'var(--accent)' }}>{todayDone}</span>
+                      <span style={{ font: '400 14px/1 var(--font-sans)', color: 'rgba(255,255,255,0.3)' }}>/{todayTotal}</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Search results override — replaces segments while searching */}
+      {searchOpen && searchQuery.trim() && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
+          {searchResults.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', font: '450 13.5px/1.2 var(--font-sans)' }}>
+              No matches.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {searchResults.map(({ dk, t }) => (
+                <TaskRow
+                  key={`search-${t.id}-${dk}`}
+                  task={t}
+                  project={t.project_id ? projectMap[t.project_id] : undefined}
+                  onToggle={() => onToggle(dk, t.id)}
+                  onDelete={() => onDelete(dk, t.id)}
+                  onEdit={() => onEdit(t)}
+                  onOpen={() => setDetailTask(t)}
+                />
+              ))}
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Segment selector */}
+      {!(searchOpen && searchQuery.trim()) && (<>
       <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 14, padding: 3, margin: '0 22px 18px', gap: 2 }}>
         {([
           { id: 'tasks',  label: 'Tasks'  },
@@ -621,6 +731,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             todayKey={todayKey}
             onToggle={toggleHabitLog}
             onAdd={addHabit}
+            plan={(profile?.plan ?? 'free') as 'free' | 'pro'}
           />
         </div>
       )}
@@ -628,14 +739,46 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       {/* Segment: Coop */}
       {segment === 'coop' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
-          <CoopTaskList
-            tasks={tasks}
-            projectMap={projectMap}
-            currentUserId={profile?.id ?? ''}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            onEdit={onEdit}
-          />
+          {(profile?.plan ?? 'free') === 'free' ? (
+            <div style={{ padding: '40px 8px 20px', textAlign: 'center' }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 18, margin: '0 auto 16px',
+                background: 'var(--accent-soft)', color: 'var(--accent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24,
+              }}>🔒</div>
+              <div style={{ font: '300 22px/1.2 var(--font-sans)', color: 'var(--text)', letterSpacing: '-0.01em', marginBottom: 8 }}>
+                Coop is a Pro feature
+              </div>
+              <div style={{ font: '400 13.5px/1.5 var(--font-sans)', color: 'var(--text-muted)', marginBottom: 22, maxWidth: 300, marginInline: 'auto' }}>
+                Invite teammates by Planer ID, assign tasks, and track progress together.
+              </div>
+              <button
+                onClick={() => setCoopPaywallOpen(true)}
+                style={{
+                  padding: '12px 24px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                  background: 'var(--accent)', color: '#fff',
+                  font: '600 13px/1 var(--font-sans)', letterSpacing: '-0.01em',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.2) inset, 0 6px 18px var(--accent-glow)',
+                }}
+              >Upgrade to Pro</button>
+              <PaywallSheet
+                open={coopPaywallOpen}
+                onClose={() => setCoopPaywallOpen(false)}
+                headline="Unlock Coop"
+                subhead="Team up on shared projects with role-based access."
+              />
+            </div>
+          ) : (
+            <CoopTaskList
+              tasks={tasks}
+              projectMap={projectMap}
+              currentUserId={profile?.id ?? ''}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              onEdit={onEdit}
+            />
+          )}
         </div>
       )}
 
@@ -667,6 +810,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                     onToggle={() => onToggle(t.task_date, t.id)}
                     onDelete={() => onDelete(t.task_date, t.id)}
                     onEdit={() => onEdit(t)}
+                    onOpen={() => setDetailTask(t)}
                   />
                 ))}
               </div>
@@ -690,6 +834,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                       onToggle={() => onToggle(dk, t.id)}
                       onDelete={() => onDelete(dk, t.id)}
                       onEdit={() => onEdit(t)}
+                      onOpen={() => setDetailTask(t)}
                     />
                   ))}
                 </div>
@@ -700,6 +845,14 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         )}
       </div>
       )}
+      </>)}
+
+      <TaskDetailSheet
+        task={detailTask}
+        onClose={() => setDetailTask(null)}
+        onEdit={onEdit}
+        onDelete={(t) => onDelete(t.task_date, t.id)}
+      />
 
       {showHistory && (
         <HistorySheet

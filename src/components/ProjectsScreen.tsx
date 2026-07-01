@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import type { Task, Project, TaskStatus } from '../services/supabase'
 import { TASK_STATUSES, TASK_PRIORITIES } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
@@ -349,20 +349,54 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
   }, [projects, rawTasks, donIds])
 
   const totalTasks = useMemo(() => rawTasks.filter(t => !!t.project_id).length, [rawTasks])
-  const visibleProjects = projects.filter(p => !p.is_archived)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { if (searchOpen) setTimeout(() => searchRef.current?.focus(), 60) }, [searchOpen])
+
+  const visibleProjects = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    const list = projects.filter(p => !p.is_archived)
+    return q ? list.filter(p => p.name.toLowerCase().includes(q)) : list
+  }, [projects, searchQuery])
+
+  function closeSearch() { setSearchOpen(false); setSearchQuery('') }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '8px 22px 14px', flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ font: '300 34px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Projects</div>
-          <div style={{ font: '400 12px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 7 }}>{visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {totalTasks} task{totalTasks !== 1 ? 's' : ''}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 12px', background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-          <span style={{ font: '500 12px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.6)' }}>All</span>
-        </div>
+      <div style={{ padding: '8px 22px 14px', flexShrink: 0 }}>
+        {searchOpen ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 46, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '0 12px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input
+              ref={searchRef}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') closeSearch() }}
+              placeholder="Search projects…"
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', font: '500 14px/1.2 var(--font-sans)' }}
+            />
+            <button onClick={closeSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ font: '300 34px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>Projects</div>
+              <div style={{ font: '400 12px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 7 }}>{visibleProjects.length} project{visibleProjects.length !== 1 ? 's' : ''} · {totalTasks} task{totalTasks !== 1 ? 's' : ''}</div>
+            </div>
+            <button
+              onClick={() => setSearchOpen(true)}
+              style={{ width: 32, height: 32, borderRadius: '50%', background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+              title="Search"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* List */}

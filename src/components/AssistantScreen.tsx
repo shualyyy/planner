@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { sendMessage, type ChatMessage, type ParsedAction, type TaskSummary, type ProjectSummary } from '../services/aiService'
 import { useTaskStore } from '../store/taskStore'
+import PaywallSheet from './PaywallSheet'
 
 // ── Action bubble metadata ────────────────────────────────────────────────
 
@@ -158,16 +159,41 @@ function fmtDate(d: string): string {
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function AssistantScreen() {
-  const { tasks, donIds, projects, addTask, deleteTask, updateTask, toggleDone, fetchTasks } = useTaskStore()
+const AI_HISTORY_KEY = 'planer-ai-history-v1'
+const AI_HISTORY_MAX = 20
+const WELCOME: Message = { role: 'assistant', content: 'Hey! I can add, move, complete, and organize your tasks. I also know your projects — just tell me what to do.' }
 
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hey! I can add, move, complete, and organize your tasks. I also know your projects — just tell me what to do.' },
-  ])
+function loadHistory(): Message[] {
+  try {
+    const raw = localStorage.getItem(AI_HISTORY_KEY)
+    if (!raw) return [WELCOME]
+    const parsed = JSON.parse(raw) as Message[]
+    if (!Array.isArray(parsed) || parsed.length === 0) return [WELCOME]
+    return parsed
+  } catch { return [WELCOME] }
+}
+
+function saveHistory(messages: Message[]) {
+  try {
+    const trimmed = messages.slice(-AI_HISTORY_MAX)
+    localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(trimmed))
+  } catch { /* ignore quota */ }
+}
+
+export default function AssistantScreen() {
+  const { tasks, donIds, projects, habits, profile, addTask, deleteTask, updateTask, toggleDone, fetchTasks } = useTaskStore()
+
+  const [messages, setMessages] = useState<Message[]>(() => loadHistory())
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const [listening, setListening] = useState(false)
   const [hasSpeechAPI, setHasSpeechAPI] = useState(false)
+  const [paywallOpen, setPaywallOpen] = useState(false)
+
+  const isFreePlan = (profile?.plan ?? 'free') === 'free'
+
+  // Persist history
+  useEffect(() => { saveHistory(messages) }, [messages])
 
   // Evaluated post-mount: on some iOS Safari versions the Speech API
   // registers on window only after first user interaction
@@ -208,14 +234,19 @@ export default function AssistantScreen() {
   async function handleSend(text?: string) {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
+    if (isFreePlan) { setPaywallOpen(true); return }
 
     setMessages(prev => [...prev, { role: 'user', content: msg }])
     setInput('')
     setLoading(true)
 
     try {
+      const contextHint = habits.length > 0
+        ? `[context: user has ${habits.length} habits tracked]`
+        : ''
       const history: ChatMessage[] = messages
         .slice(1)
+        .concat(contextHint ? [{ role: 'assistant', content: contextHint } as Message] : [])
         .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
       const { reply, action } = await sendMessage(history, msg, taskSummaries, projectSummaries)
@@ -394,6 +425,16 @@ export default function AssistantScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', height: '100%' }}>
 
+      {/* Header — clear history */}
+      {messages.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 20px 0', flexShrink: 0 }}>
+          <button
+            onClick={() => setMessages([WELCOME])}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', font: '500 12px/1 var(--font-sans)', color: 'var(--text-muted)', padding: 4 }}
+          >Clear</button>
+        </div>
+      )}
+
       {/* Messages */}
       <div
         ref={streamRef}
@@ -423,7 +464,12 @@ export default function AssistantScreen() {
       {/* Quick-prompt chips — only on empty chat */}
       {messages.length === 1 && !loading && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 18px 14px', flexShrink: 0 }}>
-          {["What's today?", "Show overdue", "Add a task"].map(prompt => (
+          {[
+            'What should I focus on?',
+            'Prioritize my tasks',
+            'Show overdue',
+            'Weekly summary',
+          ].map(prompt => (
             <button
               key={prompt}
               onClick={() => handleSend(prompt)}
@@ -497,6 +543,13 @@ export default function AssistantScreen() {
           </button>
         </div>
       </div>
+
+      <PaywallSheet
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        headline="AI Assistant is a Pro feature"
+        subhead="Ask questions, get task suggestions, and let the assistant organize your day."
+      />
     </div>
   )
 }

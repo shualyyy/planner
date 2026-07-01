@@ -1,55 +1,55 @@
-/* ── Design tokens — Claude palette ── */
+/* ── Design tokens — Anthropic palette ── */
 :root {
   --font-sans:  ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-serif: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
   /* ── Backgrounds ── */
-  --bg:         #1C1917;
-  --surface:    #242120;
-  --surface2:   #2D2926;
-  --surface3:   #35302C;
+  --bg:         #191919;
+  --surface:    #262625;
+  --surface2:   #40403E;
+  --surface3:   #666663;
   --border:     rgba(255,255,255,0.08);
   --border-2:   rgba(255,255,255,0.10);
   --hairline:   rgba(255,255,255,0.06);
 
   /* ── Text ── */
-  --text:       #F0ECE3;
-  --text-2:     rgba(255,255,255,0.70);
-  --text-muted: rgba(255,255,255,0.40);
-  --text-faint: rgba(255,255,255,0.25);
+  --text:       #FAFAF7;
+  --text-2:     #F0F0EB;
+  --text-muted: #BFBFBA;
+  --text-faint: #91918D;
 
   /* ── Accent ── */
-  --accent:      #D97757;
-  --accent-soft: rgba(217,119,87,0.15);
-  --accent-2:    rgba(217,119,87,0.35);
+  --accent:      #CC785C;
+  --accent-soft: rgba(204,120,92,0.15);
+  --accent-2:    rgba(204,120,92,0.35);
   --accent-ink:  #fff;
-  --accent-glow: rgba(217,119,87,0.30);
+  --accent-glow: rgba(204,120,92,0.30);
 
   /* ── Brand (keep for logo/icon only) ── */
-  --brand:      #D97757;
-  --brand-deep: #B85A3D;
+  --brand:      #CC785C;
+  --brand-deep: #A85840;
 
   /* ── Status ── */
   --success:      #3DD68C;
   --success-soft: rgba(61,214,140,0.12);
-  --danger:       #FF5C5C;
-  --danger-soft:  rgba(255,92,92,0.12);
-  --danger-border:rgba(255,92,92,0.18);
-  --danger-text:  #FF5C5C;
-  --warning:      #E8A24A;
-  --warning-soft: rgba(232,162,74,0.12);
-  --info:         #D97757;
-  --info-hover:   #E8896A;
+  --danger:       #CC5247;
+  --danger-soft:  rgba(204,82,71,0.12);
+  --danger-border:rgba(204,82,71,0.18);
+  --danger-text:  #CC5247;
+  --warning:      #D4A27F;
+  --warning-soft: rgba(212,162,127,0.12);
+  --info:         #61AAF2;
+  --info-hover:   #7BBDF5;
 
   /* ── Project colors ── */
-  --pc-blue:   #4A9EFF;
+  --pc-blue:   #61AAF2;
   --pc-purple: #A78BFA;
-  --pc-amber:  #E8A24A;
+  --pc-amber:  #D4A27F;
   --pc-green:  #3DD68C;
-  --pc-red:    #FF5C5C;
+  --pc-red:    #CC5247;
   --pc-teal:   #8ED4C8;
   --pc-pink:   #F5BDD0;
-  --pc-brand:  #D97757;
+  --pc-brand:  #CC785C;
 
   /* ── Label colors ── */
   --label-work:     #B8D4F2;
@@ -57,7 +57,7 @@
   --label-health:   #8ED4C8;
   --label-family:   #F5E28A;
   --label-travel:   #C8B4E8;
-  --label-ink:      #1C1917;
+  --label-ink:      #191919;
 
   /* ── Radii ── */
   --r-chip:    999px;
@@ -80,7 +80,7 @@
   --sheet-shadow: 0 -8px 40px rgba(0,0,0,0.4);
 
   /* ── Tab bar ── */
-  --tabbar-bg:     rgba(28,25,23,0.95);
+  --tabbar-bg:     rgba(25,25,25,0.95);
   --tabbar-stroke: rgba(255,255,255,0.08);
   --tabbar-shadow: none;
 
@@ -89,15 +89,66 @@
   --panel-2:      var(--surface2);
   --border-soft:  var(--border);
   --hover-overlay: rgba(255,255,255,0.04);
-  --danger-text-2: #FF5C5C;
-  --danger-soft-2: rgba(255,92,92,0.10);
+  --danger-text-2: #CC5247;
+  --danger-soft-2: rgba(204,82,71,0.10);
 
   /* ── Calendar card ── */
-  --cal-bg: #1C1917;
+  --cal-bg: #191919;
 
   /* ── Legacy (still referenced by older screens) ── */
-  --bg-2:   #2D2926;
-  --ev-ink: #1C1917;
+  --bg-2:   #40403E;
+  --ev-ink: #191919;
+}
+
+/* ── Light theme override — Anthropic palette ── */
+[data-theme="light"] {
+  --bg:         #FAFAF7;
+  --surface:    #FFFFFF;
+  --surface2:   #F0F0EB;
+  --surface3:   #E5E5DF;
+  --border:     rgba(0,0,0,0.08);
+  --border-2:   rgba(0,0,0,0.10);
+  --hairline:   rgba(0,0,0,0.06);
+
+  --text:       #191919;
+  --text-2:     #262625;
+  --text-muted: #666663;
+  --text-faint: #91918D;
+
+  --accent:      #B8603E;
+  --accent-soft: rgba(184,96,62,0.12);
+  --accent-2:    rgba(184,96,62,0.30);
+  --accent-ink:  #fff;
+  --accent-glow: rgba(184,96,62,0.20);
+
+  --success:      #2CA86E;
+  --success-soft: rgba(44,168,110,0.10);
+  --danger:       #CC5247;
+  --danger-soft:  rgba(204,82,71,0.10);
+  --danger-border:rgba(204,82,71,0.15);
+  --danger-text:  #CC5247;
+  --warning:      #C47A1A;
+  --warning-soft: rgba(196,122,26,0.10);
+
+  --shadow:       rgba(0,0,0,0.12);
+  --shadow-lg:    0 30px 80px rgba(0,0,0,0.14);
+  --card-shadow:  0 0 0 1px var(--border), 0 1px 4px rgba(0,0,0,0.05);
+  --sheet-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+
+  --tabbar-bg:     rgba(250,250,247,0.96);
+  --tabbar-stroke: rgba(0,0,0,0.08);
+
+  --panel:        var(--surface);
+  --panel-2:      var(--surface2);
+  --border-soft:  var(--border);
+  --hover-overlay: rgba(0,0,0,0.04);
+
+  --danger-text-2: #CC5247;
+  --danger-soft-2: rgba(204,82,71,0.10);
+
+  --cal-bg: #FFFFFF;
+  --bg-2:   #F0F0EB;
+  --ev-ink: #191919;
 }
 
 /* ── Base ── */
@@ -126,7 +177,7 @@ input, textarea { font-family: inherit; color: inherit; }
   transform: translateX(-50%);
   width: 320px;
   height: 58px;
-  background: rgba(28,25,23,0.96);
+  background: var(--tabbar-bg);
   backdrop-filter: blur(24px) saturate(1.8);
   -webkit-backdrop-filter: blur(24px) saturate(1.8);
   border-radius: 40px;

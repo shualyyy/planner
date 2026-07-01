@@ -54,8 +54,13 @@ export interface UserProfile {
   email: string | null
   planer_id: string
   avatar_color: string
+  onboarded?: boolean | null
+  plan?: 'free' | 'pro' | null
   created_at: string
 }
+
+export const FREE_PROJECT_LIMIT = 3
+export const FREE_HABIT_LIMIT = 5
 
 export interface ProjectMember {
   id: string
@@ -66,6 +71,15 @@ export interface ProjectMember {
   profile?: UserProfile
 }
 
+export interface TaskComment {
+  id: string
+  task_id: string
+  user_id: string
+  text: string
+  created_at: string
+  profile?: UserProfile | null
+}
+
 export interface ProjectInvite {
   id: string
   project_id: string
@@ -74,6 +88,7 @@ export interface ProjectInvite {
   role: 'editor' | 'viewer'
   status: 'pending' | 'accepted' | 'declined'
   created_at: string
+  project?: { name: string; color: string } | null
 }
 
 export type TaskStatus = 'not_started' | 'in_progress' | 'blocked' | 'done'
