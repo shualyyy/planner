@@ -280,51 +280,48 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             </div>
           </div>
 
-          {/* Row: Assignee — only when project has other members */}
-          {projectId && (members[projectId]?.length ?? 0) > 1 && (
-            <>
-              <button onClick={() => toggleRow('assignee')} style={rowBtn(false)}>
-                <span style={rowLeft}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <span style={rowLabelTxt}>Assign to</span>
-                </span>
-                {assignedTo
-                  ? (() => {
-                      const m = (members[projectId] || []).find(x => x.user_id === assignedTo)
-                      const name = m?.user_id === profile?.id ? 'Me' : (m?.profile?.display_name ?? m?.profile?.email ?? m?.profile?.planer_id ?? '—')
-                      return <span style={valuePill('#D97757')}>{name}</span>
-                    })()
-                  : <span style={valuePill('rgba(255,255,255,0.4)')}>Unassigned</span>}
-              </button>
-              <div style={expandWrap(expandedRow === 'assignee')}>
-                <div style={expandInner}>
-                  <button onClick={() => setAssignedTo(null)} style={pill(assignedTo === null)}>Unassigned</button>
-                  {(members[projectId] || []).map(m => {
-                    const isSelected = assignedTo === m.user_id
-                    const isMe = m.user_id === profile?.id
-                    const name = isMe ? 'Me' : (m.profile?.display_name ?? m.profile?.email ?? m.profile?.planer_id ?? '—')
-                    return (
-                      <button
-                        key={m.user_id}
-                        onClick={() => setAssignedTo(isSelected ? null : m.user_id)}
-                        style={{ ...pill(isSelected), gap: 6 }}
-                      >
-                        <span style={{
-                          width: 16, height: 16, borderRadius: '50%',
-                          background: m.profile?.avatar_color ?? 'var(--accent)',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          font: '700 8px/1 var(--font-sans)', color: '#fff', flexShrink: 0,
-                        }}>
-                          {(m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()}
+          {/* Row: Assignee — shown whenever a project is selected */}
+          {projectId && (() => {
+            // Build assignee list: always include self + project members (deduplicated)
+            const projectMembers = members[projectId] || []
+            const selfInMembers = profile ? projectMembers.some(m => m.user_id === profile.id) : false
+            type AssigneeOption = { user_id: string; name: string; initials: string; color: string }
+            const opts: AssigneeOption[] = []
+            if (profile && !selfInMembers) {
+              opts.push({ user_id: profile.id, name: 'Me', initials: (profile.display_name ?? profile.email ?? '?')[0].toUpperCase(), color: profile.avatar_color ?? 'var(--accent)' })
+            }
+            for (const m of projectMembers) {
+              const isMe = m.user_id === profile?.id
+              opts.push({ user_id: m.user_id, name: isMe ? 'Me' : (m.profile?.display_name ?? m.profile?.email ?? m.profile?.planer_id ?? '—'), initials: (m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase(), color: m.profile?.avatar_color ?? 'var(--accent)' })
+            }
+            const currentOpt = assignedTo ? opts.find(o => o.user_id === assignedTo) : null
+            return (
+              <>
+                <button onClick={() => toggleRow('assignee')} style={rowBtn(false)}>
+                  <span style={rowLeft}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span style={rowLabelTxt}>Assign to</span>
+                  </span>
+                  {currentOpt
+                    ? <span style={valuePill('#D97757')}>{currentOpt.name}</span>
+                    : <span style={valuePill('rgba(255,255,255,0.4)')}>Unassigned</span>}
+                </button>
+                <div style={expandWrap(expandedRow === 'assignee')}>
+                  <div style={expandInner}>
+                    <button onClick={() => setAssignedTo(null)} style={pill(assignedTo === null)}>Unassigned</button>
+                    {opts.map(o => (
+                      <button key={o.user_id} onClick={() => setAssignedTo(assignedTo === o.user_id ? null : o.user_id)} style={{ ...pill(assignedTo === o.user_id), gap: 6 }}>
+                        <span style={{ width: 16, height: 16, borderRadius: '50%', background: o.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: '700 8px/1 var(--font-sans)', color: '#fff', flexShrink: 0 }}>
+                          {o.initials}
                         </span>
-                        {name}
+                        {o.name}
                       </button>
-                    )
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )
+          })()}
 
           {/* Row 2 — Status */}
           <button onClick={() => toggleRow('status')} style={rowBtn(false)}>

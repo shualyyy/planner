@@ -48,12 +48,20 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   fetchProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
-    if (data) set({ profile: data as UserProfile })
+      .maybeSingle()
+    if (error) {
+      console.error('[Planer] fetchProfile error:', error.code, error.message)
+      return
+    }
+    if (data) {
+      set({ profile: data as UserProfile })
+    } else {
+      console.warn('[Planer] fetchProfile: no profile row found for user', user.id)
+    }
   },
 
   fetchMembers: async (projectId) => {
@@ -226,6 +234,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const inserted = data?.[0] as Project | undefined
     if (!inserted) throw new Error('Project not saved — check Supabase RLS policies')
     set((state) => ({ projects: [...state.projects, inserted] }))
+    // Add creator as owner in project_members (best-effort — table may not exist yet)
+    try {
+      await supabase.from('project_members').insert([{
+        project_id: inserted.id,
+        user_id: user.id,
+        role: 'owner',
+      }])
+    } catch { /* ignore if table not yet set up */ }
     return inserted
   },
 
