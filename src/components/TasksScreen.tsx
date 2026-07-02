@@ -59,14 +59,14 @@ function StatusCircle({ task }: { task: Task & { done: boolean } }) {
   const base: React.CSSProperties = { width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   if (task.done) {
     return (
-      <div style={{ ...base, background: '#D97757' }}>
+      <div style={{ ...base, background: 'var(--accent)' }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
     )
   }
-  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid #D97757', background: 'linear-gradient(90deg,#D97757 50%,transparent 50%)' }} />
-  if (task.status === 'blocked')     return <div style={{ ...base, border: '2px solid #FF5C5C' }} />
-  return <div style={{ ...base, border: '2px solid rgba(255,255,255,0.25)' }} />
+  if (task.status === 'in_progress') return <div style={{ ...base, border: '2px solid var(--accent)', background: 'linear-gradient(90deg,var(--accent) 50%,transparent 50%)' }} />
+  if (task.status === 'blocked')     return <div style={{ ...base, border: '2px solid var(--danger)' }} />
+  return <div style={{ ...base, border: '2px solid var(--border-2)' }} />
 }
 
 /* ─── Task card ─── */
@@ -121,8 +121,9 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
         onClick={() => { if (swipeLocked) { resetSwipe(); return } if (onOpen) onOpen(); else onToggle() }}
         style={{
           display: 'flex', alignItems: 'center', gap: 13,
-          padding: '14px 15px', background: '#242120',
-          border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14,
+          padding: '14px 15px', background: 'var(--surface)',
+          border: '1px solid var(--border)', borderRadius: 14,
+          boxShadow: 'var(--card-shadow)',
           transform: `translateX(${swipeX}px)`,
           transition: swipeLocked || swipeX === 0 ? 'transform 0.2s ease' : 'none',
           cursor: 'pointer',
@@ -135,13 +136,13 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             font: '500 14px/1.2 var(--font-sans)', letterSpacing: '-0.005em',
-            color: task.done ? 'rgba(255,255,255,0.3)' : '#F0ECE3',
+            color: task.done ? 'var(--text-faint)' : 'var(--text)',
             textDecoration: task.done ? 'line-through' : 'none',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{task.title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7 }}>
             {task.task_time && (
-              <span style={{ background: near ? 'var(--accent-soft)' : '#2D2926', borderRadius: 6, padding: '3px 7px', font: '500 11px/1.2 var(--font-sans)', color: near ? '#D97757' : 'rgba(255,255,255,0.35)' }}>
+              <span style={{ background: near ? 'var(--accent-soft)' : 'var(--surface2)', borderRadius: 6, padding: '3px 7px', font: '500 11px/1.2 var(--font-sans)', color: near ? 'var(--accent)' : 'var(--text-muted)' }}>
                 {task.task_time.slice(0,5)}
               </span>
             )}
@@ -196,22 +197,22 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
         onTouchMove={onSheetDragMove}
         onTouchEnd={onSheetDragEnd}
         style={{
-          width: '100%', background: '#242120', borderRadius: '28px 28px 0 0', maxHeight: '80vh',
-          display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.08)',
+          width: '100%', background: 'var(--surface)', borderRadius: '28px 28px 0 0', maxHeight: '80vh',
+          display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)',
           transform: `translateY(${dragY}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
-          <div style={{ width: 38, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 16px' }} />
+          <div style={{ width: 38, height: 5, borderRadius: 999, background: 'var(--border-2)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ font: '300 24px/1.2 var(--font-sans)', color: '#F0ECE3' }}>History</span>
-            <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Close</button>
+            <span style={{ font: '300 24px/1.2 var(--font-sans)', color: 'var(--text)' }}>History</span>
+            <button onClick={onClose} style={{ color: 'var(--text-muted)', fontSize: 13 }}>Close</button>
           </div>
         </div>
         <div style={{ overflowY: 'auto', padding: '0 20px 32px', flex: 1 }}>
           {historyDays.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>No history yet</div>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>No history yet</div>
           ) : (
             [...historyDays].reverse().map(dk => {
               const dayTasks = tasks[dk] || []
@@ -219,8 +220,8 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
               return (
                 <div key={dk} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 2px 8px' }}>
-                    <span style={{ font: '600 12px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
-                    <span style={{ font: '500 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.25)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
+                    <span style={{ font: '600 12px/1.2 var(--font-sans)', color: 'var(--text-muted)' }}>{format(parseISO(dk), 'EEEE, MMMM d')}</span>
+                    <span style={{ font: '500 11px/1.2 var(--font-sans)', color: 'var(--text-faint)' }}>{dayTasks.filter(t => t.done).length}/{dayTasks.length} done</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {dayTasks.map(t => (
@@ -323,10 +324,10 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
           { icon: '✓',  label: 'Month',  value: `${doneThisMonth}/${totalThisMonth}` },
           { icon: '⚡', label: 'Active',  value: `${habits.length}` },
         ].map((s, i) => (
-          <div key={i} style={{ flex: 1, background: '#2D2926', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '11px 12px' }}>
+          <div key={i} style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '11px 12px', boxShadow: 'var(--card-shadow)' }}>
             <div style={{ fontSize: 15, marginBottom: 4 }}>{s.icon}</div>
-            <div style={{ font: '600 16px/1.2 var(--font-sans)', color: '#F0ECE3' }}>{s.value}</div>
-            <div style={{ font: '500 10px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
+            <div style={{ font: '600 16px/1.2 var(--font-sans)', color: 'var(--text)' }}>{s.value}</div>
+            <div style={{ font: '500 10px/1.2 var(--font-sans)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -334,7 +335,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
       {/* Habit cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {habits.length === 0 && !showForm && (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.4)', font: '400 13px/1.2 var(--font-sans)' }}>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', font: '400 13px/1.2 var(--font-sans)' }}>
             No habits yet. Add your first one!
           </div>
         )}
@@ -343,7 +344,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
           const freqLabel = h.frequency === 'daily' ? 'Daily' : 'Weekly'
           const todLabel = h.time_of_day === 'morning' ? 'Morning' : h.time_of_day === 'evening' ? 'Evening' : 'Afternoon'
           return (
-            <div key={h.id} style={{ background: '#2D2926', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '14px 15px' }}>
+            <div key={h.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 15px', boxShadow: 'var(--card-shadow)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: 9, background: h.color + '26',
@@ -353,24 +354,24 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
                   {h.icon && h.icon !== 'circle' ? h.icon : '⭕'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: '600 15px/1.2 var(--font-sans)', color: '#F0ECE3', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ font: '600 15px/1.2 var(--font-sans)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</span>
                     {(() => {
                       const s = habitStreak(h.id)
                       if (s < 1) return null
-                      if (s === 1) return <span style={{ font: '500 10.5px/1 var(--font-sans)', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>1 day</span>
+                      if (s === 1) return <span style={{ font: '500 10.5px/1 var(--font-sans)', color: 'var(--text-muted)', flexShrink: 0 }}>1 day</span>
                       const gold = s >= 7
-                      return <span style={{ font: '600 11px/1 var(--font-sans)', color: gold ? '#E8A24A' : 'rgba(255,255,255,0.7)', flexShrink: 0 }}>🔥 {s}</span>
+                      return <span style={{ font: '600 11px/1 var(--font-sans)', color: gold ? '#E8A24A' : 'var(--text-muted)', flexShrink: 0 }}>🔥 {s}</span>
                     })()}
                   </div>
-                  <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{freqLabel} · {todLabel}</div>
+                  <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'var(--text-muted)', marginTop: 2 }}>{freqLabel} · {todLabel}</div>
                 </div>
                 <button
                   onClick={() => onToggle(h.id, todayKey)}
                   style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                     background: doneToday ? h.color : 'transparent',
-                    border: doneToday ? 'none' : '1.5px solid rgba(255,255,255,0.25)',
+                    border: doneToday ? 'none' : '1.5px solid var(--border-2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                   }}
                 >
@@ -392,11 +393,11 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
                   if (done) style = { ...style, background: h.color }
                   else if (isToday) style = { ...style, border: `1.5px solid ${h.color}`, boxShadow: `0 0 0 3px ${h.color}2E` }
                   else if (isMiss) style = { ...style, background: 'rgba(255,92,92,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
-                  else style = { ...style, border: '1.5px solid rgba(255,255,255,0.15)' }
+                  else style = { ...style, border: '1.5px solid var(--border-2)' }
                   return (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      <div style={style}>{isMiss && <span style={{ width: 5, height: 5, borderRadius: 999, background: '#FF5C5C' }} />}</div>
-                      <span style={{ font: '500 8px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.25)' }}>{WD_EN[i]}</span>
+                      <div style={style}>{isMiss && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--danger)' }} />}</div>
+                      <span style={{ font: '500 8px/1.2 var(--font-sans)', color: 'var(--text-faint)' }}>{WD_EN[i]}</span>
                     </div>
                   )
                 })}
@@ -406,7 +407,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
         })}
 
         {showForm ? (
-          <div style={{ background: '#2D2926', border: '1.5px solid rgba(217,119,87,0.3)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: 'var(--surface)', border: '1.5px solid var(--accent-2)', borderRadius: 16, padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: 'var(--card-shadow)' }}>
             <input
               ref={inputRef}
               value={newName}
@@ -415,8 +416,8 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
               placeholder="Habit name…"
               style={{
                 background: 'transparent', border: 'none', outline: 'none',
-                color: '#F0ECE3', font: '500 15px/1.2 var(--font-sans)', width: '100%',
-                borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 8,
+                color: 'var(--text)', font: '500 15px/1.2 var(--font-sans)', width: '100%',
+                borderBottom: '1px solid var(--border)', paddingBottom: 8,
               }}
             />
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -425,7 +426,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
                   style={{
                     width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer',
                     fontSize: 16, lineHeight: 1,
-                    background: newEmoji === e ? 'var(--accent-soft)' : 'rgba(255,255,255,0.06)',
+                    background: newEmoji === e ? 'var(--accent-soft)' : 'var(--surface2)',
                     outline: newEmoji === e ? `1.5px solid var(--accent)` : 'none',
                     outlineOffset: 1,
                     transition: 'background 0.12s, outline 0.12s',
@@ -440,7 +441,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
                     style={{
                       width: 22, height: 22, borderRadius: '50%', border: 'none',
                       background: c, cursor: 'pointer', flexShrink: 0,
-                      boxShadow: newColor === c ? `0 0 0 2px #242120, 0 0 0 4px ${c}` : 'none',
+                      boxShadow: newColor === c ? `0 0 0 2px var(--surface), 0 0 0 4px ${c}` : 'none',
                       transform: newColor === c ? 'scale(1.1)' : 'scale(1)',
                       transition: 'transform 0.12s, box-shadow 0.12s',
                     }}
@@ -449,13 +450,13 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => { setShowForm(false); setNewName('') }}
-                  style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', font: '500 12px/1.2 var(--font-sans)', border: 'none', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', borderRadius: 999, background: 'var(--surface2)', color: 'var(--text-muted)', font: '500 12px/1.2 var(--font-sans)', border: 'none', cursor: 'pointer' }}
                 >Cancel</button>
                 <button onClick={handleSave} disabled={adding || !newName.trim()}
                   style={{
                     padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                    background: newName.trim() ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
-                    color: newName.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                    background: newName.trim() ? 'var(--accent)' : 'var(--surface2)',
+                    color: newName.trim() ? '#fff' : 'var(--text-muted)',
                     font: '600 12px/1.2 var(--font-sans)', transition: 'all 0.15s',
                   }}
                 >{adding ? '…' : 'Add'}</button>
@@ -465,8 +466,8 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
         ) : (
           <button onClick={() => habitsAtLimit ? setPaywallOpen(true) : setShowForm(true)}
             style={{
-              height: 48, border: '1.5px dashed rgba(255,255,255,0.18)', borderRadius: 14,
-              background: 'transparent', color: 'rgba(255,255,255,0.6)', font: '500 13px/1.2 var(--font-sans)',
+              height: 48, border: '1.5px dashed var(--border-2)', borderRadius: 14,
+              background: 'transparent', color: 'var(--text-muted)', font: '500 13px/1.2 var(--font-sans)',
               cursor: 'pointer', marginTop: 4,
             }}
           >{habitsAtLimit ? '🔒 Upgrade for more habits' : '+ Add habit'}</button>
@@ -503,7 +504,7 @@ function CoopTaskList({ tasks, projectMap, currentUserId, onToggle, onDelete, on
 
   if (!allFlat.some(x => x.t.assigned_to === currentUserId || x.t.assigned_by === currentUserId)) {
     return (
-      <div style={{ textAlign: 'center', padding: '48px 12px', color: 'rgba(255,255,255,0.4)', font: '400 13px/1.5 var(--font-sans)' }}>
+      <div style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--text-muted)', font: '400 13px/1.5 var(--font-sans)' }}>
         No shared tasks yet. Get started by inviting someone to a project.
       </div>
     )
@@ -626,7 +627,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           </div>
         ) : (
           <>
-            <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Tasks</span>
               {segment === 'tasks' && (
                 <button onClick={() => setSearchOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }} title="Search">
@@ -635,7 +636,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <div style={{ font: '300 32px/1 var(--font-sans)', color: '#F0ECE3', letterSpacing: '-0.01em' }}>
+              <div style={{ font: '300 32px/1 var(--font-sans)', color: 'var(--text)', letterSpacing: '-0.01em' }}>
                 {format(today, 'EEEE')},<br />{format(today, 'd MMMM')}
               </div>
               {todayTotal > 0 && (
@@ -645,7 +646,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                   ) : (
                     <>
                       <span style={{ font: '700 26px/1 var(--font-sans)', color: 'var(--accent)' }}>{todayDone}</span>
-                      <span style={{ font: '400 14px/1 var(--font-sans)', color: 'rgba(255,255,255,0.3)' }}>/{todayTotal}</span>
+                      <span style={{ font: '400 14px/1 var(--font-sans)', color: 'var(--text-faint)' }}>/{todayTotal}</span>
                     </>
                   )}
                 </div>
@@ -787,7 +788,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
         {activeDays.length === 0 && overdueTasks.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
-            <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.4)' }}>Nothing scheduled. Enjoy the quiet.</span>
+            <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
           </div>
         ) : (
           <>
@@ -822,7 +823,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             const isTomorrowOrLater = dk !== todayKey
             return (
               <div key={dk} style={{ marginBottom: 24 }}>
-                <div style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)', marginBottom: 11 }}>
+                <div style={{ font: '600 10px/1.2 var(--font-sans)', letterSpacing: '0.1em', textTransform: 'uppercase', color: isTomorrowOrLater ? 'var(--text-faint)' : 'var(--text-muted)', marginBottom: 11 }}>
                   {dayLabel(dk)}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.75 : 1 }}>

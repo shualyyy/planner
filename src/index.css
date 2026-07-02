@@ -259,20 +259,22 @@ input, textarea { font-family: inherit; color: inherit; }
   color: var(--accent-ink);
 }
 
-/* ── Calendar (dark card) ── */
+/* ── Calendar (adapts to theme) ── */
 .cal-card {
   margin: 0 14px;
-  background: #242120;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 12px 4px 16px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  box-shadow: var(--card-shadow);
 }
 .cal-body { flex: none; width: 100%; padding: 0 4px; display: flex; flex-direction: column; }
 .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px 6px; gap: 2px; }
-.wd { text-align: center; color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.wd { text-align: center; color: var(--text-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .days30 { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 8px; gap: 2px; }
 .d30 {
   aspect-ratio: 1;
@@ -290,15 +292,12 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 .d30:active { transform: scale(0.92); }
 .d30.other { pointer-events: none; }
-.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1; text-align: center; }
-.d30.other .d-num { color: rgba(255,255,255,0.15); }
-.d30.today { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); }
-.d30.today .d-num { color: #fff; font-weight: 700; }
+.d-num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text-2); line-height: 1; text-align: center; }
+.d30.other .d-num { color: var(--text-faint); opacity: 0.4; }
+.d30.today { background: var(--text); border: none; }
+.d30.today .d-num { color: var(--bg); font-weight: 700; }
 .d-dots { display: flex; gap: 2px; justify-content: center; height: 4px; align-items: center; flex-shrink: 0; }
-.d-dot {
-  width: 4px; height: 4px; border-radius: 50%;
-  box-shadow: 0 0 5px 1.5px rgba(255,255,255,0.22);
-}
+.d-dot { width: 4px; height: 4px; border-radius: 50%; }
 
 /* ── Expanded calendar fullscreen ── */
 .cal-expanded {
