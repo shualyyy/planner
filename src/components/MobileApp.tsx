@@ -11,6 +11,7 @@ import { useTaskStore, groupTasksByDay } from '../store/taskStore'
 import {
   CalendarTabIcon,
   TasksTabIcon,
+  AssistantTabIcon,
   SettingsTabIcon,
   IcoPlus,
 } from './icons'
@@ -18,20 +19,14 @@ import type { Task, Project } from '../services/supabase'
 
 type Tab = 'calendar' | 'tasks' | 'projects' | 'assistant' | 'settings'
 
-const ProjectsTabIcon = ({ color }: { color: string }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+const ProjectsTabIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2"/>
     <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
   </svg>
 )
 
-const AssistantTabIcon = ({ color }: { color: string }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-  </svg>
-)
-
-const TABS: { id: Tab; Icon: React.FC<{ color: string }>; label: string }[] = [
+const TABS: { id: Tab; Icon: React.FC; label: string }[] = [
   { id: 'calendar',  Icon: CalendarTabIcon,  label: 'Calendar' },
   { id: 'tasks',     Icon: TasksTabIcon,     label: 'Tasks'    },
   { id: 'projects',  Icon: ProjectsTabIcon,  label: 'Projects' },
@@ -108,7 +103,7 @@ export default function MobileApp() {
         return (
           <button key={id} className={`tab${active ? ' on' : ''}`} onClick={() => setTab(id)}>
             <span className="tab-icon" style={{ position: 'relative' }}>
-              <Icon color={active ? 'var(--accent)' : 'var(--text-faint)'} />
+              <Icon />
               {id === 'settings' && pendingInvites.length > 0 && (
                 <span style={{
                   position: 'absolute', top: -2, right: -3,
