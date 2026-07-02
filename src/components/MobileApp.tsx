@@ -108,7 +108,7 @@ export default function MobileApp() {
         return (
           <button key={id} className={`tab${active ? ' on' : ''}`} onClick={() => setTab(id)}>
             <span className="tab-icon" style={{ position: 'relative' }}>
-              <Icon color={active ? '#D97757' : 'rgba(255,255,255,0.35)'} />
+              <Icon color={active ? 'var(--accent)' : 'var(--text-faint)'} />
               {id === 'settings' && pendingInvites.length > 0 && (
                 <span style={{
                   position: 'absolute', top: -2, right: -3,
