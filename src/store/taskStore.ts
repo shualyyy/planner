@@ -10,6 +10,7 @@ interface TaskStore {
   donIds: Set<string>
   theme: 'light' | 'dark'
   profile: UserProfile | null
+  profileLoaded: boolean
   members: Record<string, ProjectMember[]>
   pendingInvites: ProjectInvite[]
   fetchTasks: () => Promise<void>
@@ -46,12 +47,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   donIds: new Set(),
   theme: (typeof localStorage !== 'undefined' && (localStorage.getItem('planer-theme') as 'light' | 'dark')) || 'dark',
   profile: null,
+  profileLoaded: false,
   members: {},
   pendingInvites: [],
 
   fetchProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { set({ profileLoaded: true }); return }
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -59,12 +61,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       .maybeSingle()
     if (error) {
       console.error('[Planer] fetchProfile error:', error.code, error.message)
+      set({ profileLoaded: true })
       return
     }
     if (data) {
-      set({ profile: data as UserProfile })
+      set({ profile: data as UserProfile, profileLoaded: true })
     } else {
       console.warn('[Planer] fetchProfile: no profile row found for user', user.id)
+      set({ profileLoaded: true })
     }
   },
 
@@ -85,17 +89,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       .eq('planer_id', planerId.toUpperCase())
       .single()
     if (!profile) throw new Error(`No user found with ID "${planerId}"`)
-    const { error } = await supabase
-      .from('project_members')
-      .insert([{ project_id: projectId, user_id: profile.id, role }])
-    if (error) throw new Error(error.message)
-    await supabase.from('project_invites').insert([{
+    if (profile.id === user.id) throw new Error("You can't invite yourself")
+    const { data: existing } = await supabase
+      .from('project_invites')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('planer_id', planerId.toUpperCase())
+      .eq('status', 'pending')
+      .maybeSingle()
+    if (existing) throw new Error('An invite for this user is already pending')
+    const { error } = await supabase.from('project_invites').insert([{
       project_id: projectId,
       invited_by: user.id,
       planer_id: planerId.toUpperCase(),
       role,
-      status: 'accepted',
+      status: 'pending',
     }])
+    if (error) throw new Error(error.message)
   },
 
   removeMember: async (projectId, userId) => {
@@ -131,7 +141,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   acceptInvite: async (inviteId) => {
-    await supabase.from('project_invites').update({ status: 'accepted' }).eq('id', inviteId)
+    const { error } = await supabase.rpc('accept_project_invite', { invite_id: inviteId })
+    if (error) {
+      console.error('acceptInvite failed:', error)
+      throw new Error(error.message)
+    }
     set(state => ({ pendingInvites: state.pendingInvites.filter(i => i.id !== inviteId) }))
   },
 
@@ -238,7 +252,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       isDoneNow = !next.has(id)
       if (isDoneNow) next.add(id)
       else next.delete(id)
-      return { donIds: next }
+      return {
+        donIds: next,
+        tasks: state.tasks.map(t => t.id === id ? { ...t, is_done: isDoneNow } : t),
+      }
     })
     const { error } = await supabase.from('tasks').update({ is_done: isDoneNow }).eq('id', id)
     if (error) {
@@ -247,7 +264,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         const next = new Set(state.donIds)
         if (isDoneNow) next.delete(id)
         else next.add(id)
-        return { donIds: next }
+        return {
+          donIds: next,
+          tasks: state.tasks.map(t => t.id === id ? { ...t, is_done: !isDoneNow } : t),
+        }
       })
       console.error('toggleDone failed:', error)
     }
@@ -328,9 +348,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const { error } = await supabase.from('habit_logs').delete().eq('id', existing.id)
       if (error) { set((state) => ({ habitLogs: [...state.habitLogs, existing] })); console.error('toggleHabitLog failed:', error) }
     } else {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
       const { data, error } = await supabase
         .from('habit_logs')
-        .insert([{ habit_id: habitId, completed_date: date }])
+        .insert([{ habit_id: habitId, completed_date: date, user_id: user.id }])
         .select()
       if (error) { console.error('toggleHabitLog failed:', error); return }
       const inserted = data?.[0] as HabitLog | undefined

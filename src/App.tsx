@@ -39,7 +39,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 export default function App() {
-  const { fetchTasks, fetchProjects, fetchHabits, fetchProfile, theme, profile } = useTaskStore()
+  const { fetchTasks, fetchProjects, fetchHabits, fetchProfile, theme, profile, profileLoaded } = useTaskStore()
   const [session, setSession] = useState<boolean | null>(null)
   const isMobile = useIsMobile()
 
@@ -75,6 +75,16 @@ export default function App() {
     return isMobile
       ? <MobileLoginPage onLogin={() => setSession(true)} />
       : <LoginPage onLogin={() => setSession(true)} />
+  }
+
+  // Wait for the profile before choosing onboarding vs main app —
+  // otherwise new users see a flash of the main screen
+  if (!profileLoaded) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)', animation: 'ping 1s ease-in-out infinite' }} />
+      </div>
+    )
   }
 
   if (profile && !profile.onboarded) {

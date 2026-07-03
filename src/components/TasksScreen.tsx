@@ -193,9 +193,6 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end' }}>
       <div
         onClick={e => e.stopPropagation()}
-        onTouchStart={onSheetDragStart}
-        onTouchMove={onSheetDragMove}
-        onTouchEnd={onSheetDragEnd}
         style={{
           width: '100%', background: 'var(--surface)', borderRadius: '28px 28px 0 0', maxHeight: '80vh',
           display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)',
@@ -203,7 +200,12 @@ function HistorySheet({ tasks, historyDays, projectMap, onToggle, onDelete, onEd
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
-        <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
+        <div
+          onTouchStart={onSheetDragStart}
+          onTouchMove={onSheetDragMove}
+          onTouchEnd={onSheetDragEnd}
+          style={{ padding: '12px 20px 0', flexShrink: 0 }}
+        >
           <div style={{ width: 38, height: 5, borderRadius: 999, background: 'var(--border-2)', margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <span style={{ font: '300 24px/1.2 var(--font-sans)', color: 'var(--text)' }}>History</span>
@@ -256,8 +258,11 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d
   })
 
-  const isLogged = (habitId: string, dk: string) =>
-    habitLogs.some(l => l.habit_id === habitId && l.completed_date === dk)
+  const logSet = useMemo(
+    () => new Set(habitLogs.map(l => l.habit_id + '|' + l.completed_date)),
+    [habitLogs]
+  )
+  const isLogged = (habitId: string, dk: string) => logSet.has(habitId + '|' + dk)
 
   const streak = (() => {
     if (habits.length === 0) return 0
@@ -265,7 +270,7 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
     const d = new Date(today)
     while (true) {
       const dk = dk_(d)
-      const allDone = habits.every(h => habitLogs.some(l => l.habit_id === h.id && l.completed_date === dk))
+      const allDone = habits.every(h => isLogged(h.id, dk))
       if (allDone) { s++; d.setDate(d.getDate() - 1) }
       else break
     }
@@ -572,9 +577,9 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   const historyCount = historyDays.reduce((s, dk) => s + (tasks[dk]?.length ?? 0), 0)
 
   // Overdue: undone tasks from days before today, tagged with their original date
-  const overdueTasks = historyDays.flatMap(dk =>
+  const overdueTasks = useMemo(() => historyDays.flatMap(dk =>
     (tasks[dk] || []).filter(t => !t.done).map(t => ({ ...t, task_date: dk }))
-  )
+  ), [tasks, historyDays])
 
   // Today progress
   const todayTasks = tasks[todayKey] || []

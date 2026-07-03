@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { sendMessage, type ChatMessage, type ParsedAction, type TaskSummary, type ProjectSummary } from '../services/aiService'
 import { useTaskStore } from '../store/taskStore'
+import { TASK_STATUSES, TASK_PRIORITIES } from '../services/supabase'
+import type { TaskStatus, TaskPriority, RecurrenceType } from '../services/supabase'
 import PaywallSheet from './PaywallSheet'
 
 // ── Action bubble metadata ────────────────────────────────────────────────
@@ -270,8 +272,14 @@ export default function AssistantScreen() {
 
   async function executeAction(action: ParsedAction) {
     switch (action.type) {
-      case 'add':
+      case 'add': {
         if (!action.title || !action.task_date) break
+        const validProject = action.project_id && projects.some(p => p.id === action.project_id)
+          ? action.project_id : null
+        const validPriority = action.priority && action.priority in TASK_PRIORITIES
+          ? action.priority as TaskPriority : undefined
+        const validRecurrence = action.recurrence && ['daily', 'weekly', 'monthly'].includes(action.recurrence)
+          ? action.recurrence as RecurrenceType : null
         await addTask({
           title: action.title,
           task_date: action.task_date,
@@ -280,8 +288,12 @@ export default function AssistantScreen() {
           is_all_day: false,
           is_done: false,
           description: action.description ?? null,
+          project_id: validProject,
+          priority: validPriority,
+          recurrence: validRecurrence,
         })
         break
+      }
 
       case 'delete':
         if (!action.task_id) break
@@ -315,19 +327,22 @@ export default function AssistantScreen() {
         break
 
       case 'set_status':
-        if (!action.task_id || !action.new_status) break
-        await updateTask(action.task_id, { status: action.new_status as import('../services/supabase').TaskStatus })
+        if (!action.task_id || !action.new_status || !(action.new_status in TASK_STATUSES)) break
+        await updateTask(action.task_id, { status: action.new_status as TaskStatus })
         break
 
       case 'set_priority':
-        if (!action.task_id || !action.new_priority) break
-        await updateTask(action.task_id, { priority: action.new_priority as import('../services/supabase').TaskPriority })
+        if (!action.task_id || !action.new_priority || !(action.new_priority in TASK_PRIORITIES)) break
+        await updateTask(action.task_id, { priority: action.new_priority as TaskPriority })
         break
 
-      case 'set_project':
+      case 'set_project': {
         if (!action.task_id) break
-        await updateTask(action.task_id, { project_id: action.new_project_id ?? null })
+        const pid = action.new_project_id && projects.some(p => p.id === action.new_project_id)
+          ? action.new_project_id : null
+        await updateTask(action.task_id, { project_id: pid })
         break
+      }
 
       case 'list':
         break // AI replies with text, no store action

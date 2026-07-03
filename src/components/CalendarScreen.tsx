@@ -208,8 +208,8 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
   // Force body background to dark so iOS safe-area doesn't bleed through
   useEffect(() => {
     const prev = document.body.style.background
-    document.body.style.background = '#1C1917'
-    document.documentElement.style.background = '#1C1917'
+    document.body.style.background = 'var(--bg)'
+    document.documentElement.style.background = 'var(--bg)'
     return () => {
       document.body.style.background = prev
       document.documentElement.style.background = ''
@@ -221,10 +221,10 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
       {/* Header */}
       <div style={{ padding: 'calc(env(safe-area-inset-top, 20px) + 24px) 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', fontWeight: 500, color: '#fff', lineHeight: 1 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', fontWeight: 500, color: 'var(--text)', lineHeight: 1 }}>
             {MONTHS[month]}
           </div>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{year}</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px' }}>{year}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
@@ -244,9 +244,9 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
             onClick={onClose}
             style={{
               width: '36px', height: '36px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'var(--surface2)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+              color: 'var(--text-muted)', cursor: 'pointer',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -259,7 +259,7 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
       {/* Weekday headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 16px 8px', gap: '2px', flexShrink: 0 }}>
         {WD.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>{d}</div>
+          <div key={i} style={{ textAlign: 'center', fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>{d}</div>
         ))}
       </div>
 
@@ -290,7 +290,7 @@ function CalendarExpanded({ anchor, tasks, onDayTap, onClose }: {
                 )
               })}
               {pending.length > 3 && (
-                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>+{pending.length - 3}</div>
+                <div style={{ fontSize: '8px', color: 'var(--text-faint)', marginTop: '1px' }}>+{pending.length - 3}</div>
               )}
             </button>
           )
@@ -418,7 +418,11 @@ function TimeGrid({ days, tasks, onCellTap, hourHeight }: {
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const todayKey = dayKey(new Date())
-  const now = new Date()
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(t)
+  }, [])
 
   useEffect(() => {
     if (scrollRef.current) {

@@ -15,6 +15,7 @@ export interface ParsedAction {
   project_id?: string | null
   status?: string | null
   priority?: string | null
+  recurrence?: string | null
   // Reference (delete / done / undone / reschedule / edit)
   task_id?: string
   task_title?: string
@@ -252,7 +253,9 @@ export async function sendMessage(
       const cleanReply = rawReply.replace(/^ACTION:\{.*?\}\n?/m, '').trim()
       return { reply: cleanReply || confirmationFor(action), action }
     } catch {
-      // fall through to plain reply
+      // Malformed ACTION JSON — never show the raw line to the user
+      const cleaned = rawReply.replace(/^ACTION:.*$/m, '').trim()
+      return { reply: cleaned || 'Sorry, I could not complete that action.', action: null }
     }
   }
 

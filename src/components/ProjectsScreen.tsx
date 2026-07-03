@@ -135,7 +135,14 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
                           <span style={{ font: '500 13px/1.2 var(--font-sans)', color: isDone ? 'var(--text-faint)' : 'var(--text)', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.35 }}>{t.title}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                          <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px/1.2 var(--font-sans)', color: 'var(--text-muted)' }}>AP</span>
+                          {(() => {
+                            const m = t.assigned_to ? (members[project.id] || []).find(mm => mm.user_id === t.assigned_to) : null
+                            if (!m) return <span style={{ width: 20, height: 20 }} />
+                            const init = (m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()
+                            return (
+                              <span style={{ width: 20, height: 20, borderRadius: '50%', background: m.profile?.avatar_color ?? 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px/1.2 var(--font-sans)', color: '#fff' }}>{init}</span>
+                            )
+                          })()}
                           {t.time_estimate != null && (
                             <span style={{ font: '500 10px/1.2 var(--font-sans)', background: 'var(--surface2)', borderRadius: 6, padding: '3px 7px', color: 'var(--text-muted)' }}>
                               {t.time_estimate >= 60 ? `${Math.round(t.time_estimate / 60)}h` : `${t.time_estimate}m`}

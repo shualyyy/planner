@@ -74,7 +74,7 @@ function EditProfileSheet({ open, onClose }: { open: boolean; onClose: () => voi
           borderRadius: '28px 28px 0 0',
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
           boxShadow: 'var(--sheet-shadow)',
-          transform: `translateY(${shown ? dragY : 100}%)`,
+          transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
         }}
       >

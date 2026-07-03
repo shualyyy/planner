@@ -302,7 +302,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Expanded calendar fullscreen ── */
 .cal-expanded {
   position: fixed; inset: 0; z-index: 700;
-  background: #1C1917;
+  background: var(--bg);
   display: flex; flex-direction: column;
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -319,13 +319,13 @@ input, textarea { font-family: inherit; color: inherit; }
   text-align: left;
   overflow: hidden;
 }
-.d-exp:active { transform: scale(0.94); background: rgba(255,255,255,0.05); }
-.d-exp.today-exp { background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.2); }
+.d-exp:active { transform: scale(0.94); background: var(--surface2); }
+.d-exp.today-exp { background: var(--surface2); border: 1.5px solid var(--border-2); }
 .d-exp.other-exp { pointer-events: none; }
-.d-exp-num { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); line-height: 1; margin-bottom: 4px; }
-.d-exp.today-exp .d-exp-num { color: #fff; }
-.d-exp.other-exp .d-exp-num { color: rgba(255,255,255,0.15); }
-.d-exp-task { font-size: 9px; font-weight: 500; line-height: 1.25; color: rgba(255,255,255,0.6); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; margin-bottom: 2px; }
+.d-exp-num { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.d-exp.today-exp .d-exp-num { color: var(--text); }
+.d-exp.other-exp .d-exp-num { color: var(--text-faint); }
+.d-exp-task { font-size: 9px; font-weight: 500; line-height: 1.25; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; margin-bottom: 2px; }
 
 /* ── Settings ── */
 .settings-card { background: var(--surface); border-radius: var(--r-card-lg); overflow: hidden; margin-bottom: 8px; box-shadow: var(--card-shadow); }

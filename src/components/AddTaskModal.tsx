@@ -186,7 +186,6 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
         task_time: isAllDay ? null : (time || null),
         task_time_end: isAllDay ? null : (timeEnd || null),
         is_all_day: isAllDay,
-        is_done: isEditMode ? (editTask?.is_done ?? false) : false,
         description: encodedDesc || null,
         recurrence: recurrence ?? null,
         is_pinned: isPinned,
@@ -275,7 +274,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             onChange={e => handleTitleChange(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
             placeholder="Task title…"
-            style={{ font: '300 24px/1.2 var(--font-sans)', color: title ? '#F0ECE3' : 'rgba(240,236,227,0.35)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
+            style={{ font: '300 24px/1.2 var(--font-sans)', color: title ? 'var(--text)' : 'var(--text-faint)', background: 'transparent', border: 'none', outline: 'none', width: '100%' }}
           />
           {datePreview && (
             <div style={{
@@ -293,7 +292,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             onChange={e => setDescription(e.target.value)}
             placeholder="Description (optional)"
             rows={1}
-            style={{ font: '400 13px/1.2 var(--font-sans)', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
+            style={{ font: '400 13px/1.2 var(--font-sans)', color: 'var(--text-muted)', background: 'transparent', border: 'none', outline: 'none', width: '100%', resize: 'none', marginTop: 9 }}
           />
         </div>
 
@@ -304,7 +303,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
             <span style={rowLeft}>{icoFolder}<span style={rowLabelTxt}>Project</span></span>
             {projectId
               ? (() => { const p = projects.find(pr => pr.id === projectId); return <span style={valuePill()}><span style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color ?? '#D97757' }} />{p?.name ?? '—'}</span> })()
-              : <span style={valuePill('rgba(255,255,255,0.4)')}>No project</span>}
+              : <span style={valuePill('var(--text-muted)')}>No project</span>}
           </button>
           <div style={expandWrap(expandedRow === 'project')}>
             <div style={expandInner}>
@@ -336,12 +335,12 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
               <>
                 <button onClick={() => toggleRow('assignee')} style={rowBtn(false)}>
                   <span style={rowLeft}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span style={rowLabelTxt}>Assign to</span>
                   </span>
                   {currentOpt
                     ? <span style={valuePill('#D97757')}>{currentOpt.name}</span>
-                    : <span style={valuePill('rgba(255,255,255,0.4)')}>Unassigned</span>}
+                    : <span style={valuePill('var(--text-muted)')}>Unassigned</span>}
                 </button>
                 <div style={expandWrap(expandedRow === 'assignee')}>
                   <div style={expandInner}>
@@ -393,7 +392,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 4 — Estimate */}
           <button onClick={() => toggleRow('estimate')} style={rowBtn(false)}>
             <span style={rowLeft}>{icoClock}<span style={rowLabelTxt}>Estimate</span></span>
-            <span style={valuePill(timeEstimate != null ? '#D97757' : 'rgba(255,255,255,0.4)')}>{estimateLabel(timeEstimate)}</span>
+            <span style={valuePill(timeEstimate != null ? '#D97757' : 'var(--text-muted)')}>{estimateLabel(timeEstimate)}</span>
           </button>
           <div style={expandWrap(expandedRow === 'estimate')}>
             <div style={expandInner}>
@@ -425,7 +424,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
           {/* Row 6 — Time */}
           <button onClick={() => toggleRow('time')} style={rowBtn(true)}>
             <span style={rowLeft}>{icoBell}<span style={rowLabelTxt}>Time</span></span>
-            <span style={valuePill(time && !isAllDay ? '#D97757' : 'rgba(255,255,255,0.4)')}>{isAllDay ? 'All day' : (time ? time.slice(0,5) : '—')}</span>
+            <span style={valuePill(time && !isAllDay ? '#D97757' : 'var(--text-muted)')}>{isAllDay ? 'All day' : (time ? time.slice(0,5) : '—')}</span>
           </button>
           <div style={expandWrap(expandedRow === 'time')}>
             <div style={expandInner}>
@@ -474,19 +473,19 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
 function rowBtn(last: boolean): React.CSSProperties {
   return {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    height: 48, borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.07)',
+    height: 48, borderBottom: last ? 'none' : '1px solid var(--border)',
     padding: '0 22px', background: 'transparent', width: '100%', cursor: 'pointer',
     fontFamily: 'inherit',
   }
 }
 
 const rowLeft: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12 }
-const rowLabelTxt: React.CSSProperties = { font: '500 14px/1.2 var(--font-sans)', color: '#F0ECE3' }
+const rowLabelTxt: React.CSSProperties = { font: '500 14px/1.2 var(--font-sans)', color: 'var(--text)' }
 
-function valuePill(color = 'rgba(255,255,255,0.7)'): React.CSSProperties {
+function valuePill(color = 'var(--text-2)'): React.CSSProperties {
   return {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '5px 12px', borderRadius: 999, background: '#2D2926',
+    padding: '5px 12px', borderRadius: 999, background: 'var(--surface2)',
     font: '500 13px/1.2 var(--font-sans)', color, whiteSpace: 'nowrap',
   }
 }
@@ -520,14 +519,14 @@ function pill(active: boolean): React.CSSProperties {
 }
 
 const icoFolder = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
 )
 const icoClock = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
 )
 const icoCalendar = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
 )
 const icoBell = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
 )

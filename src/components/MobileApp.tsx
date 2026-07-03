@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import CalendarScreen from './CalendarScreen'
 import TasksScreen from './TasksScreen'
@@ -58,7 +58,7 @@ export default function MobileApp() {
   const [addProjectModalOpen, setAddProjectModalOpen] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
 
-  const grouped = groupTasksByDay(tasks, donIds)
+  const grouped = useMemo(() => groupTasksByDay(tasks, donIds), [tasks, donIds])
 
   function handleAdd(date?: Date, time?: string, projectId?: string) {
     setModalDate(date || new Date())
@@ -130,7 +130,7 @@ export default function MobileApp() {
           padding: 'calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px',
           textAlign: 'center', font: '600 11px/1.2 var(--font-sans)', letterSpacing: '0.04em',
         }}>
-          ⚡ Offline — changes will sync when reconnected
+          ⚡ Offline — changes may not be saved
         </div>,
         document.body
       )}
