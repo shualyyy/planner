@@ -7,6 +7,7 @@ import { IcoLock, IcoHelp, SignOutIcon, ChevronRight, SunIcon, MoonIcon } from '
 import StatsScreen from './StatsScreen'
 import PaywallSheet from './PaywallSheet'
 import { getEffectivePlan } from '../lib/flags'
+import { THEME_PRESETS } from '../lib/themes'
 
 const AVATAR_COLORS = ['#CC785C', '#61AAF2', '#3DD68C', '#A78BFA', '#F5BDD0', '#D4A27F', '#CC5247', '#8ED4C8']
 
@@ -150,7 +151,7 @@ function EditProfileSheet({ open, onClose }: { open: boolean; onClose: () => voi
 }
 
 export default function SettingsScreen() {
-  const { profile, pendingInvites, fetchPendingInvites, acceptInvite, declineInvite, fetchProjects, theme, setTheme } = useTaskStore()
+  const { profile, pendingInvites, fetchPendingInvites, acceptInvite, declineInvite, fetchProjects, theme, setTheme, accentPreset, setAccentPreset } = useTaskStore()
   const { subscribed, supported, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications()
   const [email, setEmail] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
@@ -318,6 +319,7 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <div className="settings-section-label">Appearance</div>
         <div className="settings-card">
+          {/* Dark / Light toggle */}
           <button
             className="settings-row"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -336,6 +338,43 @@ export default function SettingsScreen() {
               {theme === 'dark' ? 'Dark' : 'Light'}
             </span>
           </button>
+
+          {/* Accent preset picker */}
+          <div className="settings-row" style={{ cursor: 'default', gap: 0, flexDirection: 'column', alignItems: 'flex-start', paddingBottom: 16 }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, marginBottom: 14 }}>Accent</span>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {THEME_PRESETS.map(preset => {
+                const active = accentPreset === preset.id
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => setAccentPreset(preset.id)}
+                    title={preset.label}
+                    style={{
+                      width: 46, height: 46,
+                      borderRadius: 14,
+                      border: active ? '2px solid var(--text)' : '2px solid transparent',
+                      background: preset.swatch,
+                      cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center',
+                      gap: 3,
+                      boxShadow: active ? '0 0 0 3px var(--bg), 0 0 0 5px var(--text)' : 'none',
+                      transition: 'box-shadow 0.15s, border-color 0.15s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>{preset.emoji}</span>
+                    <span style={{
+                      fontSize: 8.5, fontWeight: 700, letterSpacing: '0.04em',
+                      color: preset.id === 'mono' ? '#191919' : '#fff',
+                      textTransform: 'uppercase', opacity: 0.85,
+                    }}>{preset.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           {supported && (
             <button
               className="settings-row"

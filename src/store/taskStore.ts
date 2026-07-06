@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase, type Task, type Project, type Habit, type HabitLog, type UserProfile, type ProjectMember, type ProjectInvite, type TaskComment } from '../services/supabase'
+import { applyThemePreset, getPresetById, DEFAULT_PRESET_ID } from '../lib/themes'
 
 interface TaskStore {
   tasks: Task[]
@@ -9,6 +10,8 @@ interface TaskStore {
   loading: boolean
   donIds: Set<string>
   theme: 'light' | 'dark'
+  accentPreset: string
+  setAccentPreset: (id: string) => void
   profile: UserProfile | null
   profileLoaded: boolean
   members: Record<string, ProjectMember[]>
@@ -46,6 +49,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   loading: false,
   donIds: new Set(),
   theme: (typeof localStorage !== 'undefined' && (localStorage.getItem('planer-theme') as 'light' | 'dark')) || 'dark',
+  accentPreset: (typeof localStorage !== 'undefined' && localStorage.getItem('planer-accent')) || DEFAULT_PRESET_ID,
   profile: null,
   profileLoaded: false,
   members: {},
@@ -186,6 +190,20 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     document.documentElement.setAttribute('data-theme', t)
     try { localStorage.setItem('planer-theme', t) } catch { /* ignore */ }
     set({ theme: t })
+  },
+
+  setAccentPreset: (id) => {
+    const preset = getPresetById(id)
+    applyThemePreset(preset)
+    try { localStorage.setItem('planer-accent', id) } catch { /* ignore */ }
+    // if preset forces a base theme, apply it too
+    if (preset.forceBase) {
+      document.documentElement.setAttribute('data-theme', preset.forceBase)
+      try { localStorage.setItem('planer-theme', preset.forceBase) } catch { /* ignore */ }
+      set({ accentPreset: id, theme: preset.forceBase })
+    } else {
+      set({ accentPreset: id })
+    }
   },
 
   fetchTasks: async () => {
@@ -363,6 +381,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
 // Ensure data-theme is set on <html> from the very first render, using stored preference
 useTaskStore.getState().setTheme(useTaskStore.getState().theme)
+// Apply saved accent preset (CSS vars) on startup
+applyThemePreset(getPresetById(useTaskStore.getState().accentPreset))
 
 function addDaysToDate(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
