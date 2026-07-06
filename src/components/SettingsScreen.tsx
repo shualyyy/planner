@@ -6,6 +6,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 import { IcoLock, IcoHelp, SignOutIcon, ChevronRight, SunIcon, MoonIcon } from './icons'
 import StatsScreen from './StatsScreen'
 import PaywallSheet from './PaywallSheet'
+import { getEffectivePlan } from '../lib/flags'
 
 const AVATAR_COLORS = ['#CC785C', '#61AAF2', '#3DD68C', '#A78BFA', '#F5BDD0', '#D4A27F', '#CC5247', '#8ED4C8']
 
@@ -229,7 +230,7 @@ export default function SettingsScreen() {
               {email ?? '—'}
             </div>
             <div style={{ marginTop: '6px' }}>
-              {(profile?.plan ?? 'free') === 'pro' ? (
+              {getEffectivePlan(profile) === 'pro' ? (
                 <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 10px', background: 'var(--accent)', color: '#fff', borderRadius: '999px' }}>
                   Pro
                 </span>

@@ -6,6 +6,7 @@ import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription, FREE_HABIT_LIM
 import { useTaskStore } from '../store/taskStore'
 import TaskDetailSheet from './TaskDetailSheet'
 import PaywallSheet from './PaywallSheet'
+import { getEffectivePlan } from '../lib/flags'
 
 const HABIT_COLORS = ['#D97757','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
 const HABIT_EMOJIS = ['⭕','🏃','📚','💧','🧘','💪','🥗','😴','✍️','🎯']
@@ -737,7 +738,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
             todayKey={todayKey}
             onToggle={toggleHabitLog}
             onAdd={addHabit}
-            plan={(profile?.plan ?? 'free') as 'free' | 'pro'}
+            plan={getEffectivePlan(profile)}
           />
         </div>
       )}
@@ -745,7 +746,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       {/* Segment: Coop */}
       {segment === 'coop' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
-          {(profile?.plan ?? 'free') === 'free' ? (
+          {getEffectivePlan(profile) === 'free' ? (
             <div style={{ padding: '40px 8px 20px', textAlign: 'center' }}>
               <div style={{
                 width: 56, height: 56, borderRadius: 18, margin: '0 auto 16px',

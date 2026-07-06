@@ -30,18 +30,41 @@ function StatusIcon({ status }: { status: TaskStatus }) {
 }
 
 /* ─── Project detail (Kanban) ─── */
-function ProjectDetailView({ project, onBack, onAddTask }: {
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  not_started: 'Not started',
+  in_progress: 'In progress',
+  blocked:     'Blocked',
+  done:        'Done',
+}
+const STATUS_COLORS: Record<TaskStatus, string> = {
+  not_started: 'var(--text-faint)',
+  in_progress: 'var(--info)',
+  blocked:     'var(--danger)',
+  done:        'var(--success)',
+}
+
+function ProjectDetailView({ project, onBack, onAddTask, onEditProject }: {
   project: Project
   onBack: () => void
   onAddTask: (projectId?: string) => void
+  onEditProject: (p: Project) => void
 }) {
-  const { tasks, donIds, members, fetchMembers, inviteMember, removeMember, profile } = useTaskStore()
+  const { tasks, donIds, members, fetchMembers, inviteMember, removeMember, profile, updateTask, deleteProject } = useTaskStore()
   const [showMembersSheet, setShowMembersSheet] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [inviteId, setInviteId] = useState('')
   const [inviteRole, setInviteRole] = useState<'editor'|'viewer'>('editor')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
+  const [statusPickerTaskId, setStatusPickerTaskId] = useState<string | null>(null)
+  const [showMenu, setShowMenu] = useState(false)
+
+  async function handleDeleteProject() {
+    if (!window.confirm(`Delete «${project.name}»? This will delete all tasks.`)) return
+    await deleteProject(project.id)
+    setShowMenu(false)
+    onBack()
+  }
 
   useEffect(() => {
     if (project?.id) fetchMembers(project.id)
@@ -77,16 +100,86 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
           <button onClick={onBack} style={{ font: '500 13px/1.2 var(--font-sans)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
             ← Projects
           </button>
-          {/* Members button */}
-          <button
-            onClick={() => { fetchMembers(project.id); setShowMembersSheet(true) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', borderRadius: 999, background: 'var(--surface2)', border: '1px solid var(--border)', cursor: 'pointer' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-            <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--text-muted)' }}>
-              {(members[project.id]?.length ?? 0) > 0 ? members[project.id].length : '+'}
-            </span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            {/* Members button */}
+            <button
+              onClick={() => { fetchMembers(project.id); setShowMembersSheet(true) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', borderRadius: 999, background: 'var(--surface2)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--text-muted)' }}>
+                {(members[project.id]?.length ?? 0) > 0 ? members[project.id].length : '+'}
+              </span>
+            </button>
+            {/* ⋯ menu button */}
+            <button
+              onClick={() => setShowMenu(v => !v)}
+              aria-label="More options"
+              style={{
+                width: 44, height: 44,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 999, background: 'transparent', border: 'none',
+                color: 'var(--text-muted)', cursor: 'pointer',
+                font: '700 20px/1 var(--font-sans)',
+              }}
+            >⋯</button>
+            {showMenu && (
+              <>
+                {/* Backdrop */}
+                <div
+                  onClick={() => setShowMenu(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'transparent' }}
+                />
+                {/* Dropdown */}
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute', top: 46, right: 0, zIndex: 41,
+                    minWidth: 180,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--r-card)',
+                    boxShadow: 'var(--shadow-lg)',
+                    overflow: 'hidden',
+                    display: 'flex', flexDirection: 'column',
+                  }}
+                >
+                  <button
+                    role="menuitem"
+                    onClick={() => { setShowMenu(false); onEditProject(project) }}
+                    style={{
+                      minHeight: 44, padding: '0 14px', textAlign: 'left',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'var(--text)', font: '500 14px/1 var(--font-sans)',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit project
+                  </button>
+                  <div style={{ height: 1, background: 'var(--border)' }} />
+                  <button
+                    role="menuitem"
+                    onClick={handleDeleteProject}
+                    style={{
+                      minHeight: 44, padding: '0 14px', textAlign: 'left',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'var(--danger)', font: '500 14px/1 var(--font-sans)',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                    </svg>
+                    Delete project
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: project.color, flexShrink: 0 }} />
@@ -128,8 +221,13 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 9, overflowY: 'auto', flex: 1 }}>
                     {list.map(t => (
-                      <div key={`${t.id}-${t.task_date}`} onClick={() => {}}
-                        style={{ background: 'var(--surface)', border: `1px solid ${blocked ? 'rgba(204,82,71,0.25)' : 'var(--border)'}`, borderRadius: 14, padding: '12px 13px', opacity: isDone ? 0.55 : 1 }}>
+                      <div
+                        key={`${t.id}-${t.task_date}`}
+                        onClick={() => setStatusPickerTaskId(t.id)}
+                        role="button"
+                        tabIndex={0}
+                        style={{ background: 'var(--surface)', border: `1px solid ${blocked ? 'rgba(204,82,71,0.25)' : 'var(--border)'}`, borderRadius: 14, padding: '12px 13px', opacity: isDone ? 0.55 : 1, cursor: 'pointer', minHeight: 44 }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                           <span style={{ width: 5, height: 5, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: t.priority ? TASK_PRIORITIES[t.priority].color : 'var(--text-faint)' }} />
                           <span style={{ font: '500 13px/1.2 var(--font-sans)', color: isDone ? 'var(--text-faint)' : 'var(--text)', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.35 }}>{t.title}</span>
@@ -283,6 +381,86 @@ function ProjectDetailView({ project, onBack, onAddTask }: {
           border: 'none', zIndex: 5,
         }}
       ><span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Task</button>
+
+      {/* Inline status picker */}
+      {statusPickerTaskId && (() => {
+        const currentTask = tasks.find(x => x.id === statusPickerTaskId)
+        const currentStatus: TaskStatus = currentTask ? effStatus(currentTask, donIds.has(currentTask.id)) : 'not_started'
+        return (
+          <div
+            onClick={() => setStatusPickerTaskId(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 60,
+              background: 'rgba(0,0,0,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              role="menu"
+              aria-label="Change status"
+              style={{
+                width: '100%', maxWidth: 320,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-card)',
+                boxShadow: 'var(--shadow-lg)',
+                overflow: 'hidden',
+                display: 'flex', flexDirection: 'column',
+              }}
+            >
+              <div style={{
+                padding: '14px 16px 10px',
+                font: '600 10px/1 var(--font-sans)',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: 'var(--text-faint)',
+              }}>
+                Status
+              </div>
+              {STATUS_ORDER.map(st => {
+                const active = st === currentStatus
+                return (
+                  <button
+                    key={st}
+                    role="menuitem"
+                    onClick={async () => {
+                      await updateTask(statusPickerTaskId, { status: st })
+                      setStatusPickerTaskId(null)
+                    }}
+                    style={{
+                      minHeight: 48, width: '100%',
+                      padding: '0 16px',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      background: active ? 'var(--accent-soft)' : 'transparent',
+                      border: 'none', cursor: 'pointer',
+                      borderLeft: `3px solid ${active ? 'var(--accent)' : STATUS_COLORS[st]}`,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{
+                      width: 10, height: 10, borderRadius: '50%',
+                      background: STATUS_COLORS[st], flexShrink: 0,
+                    }} />
+                    <span style={{
+                      flex: 1,
+                      font: '500 14px/1 var(--font-sans)',
+                      color: active ? 'var(--accent)' : 'var(--text)',
+                    }}>
+                      {STATUS_LABELS[st]}
+                    </span>
+                    {active && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -339,7 +517,7 @@ function ProjectCard({ project, stats, onTap }: {
 }
 
 /* ─── Main ─── */
-export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask, onDetailChange }: ProjectsScreenProps) {
+export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask, onDetailChange, onEditProject }: ProjectsScreenProps) {
   const { projects, tasks: rawTasks, donIds } = useTaskStore()
   const [openProject, setOpenProject] = useState<Project | null>(null)
 
@@ -432,6 +610,7 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
           project={openProject}
           onBack={() => setOpenProject(null)}
           onAddTask={onAddTask}
+          onEditProject={onEditProject}
         />
       )}
     </div>

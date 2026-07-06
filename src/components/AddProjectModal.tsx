@@ -4,6 +4,7 @@ import type { Project } from '../services/supabase'
 import { FREE_PROJECT_LIMIT } from '../services/supabase'
 import { IcoChevronDown } from './icons'
 import PaywallSheet from './PaywallSheet'
+import { getEffectivePlan } from '../lib/flags'
 
 interface Props {
   isOpen: boolean
@@ -20,7 +21,7 @@ export default function AddProjectModal({ isOpen, onClose, editProject }: Props)
   const { addProject, updateProject, projects, profile } = useTaskStore()
   const isEditMode = !!editProject
 
-  const isPaywalled = !isEditMode && (profile?.plan ?? 'free') === 'free'
+  const isPaywalled = !isEditMode && getEffectivePlan(profile) === 'free'
     && projects.filter(p => !p.is_archived).length >= FREE_PROJECT_LIMIT
 
   const [name, setName]               = useState('')

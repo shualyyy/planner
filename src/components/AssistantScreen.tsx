@@ -5,6 +5,7 @@ import { useTaskStore } from '../store/taskStore'
 import { TASK_STATUSES, TASK_PRIORITIES } from '../services/supabase'
 import type { TaskStatus, TaskPriority, RecurrenceType } from '../services/supabase'
 import PaywallSheet from './PaywallSheet'
+import { getEffectivePlan } from '../lib/flags'
 
 // ── Action bubble metadata ────────────────────────────────────────────────
 
@@ -192,7 +193,7 @@ export default function AssistantScreen() {
   const [hasSpeechAPI, setHasSpeechAPI] = useState(false)
   const [paywallOpen, setPaywallOpen] = useState(false)
 
-  const isFreePlan = (profile?.plan ?? 'free') === 'free'
+  const isFreePlan = getEffectivePlan(profile) === 'free'
 
   // Persist history
   useEffect(() => { saveHistory(messages) }, [messages])
