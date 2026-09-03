@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { format, addDays } from 'date-fns'
 import * as chrono from 'chrono-node'
 import { useTaskStore } from '../store/taskStore'
+import { haptics } from '../lib/haptics'
 import { supabase } from '../services/supabase'
 import type { Task, TaskLabel, RecurrenceType, TaskStatus, TaskPriority } from '../services/supabase'
 import { TASK_STATUSES, TASK_PRIORITIES, parseLabelFromDescription, stripLabelFromDescription, encodeLabelInDescription } from '../services/supabase'
@@ -202,6 +203,7 @@ export default function AddTaskModal({ isOpen, onClose, defaultDate, defaultTime
       } else {
         await addTask(payload)
       }
+      haptics.success()
       onClose()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err)

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import type { Task, Project, TaskStatus } from '../services/supabase'
 import { TASK_STATUSES, TASK_PRIORITIES } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
+import { haptics } from '../lib/haptics'
 
 interface ProjectsScreenProps {
   tasks: Record<string, (Task & { done: boolean })[]>
@@ -60,7 +61,7 @@ function ProjectDetailView({ project, onBack, onAddTask, onEditProject }: {
   const [showMenu, setShowMenu] = useState(false)
 
   async function handleDeleteProject() {
-    if (!window.confirm(`Delete «${project.name}»? This will delete all tasks.`)) return
+    if (!window.confirm(`Delete "${project.name}"? All tasks will be deleted.`)) return
     await deleteProject(project.id)
     setShowMenu(false)
     onBack()
@@ -116,11 +117,10 @@ function ProjectDetailView({ project, onBack, onAddTask, onEditProject }: {
               onClick={() => setShowMenu(v => !v)}
               aria-label="More options"
               style={{
-                width: 44, height: 44,
+                width: 36, height: 36, borderRadius: 10,
+                background: 'var(--surface2)', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 999, background: 'transparent', border: 'none',
-                color: 'var(--text-muted)', cursor: 'pointer',
-                font: '700 20px/1 var(--font-sans)',
+                cursor: 'pointer', color: 'var(--text-2)', fontSize: 18,
               }}
             >⋯</button>
             {showMenu && (
@@ -220,35 +220,93 @@ function ProjectDetailView({ project, onBack, onAddTask, onEditProject }: {
                     <span style={{ font: '600 10px/1.2 var(--font-sans)', background: 'var(--surface2)', borderRadius: 999, padding: '2px 7px', color: 'var(--text-muted)' }}>{list.length}</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 9, overflowY: 'auto', flex: 1 }}>
-                    {list.map(t => (
-                      <div
-                        key={`${t.id}-${t.task_date}`}
-                        onClick={() => setStatusPickerTaskId(t.id)}
-                        role="button"
-                        tabIndex={0}
-                        style={{ background: 'var(--surface)', border: `1px solid ${blocked ? 'rgba(204,82,71,0.25)' : 'var(--border)'}`, borderRadius: 14, padding: '12px 13px', opacity: isDone ? 0.55 : 1, cursor: 'pointer', minHeight: 44 }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: t.priority ? TASK_PRIORITIES[t.priority].color : 'var(--text-faint)' }} />
-                          <span style={{ font: '500 13px/1.2 var(--font-sans)', color: isDone ? 'var(--text-faint)' : 'var(--text)', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.35 }}>{t.title}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                          {(() => {
-                            const m = t.assigned_to ? (members[project.id] || []).find(mm => mm.user_id === t.assigned_to) : null
-                            if (!m) return <span style={{ width: 20, height: 20 }} />
-                            const init = (m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()
-                            return (
-                              <span style={{ width: 20, height: 20, borderRadius: '50%', background: m.profile?.avatar_color ?? 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px/1.2 var(--font-sans)', color: '#fff' }}>{init}</span>
-                            )
-                          })()}
-                          {t.time_estimate != null && (
-                            <span style={{ font: '500 10px/1.2 var(--font-sans)', background: 'var(--surface2)', borderRadius: 6, padding: '3px 7px', color: 'var(--text-muted)' }}>
-                              {t.time_estimate >= 60 ? `${Math.round(t.time_estimate / 60)}h` : `${t.time_estimate}m`}
-                            </span>
+                    {list.map(t => {
+                      const isOpen = statusPickerTaskId === t.id
+                      return (
+                        <div
+                          key={`${t.id}-${t.task_date}`}
+                          onClick={() => setStatusPickerTaskId(isOpen ? null : t.id)}
+                          role="button"
+                          tabIndex={0}
+                          style={{ position: 'relative', background: 'var(--surface)', border: `1px solid ${blocked ? 'rgba(204,82,71,0.25)' : 'var(--border)'}`, borderRadius: 14, padding: '12px 13px', opacity: isDone ? 0.55 : 1, cursor: 'pointer', minHeight: 44 }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                            <span style={{ width: 5, height: 5, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: t.priority ? TASK_PRIORITIES[t.priority].color : 'var(--text-faint)' }} />
+                            <span style={{ font: '500 13px/1.2 var(--font-sans)', color: isDone ? 'var(--text-faint)' : 'var(--text)', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.35 }}>{t.title}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                            {(() => {
+                              const m = t.assigned_to ? (members[project.id] || []).find(mm => mm.user_id === t.assigned_to) : null
+                              if (!m) return <span style={{ width: 20, height: 20 }} />
+                              const init = (m.profile?.display_name ?? m.profile?.email ?? '?')[0].toUpperCase()
+                              return (
+                                <span style={{ width: 20, height: 20, borderRadius: '50%', background: m.profile?.avatar_color ?? 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px/1.2 var(--font-sans)', color: '#fff' }}>{init}</span>
+                              )
+                            })()}
+                            {t.time_estimate != null && (
+                              <span style={{ font: '500 10px/1.2 var(--font-sans)', background: 'var(--surface2)', borderRadius: 6, padding: '3px 7px', color: 'var(--text-muted)' }}>
+                                {t.time_estimate >= 60 ? `${Math.round(t.time_estimate / 60)}h` : `${t.time_estimate}m`}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Anchored status popup */}
+                          {isOpen && (
+                            <>
+                              <div
+                                onClick={e => { e.stopPropagation(); setStatusPickerTaskId(null) }}
+                                style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent' }}
+                              />
+                              <div
+                                onClick={e => e.stopPropagation()}
+                                role="menu"
+                                aria-label="Change status"
+                                style={{
+                                  position: 'absolute', zIndex: 100,
+                                  bottom: 'calc(100% + 6px)', left: 0,
+                                  background: 'var(--surface)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 'var(--r-card)',
+                                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                                  minWidth: 160, overflow: 'hidden',
+                                }}
+                              >
+                                {STATUS_ORDER.map(st => {
+                                  const active = st === effStatus(t, t.done)
+                                  return (
+                                    <button
+                                      key={st}
+                                      role="menuitem"
+                                      onClick={async (e) => {
+                                        e.stopPropagation()
+                                        haptics.light()
+                                        setStatusPickerTaskId(null)
+                                        await updateTask(t.id, { status: st })
+                                      }}
+                                      style={{
+                                        width: '100%', padding: '11px 14px',
+                                        fontSize: 13, fontWeight: 500,
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        background: active ? 'var(--accent-soft)' : 'transparent',
+                                        border: 'none', cursor: 'pointer', textAlign: 'left',
+                                        color: active ? 'var(--accent)' : 'var(--text)',
+                                        minHeight: 44,
+                                      }}
+                                    >
+                                      <span style={{
+                                        width: 8, height: 8, borderRadius: '50%',
+                                        background: STATUS_COLORS[st], flexShrink: 0,
+                                      }} />
+                                      {STATUS_LABELS[st]}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                     {list.length === 0 && (
                       <div style={{ font: '400 11px/1.2 var(--font-sans)', color: 'var(--text-faint)', padding: '8px 2px' }}>—</div>
                     )}
@@ -382,85 +440,6 @@ function ProjectDetailView({ project, onBack, onAddTask, onEditProject }: {
         }}
       ><span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Task</button>
 
-      {/* Inline status picker */}
-      {statusPickerTaskId && (() => {
-        const currentTask = tasks.find(x => x.id === statusPickerTaskId)
-        const currentStatus: TaskStatus = currentTask ? effStatus(currentTask, donIds.has(currentTask.id)) : 'not_started'
-        return (
-          <div
-            onClick={() => setStatusPickerTaskId(null)}
-            style={{
-              position: 'fixed', inset: 0, zIndex: 60,
-              background: 'rgba(0,0,0,0.45)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: 20,
-            }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              role="menu"
-              aria-label="Change status"
-              style={{
-                width: '100%', maxWidth: 320,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r-card)',
-                boxShadow: 'var(--shadow-lg)',
-                overflow: 'hidden',
-                display: 'flex', flexDirection: 'column',
-              }}
-            >
-              <div style={{
-                padding: '14px 16px 10px',
-                font: '600 10px/1 var(--font-sans)',
-                letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: 'var(--text-faint)',
-              }}>
-                Status
-              </div>
-              {STATUS_ORDER.map(st => {
-                const active = st === currentStatus
-                return (
-                  <button
-                    key={st}
-                    role="menuitem"
-                    onClick={async () => {
-                      await updateTask(statusPickerTaskId, { status: st })
-                      setStatusPickerTaskId(null)
-                    }}
-                    style={{
-                      minHeight: 48, width: '100%',
-                      padding: '0 16px',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      background: active ? 'var(--accent-soft)' : 'transparent',
-                      border: 'none', cursor: 'pointer',
-                      borderLeft: `3px solid ${active ? 'var(--accent)' : STATUS_COLORS[st]}`,
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{
-                      width: 10, height: 10, borderRadius: '50%',
-                      background: STATUS_COLORS[st], flexShrink: 0,
-                    }} />
-                    <span style={{
-                      flex: 1,
-                      font: '500 14px/1 var(--font-sans)',
-                      color: active ? 'var(--accent)' : 'var(--text)',
-                    }}>
-                      {STATUS_LABELS[st]}
-                    </span>
-                    {active && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5"/>
-                      </svg>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }
@@ -518,7 +497,7 @@ function ProjectCard({ project, stats, onTap }: {
 
 /* ─── Main ─── */
 export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask, onDetailChange, onEditProject }: ProjectsScreenProps) {
-  const { projects, tasks: rawTasks, donIds } = useTaskStore()
+  const { projects, tasks: rawTasks, donIds, loading } = useTaskStore()
   const [openProject, setOpenProject] = useState<Project | null>(null)
 
   useEffect(() => { onDetailChange?.(!!openProject) }, [openProject, onDetailChange])
@@ -590,10 +569,24 @@ export default function ProjectsScreen({ onAddProject: _onAddProject, onAddTask,
       </div>
 
       {/* List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px', paddingBottom: 120 }}>
-        {visibleProjects.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--text-muted)', font: '400 13.5px/1.2 var(--font-sans)' }}>
-            No projects yet. Tap + to create one.
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px', paddingBottom: 120, display: 'flex', flexDirection: 'column' }}>
+        {loading && visibleProjects.length === 0 ? (
+          <div style={{ padding: '16px 0' }}>
+            {[0,1].map(i => (
+              <div key={i} className="skeleton" style={{ height: 120, margin: '0 16px 8px' }} />
+            ))}
+          </div>
+        ) : visibleProjects.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 32px', textAlign: 'center', gap: 8, flex: 1 }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>🗂</div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>No projects yet</div>
+            <div style={{ fontSize: 13, color: 'var(--text-faint)', lineHeight: 1.5 }}>Tap + to create your first project</div>
+            <button
+              onClick={_onAddProject}
+              style={{ marginTop: 12, padding: '10px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r-chip)', fontSize: 13, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}
+            >
+              New project
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>

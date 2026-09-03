@@ -140,7 +140,14 @@ export default function MobileApp() {
         paddingTop: 'env(safe-area-inset-top)',
       }}>
         <div style={{ position: 'absolute', top: 'env(safe-area-inset-top)', left: 0, right: 0, bottom: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'calendar' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            opacity: tab === 'calendar' ? 1 : 0,
+            transform: tab === 'calendar' ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+            pointerEvents: tab === 'calendar' ? 'auto' : 'none',
+          }}>
             <CalendarScreen
               tasks={grouped}
               onAdd={(d, t) => handleAdd(d, t)}
@@ -148,7 +155,14 @@ export default function MobileApp() {
               onPopupChange={setCalPopupOpen}
             />
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'tasks' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            opacity: tab === 'tasks' ? 1 : 0,
+            transform: tab === 'tasks' ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+            pointerEvents: tab === 'tasks' ? 'auto' : 'none',
+          }}>
             <TasksScreen
               tasks={grouped}
               onToggle={(_dk, id) => toggleDone(id)}
@@ -156,7 +170,14 @@ export default function MobileApp() {
               onEdit={handleEdit}
             />
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'projects' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            opacity: tab === 'projects' ? 1 : 0,
+            transform: tab === 'projects' ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+            pointerEvents: tab === 'projects' ? 'auto' : 'none',
+          }}>
             <ProjectsScreen
               tasks={grouped}
               onToggle={(_dk, id) => toggleDone(id)}
@@ -168,10 +189,24 @@ export default function MobileApp() {
               onDetailChange={setProjectDetailOpen}
             />
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'assistant' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            opacity: tab === 'assistant' ? 1 : 0,
+            transform: tab === 'assistant' ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+            pointerEvents: tab === 'assistant' ? 'auto' : 'none',
+          }}>
             <AssistantScreen />
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: tab === 'settings' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            opacity: tab === 'settings' ? 1 : 0,
+            transform: tab === 'settings' ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+            pointerEvents: tab === 'settings' ? 'auto' : 'none',
+          }}>
             <SettingsScreen />
           </div>
         </div>

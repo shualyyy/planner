@@ -5,6 +5,7 @@ import type { Task, Project, Habit, HabitLog } from '../services/supabase'
 import { TASK_LABELS, TASK_PRIORITIES, parseLabelFromDescription, FREE_HABIT_LIMIT } from '../services/supabase'
 import { useTaskStore } from '../store/taskStore'
 import TaskDetailSheet from './TaskDetailSheet'
+import { haptics } from '../lib/haptics'
 import PaywallSheet from './PaywallSheet'
 import { getEffectivePlan } from '../lib/flags'
 
@@ -71,13 +72,14 @@ function StatusCircle({ task }: { task: Task & { done: boolean } }) {
 }
 
 /* ─── Task card ─── */
-function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
+function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen, index = 0 }: {
   task: Task & { done: boolean }
   project?: Project
   onToggle: () => void
   onDelete: () => void
   onEdit: () => void
   onOpen?: () => void
+  index?: number
 }) {
   const [swipeX, setSwipeX] = useState(0)
   const [swipeLocked, setSwipeLocked] = useState(false)
@@ -105,14 +107,20 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
   const near = isNear(task)
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, opacity: deleting ? 0 : 1, maxHeight: deleting ? 0 : 200, transition: 'opacity 0.2s, max-height 0.2s' }}>
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 14,
+      opacity: deleting ? 0 : 1, maxHeight: deleting ? 0 : 200,
+      transition: 'opacity 0.2s, max-height 0.2s',
+      animation: 'slideUp 0.22s var(--ease-ios) both',
+      animationDelay: `${Math.min(index * 0.04, 0.2)}s`,
+    }}>
       {/* Action zone */}
       <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 128, display: 'flex' }}>
         <div style={{ width: 64, background: 'var(--info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button onClick={() => { resetSwipe(); onEdit() }} style={{ color: '#fff', padding: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PencilIcon /></button>
         </div>
         <div style={{ width: 64, background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <button onClick={() => { setDeleting(true); setTimeout(onDelete, 200) }} style={{ color: '#fff', padding: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon /></button>
+          <button onClick={() => { haptics.medium(); setDeleting(true); setTimeout(onDelete, 200) }} style={{ color: '#fff', padding: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrashIcon /></button>
         </div>
       </div>
 
@@ -130,7 +138,7 @@ function TaskRow({ task, project, onToggle, onDelete, onEdit, onOpen }: {
           cursor: 'pointer',
         }}
       >
-        <div onClick={e => { e.stopPropagation(); onToggle() }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <div onClick={e => { e.stopPropagation(); haptics.success(); onToggle() }} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <StatusCircle task={task} />
         </div>
 
@@ -341,8 +349,10 @@ function HabitsInline({ habits, habitLogs, todayKey, onToggle, onAdd, plan }: {
       {/* Habit cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {habits.length === 0 && !showForm && (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', font: '400 13px/1.2 var(--font-sans)' }}>
-            No habits yet. Add your first one!
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 32px', textAlign: 'center', gap: 8 }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>🌱</div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>No habits yet</div>
+            <div style={{ fontSize: 13, color: 'var(--text-faint)', lineHeight: 1.5 }}>Build streaks, one day at a time</div>
           </div>
         )}
         {habits.map(h => {
@@ -545,7 +555,7 @@ function CoopTaskList({ tasks, projectMap, currentUserId, onToggle, onDelete, on
 
 /* ─── Main ─── */
 export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: TasksScreenProps) {
-  const { projects, habits, habitLogs, toggleHabitLog, addHabit, profile } = useTaskStore()
+  const { projects, habits, habitLogs, toggleHabitLog, addHabit, profile, loading } = useTaskStore()
   const today = new Date()
   const todayKey = dayKey(today)
   const tomorrowKey = dayKey(addDays(today, 1))
@@ -792,9 +802,17 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       {/* Segment: Tasks */}
       {segment === 'tasks' && (
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
-        {activeDays.length === 0 && overdueTasks.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
-            <span style={{ font: '450 13.5px/1.2 var(--font-sans)', color: 'var(--text-muted)' }}>Nothing scheduled. Enjoy the quiet.</span>
+        {loading && activeDays.length === 0 && overdueTasks.length === 0 ? (
+          <div style={{ padding: '16px 0' }}>
+            {[0,1,2,3].map(i => (
+              <div key={i} className="skeleton" style={{ height: 72, margin: '0 16px 8px', opacity: 1 - i * 0.15 }} />
+            ))}
+          </div>
+        ) : activeDays.length === 0 && overdueTasks.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 32px', textAlign: 'center', gap: 8, flex: 1 }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>📋</div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>No tasks yet</div>
+            <div style={{ fontSize: 13, color: 'var(--text-faint)', lineHeight: 1.5 }}>Tap + to add your first task</div>
           </div>
         ) : (
           <>
@@ -809,9 +827,10 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                 Overdue
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {overdueTasks.map(t => (
+                {overdueTasks.map((t, i) => (
                   <TaskRow
                     key={`overdue-${t.id}`}
+                    index={i}
                     task={t}
                     project={t.project_id ? projectMap[t.project_id] : undefined}
                     onToggle={() => onToggle(t.task_date, t.id)}
@@ -833,9 +852,10 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
                   {dayLabel(dk)}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: isTomorrowOrLater ? 0.75 : 1 }}>
-                  {dayTasks.map(t => (
+                  {dayTasks.map((t, i) => (
                     <TaskRow
                       key={`${t.id}-${dk}`}
+                      index={i}
                       task={t}
                       project={t.project_id ? projectMap[t.project_id] : undefined}
                       onToggle={() => onToggle(dk, t.id)}
