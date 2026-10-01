@@ -1,10 +1,23 @@
 /// <reference lib="webworker" />
+import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any[] }
 
+// Без этих двух строк новый service worker висит в состоянии "waiting",
+// пока пользователь не закроет все вкладки и PWA. На телефоне это значит,
+// что приложение бесконечно показывает старую сборку.
+// registerType: 'autoUpdate' сам их НЕ добавляет при strategies: 'injectManifest'.
+self.skipWaiting()
+clientsClaim()
+
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Страница может попросить обновиться немедленно
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if ((event.data as { type?: string } | null)?.type === 'SKIP_WAITING') self.skipWaiting()
+})
 
 // ── Push notifications ───────────────────────────────────────────────────────
 self.addEventListener('push', (event: PushEvent) => {
