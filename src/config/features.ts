@@ -15,6 +15,9 @@ export interface FeatureFlags {
   habits: boolean
   /** Список задач выбранного дня под сеткой календаря */
   calendarDayList: boolean
+  /** Отдельная широкая вёрстка логина для компьютера.
+   *  false — везде мобильный экран, приложение всегда выглядит как телефон */
+  desktopLanding: boolean
 }
 
 export const FEATURES: FeatureFlags = {
@@ -23,4 +26,5 @@ export const FEATURES: FeatureFlags = {
   coop: false,
   habits: true,
   calendarDayList: false,
+  desktopLanding: false,
 }

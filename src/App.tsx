@@ -5,6 +5,7 @@ import OnboardingScreen from './components/OnboardingScreen'
 import { useTaskStore } from './store/taskStore'
 import { supabase } from './services/supabase'
 import { useIsMobile } from './hooks/useIsMobile'
+import { FEATURES } from './config/features'
 
 /* ── Error Boundary ── */
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -72,7 +73,7 @@ export default function App() {
   }
 
   if (!session) {
-    return isMobile
+    return (isMobile || !FEATURES.desktopLanding)
       ? <MobileLoginPage onLogin={() => setSession(true)} />
       : <LoginPage onLogin={() => setSession(true)} />
   }

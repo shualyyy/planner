@@ -136,7 +136,7 @@ export default function MobileApp() {
         </div>,
         document.body
       )}
-      <div style={{
+      <div className="app-shell" style={{
         position: 'fixed', inset: 0,
         background: 'var(--bg)',
         paddingTop: 'env(safe-area-inset-top)',
