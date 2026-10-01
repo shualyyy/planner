@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import type { Task } from '../services/supabase'
 import { TASK_LABELS, parseLabelFromDescription } from '../services/supabase'
 import { ChevronLeft, ChevronRight, IcoPlus } from './icons'
+import { FEATURES } from '../config/features'
 
 /**
  * Календарь в стиле Apple Calendar: сетка месяца сверху, список задач
@@ -170,7 +171,11 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
       </div>
 
       {/* ── Сетка месяца ── */}
-      <div className="ac-grid" onTouchStart={onGridTouchStart} onTouchEnd={onGridTouchEnd}>
+      <div
+        className={`ac-grid${FEATURES.calendarDayList ? '' : ' full'}`}
+        onTouchStart={onGridTouchStart}
+        onTouchEnd={onGridTouchEnd}
+      >
         {cells.map((d, i) => {
           const dk = dayKey(d)
           const isOther = d.getMonth() !== anchor.getMonth()
@@ -194,7 +199,8 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
         })}
       </div>
 
-      {/* ── Список выбранного дня ── */}
+      {/* ── Список выбранного дня — включается флагом calendarDayList ── */}
+      {FEATURES.calendarDayList && (
       <div className="ac-list">
         <div className="ac-list-head">{listHeading}</div>
         {dayTasks.length === 0 ? (
@@ -209,6 +215,7 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
           ))
         )}
       </div>
+      )}
     </div>
   )
 }

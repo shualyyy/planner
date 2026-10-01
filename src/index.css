@@ -510,3 +510,14 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: none; cursor: po
 }
 .ac-row-title.done { color: var(--text-faint); text-decoration: line-through; }
 .ac-row-check { flex-shrink: 0; align-self: center; }
+
+/* Сетка месяца на весь экран — когда список дня скрыт (FEATURES.calendarDayList) */
+.ac-grid.full {
+  flex: 1; min-height: 0;
+  grid-auto-rows: 1fr;
+  align-content: stretch;
+  border-bottom: none;
+  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+.ac-grid.full .ac-day { height: auto; justify-content: flex-start; padding-top: 7px; }
+.ac-grid.full .ac-day { border-top: 1px solid var(--hairline); }

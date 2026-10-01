@@ -13,6 +13,8 @@ export interface FeatureFlags {
   coop: boolean
   /** Сегмент «Habits» на вкладке задач — трекер привычек */
   habits: boolean
+  /** Список задач выбранного дня под сеткой календаря */
+  calendarDayList: boolean
 }
 
 export const FEATURES: FeatureFlags = {
@@ -20,4 +22,5 @@ export const FEATURES: FeatureFlags = {
   assistant: false,
   coop: false,
   habits: true,
+  calendarDayList: false,
 }
