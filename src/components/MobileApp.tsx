@@ -99,7 +99,7 @@ export default function MobileApp() {
   const showFab = (tab === 'tasks' || tab === 'projects') && !projectDetailOpen
 
   const tabBar = createPortal(
-    <div className="tabbar" style={{ width: TABS.length * 76 + 16 }}>
+    <div className="tabbar" style={{ width: TABS.length * 64 + 10 }}>
       {TABS.map(({ id, Icon, label }) => {
         const active = tab === id
         return (

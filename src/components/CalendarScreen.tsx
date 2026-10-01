@@ -1,13 +1,14 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { Task } from '../services/supabase'
 import { TASK_LABELS, parseLabelFromDescription } from '../services/supabase'
 import { ChevronLeft, ChevronRight, IcoPlus } from './icons'
 import { FEATURES } from '../config/features'
 
 /**
- * Календарь в стиле Apple Calendar: сетка месяца сверху, список задач
- * выбранного дня снизу. Прошлый вариант (30d / 3d / 1d, TimeGrid,
- * DayPopup, полноэкранный месяц) сохранён в CalendarScreen.legacy.tsx.
+ * Календарь в стиле Apple Calendar.
+ *  • Month — сетка месяца с точками событий
+ *  • 3 Days / Day — почасовая сетка
+ * Прежний вариант экрана целиком сохранён в CalendarScreen.legacy.tsx.
  */
 
 interface CalendarScreenProps {
@@ -18,16 +19,25 @@ interface CalendarScreenProps {
   onPopupChange?: (open: boolean) => void
 }
 
+type View = 'month' | '3d' | '1d'
+
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December']
 const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const WD = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+const HOUR_H = 50
 
 const dayKey = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 const addDays = (d: Date, n: number): Date => {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
+}
+
+const toMins = (time: string): number => {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + (m || 0)
 }
 
 /** Недели месяца — ровно столько строк, сколько нужно (5 или 6) */
@@ -54,7 +64,164 @@ function sortDayTasks(list: (Task & { done: boolean })[]): (Task & { done: boole
   })
 }
 
-/* ─── Одна строка события ─── */
+/** Раскладка пересекающихся событий по колонкам */
+function layoutDay(list: (Task & { done: boolean })[]) {
+  const timed = list.filter(t => t.task_time && !t.is_all_day)
+    .sort((a, b) => a.task_time!.localeCompare(b.task_time!))
+  const slots = timed.map(t => ({
+    id: t.id,
+    start: toMins(t.task_time!),
+    end: Math.max(
+      t.task_time_end ? toMins(t.task_time_end) : toMins(t.task_time!) + 60,
+      toMins(t.task_time!) + 30,
+    ),
+    col: 0,
+  }))
+  const colEnds: number[] = []
+  for (const s of slots) {
+    let placed = false
+    for (let c = 0; c < colEnds.length; c++) {
+      if (s.start >= colEnds[c]) { s.col = c; colEnds[c] = s.end; placed = true; break }
+    }
+    if (!placed) { s.col = colEnds.length; colEnds.push(s.end) }
+  }
+  const total = Math.max(1, colEnds.length)
+  const map = new Map<string, { col: number; total: number; start: number; end: number }>()
+  slots.forEach(s => map.set(s.id, { col: s.col, total, start: s.start, end: s.end }))
+  return map
+}
+
+/* ─── Почасовая сетка (виды Day и 3 Days) ─── */
+function TimeGrid({ days, tasks, onCellTap, onToggle }: {
+  days: Date[]
+  tasks: Record<string, (Task & { done: boolean })[]>
+  onCellTap: (d: Date, hour: string) => void
+  onToggle: (dateKey: string, taskId: string) => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const todayKey = dayKey(new Date())
+  const [now, setNow] = useState(() => new Date())
+  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = Math.max(new Date().getHours() - 1, 0) * HOUR_H
+    }
+  }, [])
+
+  return (
+    <div className="tg">
+      {/* Шапка с датами */}
+      <div className="tg-head" style={{ gridTemplateColumns: `44px repeat(${days.length}, 1fr)` }}>
+        <div />
+        {days.map(d => {
+          const isToday = dayKey(d) === todayKey
+          return (
+            <div key={dayKey(d)} className="tg-head-day">
+              <span className="tg-head-dow">{SHORT_DAYS[d.getDay()].toUpperCase()}</span>
+              <span className={`tg-head-num${isToday ? ' today' : ''}`}>{d.getDate()}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Задачи без времени */}
+      {days.some(d => (tasks[dayKey(d)] || []).some(t => t.is_all_day || !t.task_time)) && (
+        <div className="tg-allday" style={{ gridTemplateColumns: `44px repeat(${days.length}, 1fr)` }}>
+          <span className="tg-allday-label">all-day</span>
+          {days.map(d => {
+            const dk = dayKey(d)
+            return (
+              <div key={dk} className="tg-allday-col">
+                {(tasks[dk] || []).filter(t => t.is_all_day || !t.task_time).map(t => {
+                  const c = TASK_LABELS[parseLabelFromDescription(t.description)].color
+                  return (
+                    <button
+                      key={t.id}
+                      className={`tg-chip${t.done ? ' done' : ''}`}
+                      style={{ borderLeftColor: c, background: c + '1A' }}
+                      onClick={() => onToggle(dk, t.id)}
+                    >{t.title}</button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Часы */}
+      <div className="tg-scroll" ref={scrollRef}>
+        <div className="tg-body" style={{ gridTemplateColumns: `44px repeat(${days.length}, 1fr)` }}>
+          <div className="tg-hours">
+            {hours.map(h => (
+              <div key={h} className="tg-hour-label" style={{ height: HOUR_H }}>
+                {h > 0 && <span>{String(h).padStart(2, '0')}:00</span>}
+              </div>
+            ))}
+          </div>
+
+          {days.map(d => {
+            const dk = dayKey(d)
+            const dayTasks = tasks[dk] || []
+            const layout = layoutDay(dayTasks)
+            const isToday = dk === todayKey
+            return (
+              <div key={dk} className="tg-col">
+                {hours.map(h => (
+                  <div
+                    key={h}
+                    className="tg-cell"
+                    style={{ height: HOUR_H }}
+                    onClick={() => onCellTap(d, `${String(h).padStart(2, '0')}:00`)}
+                  />
+                ))}
+
+                {dayTasks.filter(t => t.task_time && !t.is_all_day).map(t => {
+                  const l = layout.get(t.id)
+                  if (!l) return null
+                  const c = TASK_LABELS[parseLabelFromDescription(t.description)].color
+                  const top = (l.start / 60) * HOUR_H
+                  const height = Math.max(((l.end - l.start) / 60) * HOUR_H - 2, 22)
+                  return (
+                    <button
+                      key={`${t.id}-${dk}`}
+                      className={`tg-event${t.done ? ' done' : ''}`}
+                      onClick={() => onToggle(dk, t.id)}
+                      style={{
+                        top, height,
+                        left: `calc(2px + (100% - 4px) / ${l.total} * ${l.col})`,
+                        width: `calc((100% - 4px) / ${l.total})`,
+                        background: c + '1F',
+                        borderLeftColor: c,
+                      }}
+                    >
+                      <span className="tg-event-title">{t.title}</span>
+                      {height > 32 && <span className="tg-event-time">{t.task_time!.slice(0, 5)}</span>}
+                    </button>
+                  )
+                })}
+
+                {isToday && (
+                  <div className="tg-now" style={{ top: (now.getHours() * 60 + now.getMinutes()) / 60 * HOUR_H }}>
+                    <span className="tg-now-dot" />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Строка события в списке дня ─── */
 function EventRow({ task, onToggle }: {
   task: Task & { done: boolean }
   onToggle: () => void
@@ -95,15 +262,22 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
   const today = new Date()
   const todayKey = dayKey(today)
 
-  const [anchor, setAnchor] = useState(() => new Date())        // отображаемый месяц
+  const [view, setView] = useState<View>('month')
+  const [anchor, setAnchor] = useState(() => new Date())        // месяц в виде Month
   const [selected, setSelected] = useState(() => new Date())    // выбранный день
 
   const cells = useMemo(() => buildMonthCells(anchor), [anchor])
   const selectedKey = dayKey(selected)
   const dayTasks = useMemo(() => sortDayTasks(tasks[selectedKey] || []), [tasks, selectedKey])
+  const threeDays = useMemo(() => [selected, addDays(selected, 1), addDays(selected, 2)], [selected])
+  const oneDay = useMemo(() => [selected], [selected])
 
-  function goMonth(dir: -1 | 1) {
-    setAnchor(a => new Date(a.getFullYear(), a.getMonth() + dir, 1))
+  function navigate(dir: -1 | 1) {
+    if (view === 'month') {
+      setAnchor(a => new Date(a.getFullYear(), a.getMonth() + dir, 1))
+    } else {
+      setSelected(s => addDays(s, dir * (view === '3d' ? 3 : 1)))
+    }
   }
 
   function goToday() {
@@ -114,13 +288,12 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
 
   function pickDay(d: Date) {
     setSelected(d)
-    // тап по «хвосту» соседнего месяца — переходим в этот месяц
     if (d.getMonth() !== anchor.getMonth() || d.getFullYear() !== anchor.getFullYear()) {
       setAnchor(new Date(d.getFullYear(), d.getMonth(), 1))
     }
   }
 
-  // Свайп по сетке — листание месяцев
+  // Свайп по сетке месяца — листание месяцев
   const swipe = useRef<{ x: number; y: number } | null>(null)
   function onGridTouchStart(e: React.TouchEvent) {
     swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
@@ -130,10 +303,22 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
     const dx = e.changedTouches[0].clientX - swipe.current.x
     const dy = e.changedTouches[0].clientY - swipe.current.y
     swipe.current = null
-    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) goMonth(dx < 0 ? 1 : -1)
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) navigate(dx < 0 ? 1 : -1)
   }
 
-  const isCurrentMonth = anchor.getFullYear() === today.getFullYear() && anchor.getMonth() === today.getMonth()
+  // Заголовок зависит от вида
+  const title = view === 'month'
+    ? { main: MONTHS[anchor.getMonth()], sub: String(anchor.getFullYear()) }
+    : view === '1d'
+      ? { main: `${selected.getDate()} ${MONTHS[selected.getMonth()].slice(0, 3)}`, sub: SHORT_DAYS[selected.getDay()] }
+      : {
+        main: `${selected.getDate()}–${addDays(selected, 2).getDate()} ${MONTHS[addDays(selected, 2).getMonth()].slice(0, 3)}`,
+        sub: String(selected.getFullYear()),
+      }
+
+  const showToday = view === 'month'
+    ? !(anchor.getFullYear() === today.getFullYear() && anchor.getMonth() === today.getMonth())
+    : selectedKey !== todayKey
 
   const listHeading = selectedKey === todayKey
     ? 'Today'
@@ -146,75 +331,103 @@ export default function CalendarScreen({ tasks, onAdd, onToggle }: CalendarScree
       {/* ── Заголовок ── */}
       <div className="ac-nav">
         <div className="ac-title">
-          <span className="ac-title-month">{MONTHS[anchor.getMonth()]}</span>
-          <span className="ac-title-year">{anchor.getFullYear()}</span>
+          <span className="ac-title-month">{title.main}</span>
+          <span className="ac-title-year">{title.sub}</span>
         </div>
         <div className="ac-nav-actions">
-          {!isCurrentMonth && (
-            <button className="ac-today" onClick={goToday}>Today</button>
-          )}
-          <button className="ac-icon-btn" onClick={() => goMonth(-1)} aria-label="Previous month">
-            <ChevronLeft size={17} />
-          </button>
-          <button className="ac-icon-btn" onClick={() => goMonth(1)} aria-label="Next month">
-            <ChevronRight size={17} />
-          </button>
+          {showToday && <button className="ac-today" onClick={goToday}>Today</button>}
           <button className="ac-icon-btn accent" onClick={() => onAdd(selected)} aria-label="New task">
             <IcoPlus size={19} />
           </button>
         </div>
       </div>
 
-      {/* ── Дни недели ── */}
-      <div className="ac-head">
-        {WD.map((d, i) => <span key={i}>{d}</span>)}
-      </div>
-
-      {/* ── Сетка месяца ── */}
-      <div
-        className={`ac-grid${FEATURES.calendarDayList ? '' : ' full'}`}
-        onTouchStart={onGridTouchStart}
-        onTouchEnd={onGridTouchEnd}
-      >
-        {cells.map((d, i) => {
-          const dk = dayKey(d)
-          const isOther = d.getMonth() !== anchor.getMonth()
-          const dots = (tasks[dk] || [])
-            .filter(t => !t.done)
-            .slice(0, 3)
-            .map(t => TASK_LABELS[parseLabelFromDescription(t.description)].color)
-
-          return (
+      {/* ── Переключатель вида + стрелки ── */}
+      <div className="ac-toolbar">
+        <div className="ac-seg">
+          {([
+            { id: 'month', label: 'Month' },
+            { id: '3d', label: '3 Days' },
+            { id: '1d', label: 'Day' },
+          ] as const).map(v => (
             <button
-              key={i}
-              className={`ac-day${dk === todayKey ? ' today' : ''}${dk === selectedKey ? ' sel' : ''}${isOther ? ' other' : ''}`}
-              onClick={() => pickDay(d)}
-            >
-              <span className="ac-day-num">{d.getDate()}</span>
-              <span className="ac-dots">
-                {dots.map((c, j) => <span key={j} className="ac-dot" style={{ background: c }} />)}
-              </span>
-            </button>
-          )
-        })}
+              key={v.id}
+              className={`ac-seg-pill${view === v.id ? ' on' : ''}`}
+              onClick={() => setView(v.id)}
+            >{v.label}</button>
+          ))}
+        </div>
+        <div className="ac-arrows">
+          <button className="ac-icon-btn" onClick={() => navigate(-1)} aria-label="Previous">
+            <ChevronLeft size={16} />
+          </button>
+          <button className="ac-icon-btn" onClick={() => navigate(1)} aria-label="Next">
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* ── Список выбранного дня — включается флагом calendarDayList ── */}
-      {FEATURES.calendarDayList && (
-      <div className="ac-list">
-        <div className="ac-list-head">{listHeading}</div>
-        {dayTasks.length === 0 ? (
-          <div className="ac-empty">Nothing scheduled</div>
-        ) : (
-          dayTasks.map(t => (
-            <EventRow
-              key={`${t.id}-${selectedKey}`}
-              task={t}
-              onToggle={() => onToggle(selectedKey, t.id)}
-            />
-          ))
-        )}
-      </div>
+      {view === 'month' ? (
+        <>
+          {/* ── Дни недели ── */}
+          <div className="ac-head">
+            {WD.map((d, i) => <span key={i}>{d}</span>)}
+          </div>
+
+          {/* ── Сетка месяца ── */}
+          <div
+            className={`ac-grid${FEATURES.calendarDayList ? '' : ' full'}`}
+            onTouchStart={onGridTouchStart}
+            onTouchEnd={onGridTouchEnd}
+          >
+            {cells.map((d, i) => {
+              const dk = dayKey(d)
+              const isOther = d.getMonth() !== anchor.getMonth()
+              const dots = (tasks[dk] || [])
+                .filter(t => !t.done)
+                .slice(0, 3)
+                .map(t => TASK_LABELS[parseLabelFromDescription(t.description)].color)
+
+              return (
+                <button
+                  key={i}
+                  className={`ac-day${dk === todayKey ? ' today' : ''}${dk === selectedKey ? ' sel' : ''}${isOther ? ' other' : ''}`}
+                  onClick={() => pickDay(d)}
+                >
+                  <span className="ac-day-num">{d.getDate()}</span>
+                  <span className="ac-dots">
+                    {dots.map((c, j) => <span key={j} className="ac-dot" style={{ background: c }} />)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* ── Список выбранного дня — включается флагом calendarDayList ── */}
+          {FEATURES.calendarDayList && (
+            <div className="ac-list">
+              <div className="ac-list-head">{listHeading}</div>
+              {dayTasks.length === 0 ? (
+                <div className="ac-empty">Nothing scheduled</div>
+              ) : (
+                dayTasks.map(t => (
+                  <EventRow
+                    key={`${t.id}-${selectedKey}`}
+                    task={t}
+                    onToggle={() => onToggle(selectedKey, t.id)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <TimeGrid
+          days={view === '3d' ? threeDays : oneDay}
+          tasks={tasks}
+          onCellTap={(d, h) => onAdd(d, h)}
+          onToggle={onToggle}
+        />
       )}
     </div>
   )
