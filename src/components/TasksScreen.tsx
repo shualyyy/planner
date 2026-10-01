@@ -8,6 +8,16 @@ import TaskDetailSheet from './TaskDetailSheet'
 import { haptics } from '../lib/haptics'
 import PaywallSheet from './PaywallSheet'
 import { getEffectivePlan } from '../lib/flags'
+import { FEATURES } from '../config/features'
+
+type Segment = 'tasks' | 'habits' | 'coop'
+
+/** Сегменты вкладки «Задачи». Скрытые возвращает config/features.ts */
+const SEGMENTS: { id: Segment; label: string }[] = ([
+  { id: 'tasks',  label: 'Tasks',  enabled: true },
+  { id: 'habits', label: 'Habits', enabled: FEATURES.habits },
+  { id: 'coop',   label: 'Coop',   enabled: FEATURES.coop },
+] as const).filter(s => s.enabled).map(({ id, label }) => ({ id, label }))
 
 const HABIT_COLORS = ['#D97757','#4A9EFF','#3DD68C','#A78BFA','#F5BDD0']
 const HABIT_EMOJIS = ['⭕','🏃','📚','💧','🧘','💪','🥗','😴','✍️','🎯']
@@ -560,7 +570,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
   const todayKey = dayKey(today)
   const tomorrowKey = dayKey(addDays(today, 1))
   const [showHistory, setShowHistory] = useState(false)
-  const [segment, setSegment] = useState<'tasks' | 'habits' | 'coop'>('tasks')
+  const [segment, setSegment] = useState<Segment>('tasks')
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -697,14 +707,11 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
         </div>
       )}
 
-      {/* Segment selector */}
+      {/* Segment selector — скрытые сегменты возвращает config/features.ts */}
       {!(searchOpen && searchQuery.trim()) && (<>
+      {SEGMENTS.length > 1 && (
       <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 14, padding: 3, margin: '0 22px 18px', gap: 2 }}>
-        {([
-          { id: 'tasks',  label: 'Tasks'  },
-          { id: 'habits', label: 'Habits' },
-          { id: 'coop',   label: 'Coop'   },
-        ] as const).map(s => (
+        {SEGMENTS.map(s => (
           <button
             key={s.id}
             onClick={() => setSegment(s.id)}
@@ -718,6 +725,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
           >{s.label}</button>
         ))}
       </div>
+      )}
 
       {/* History icon button — only in Tasks segment */}
       {segment === 'tasks' && historyCount > 0 && (
@@ -740,7 +748,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       )}
 
       {/* Segment: Habits */}
-      {segment === 'habits' && (
+      {segment === 'habits' && FEATURES.habits && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
           <HabitsInline
             habits={habits}
@@ -754,7 +762,7 @@ export default function TasksScreen({ tasks, onToggle, onDelete, onEdit }: Tasks
       )}
 
       {/* Segment: Coop */}
-      {segment === 'coop' && (
+      {segment === 'coop' && FEATURES.coop && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px', paddingBottom: 'calc(74px + env(safe-area-inset-bottom, 0px) + 8px)' }}>
           {getEffectivePlan(profile) === 'free' ? (
             <div style={{ padding: '40px 8px 20px', textAlign: 'center' }}>

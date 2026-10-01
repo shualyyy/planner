@@ -8,6 +8,7 @@ import SettingsScreen from './SettingsScreen'
 import AddTaskModal from './AddTaskModal'
 import AddProjectModal from './AddProjectModal'
 import { useTaskStore, groupTasksByDay } from '../store/taskStore'
+import { FEATURES } from '../config/features'
 import {
   CalendarTabIcon,
   TasksTabIcon,
@@ -26,13 +27,15 @@ const ProjectsTabIcon = () => (
   </svg>
 )
 
-const TABS: { id: Tab; Icon: React.FC; label: string }[] = [
-  { id: 'calendar',  Icon: CalendarTabIcon,  label: 'Calendar' },
-  { id: 'tasks',     Icon: TasksTabIcon,     label: 'Tasks'    },
-  { id: 'projects',  Icon: ProjectsTabIcon,  label: 'Projects' },
-  { id: 'assistant', Icon: AssistantTabIcon, label: 'AI'       },
-  { id: 'settings',  Icon: SettingsTabIcon,  label: 'You'      },
+// Скрытые вкладки остаются в списке — их возвращает флаг в config/features.ts
+const ALL_TABS: { id: Tab; Icon: React.FC; label: string; enabled: boolean }[] = [
+  { id: 'calendar',  Icon: CalendarTabIcon,  label: 'Calendar', enabled: true },
+  { id: 'tasks',     Icon: TasksTabIcon,     label: 'Tasks',    enabled: true },
+  { id: 'projects',  Icon: ProjectsTabIcon,  label: 'Projects', enabled: FEATURES.projects },
+  { id: 'assistant', Icon: AssistantTabIcon, label: 'AI',       enabled: FEATURES.assistant },
+  { id: 'settings',  Icon: SettingsTabIcon,  label: 'You',      enabled: true },
 ]
+const TABS = ALL_TABS.filter(t => t.enabled)
 
 export default function MobileApp() {
   const { tasks, donIds, toggleDone, deleteTask, pendingInvites, fetchPendingInvites } = useTaskStore()
@@ -47,13 +50,12 @@ export default function MobileApp() {
     window.addEventListener('offline', off)
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
-  const [tab, setTab] = useState<Tab>('tasks')
+  const [tab, setTab] = useState<Tab>('calendar')
   const [modalOpen, setModalOpen] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
   const [modalTime, setModalTime] = useState('')
   const [modalProjectId, setModalProjectId] = useState<string | null>(null)
   const [editTask, setEditTask] = useState<Task | null>(null)
-  const [calPopupOpen, setCalPopupOpen] = useState(false)
   const [projectDetailOpen, setProjectDetailOpen] = useState(false)
   const [addProjectModalOpen, setAddProjectModalOpen] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
@@ -93,11 +95,11 @@ export default function MobileApp() {
     setEditProject(null)
   }
 
-  const showFab = (tab === 'calendar' || tab === 'tasks' || tab === 'projects') && !calPopupOpen && !projectDetailOpen
-
+  // На календаре своя кнопка «+» в шапке — она добавляет задачу на выбранный день
+  const showFab = (tab === 'tasks' || tab === 'projects') && !projectDetailOpen
 
   const tabBar = createPortal(
-    <div className="tabbar">
+    <div className="tabbar" style={{ width: TABS.length * 76 + 16 }}>
       {TABS.map(({ id, Icon, label }) => {
         const active = tab === id
         return (
@@ -152,7 +154,6 @@ export default function MobileApp() {
               tasks={grouped}
               onAdd={(d, t) => handleAdd(d, t)}
               onToggle={(_dk, id) => toggleDone(id)}
-              onPopupChange={setCalPopupOpen}
             />
           </div>
           <div style={{
@@ -170,35 +171,39 @@ export default function MobileApp() {
               onEdit={handleEdit}
             />
           </div>
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            opacity: tab === 'projects' ? 1 : 0,
-            transform: tab === 'projects' ? 'translateY(0)' : 'translateY(6px)',
-            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
-            pointerEvents: tab === 'projects' ? 'auto' : 'none',
-          }}>
-            <ProjectsScreen
-              tasks={grouped}
-              onToggle={(_dk, id) => toggleDone(id)}
-              onDelete={(_dk, id) => deleteTask(id)}
-              onEdit={handleEdit}
-              onAddProject={handleAddProject}
-              onEditProject={handleEditProject}
-              onAddTask={(projectId) => handleAdd(undefined, undefined, projectId)}
-              onDetailChange={setProjectDetailOpen}
-            />
-          </div>
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            opacity: tab === 'assistant' ? 1 : 0,
-            transform: tab === 'assistant' ? 'translateY(0)' : 'translateY(6px)',
-            transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
-            pointerEvents: tab === 'assistant' ? 'auto' : 'none',
-          }}>
-            <AssistantScreen />
-          </div>
+          {FEATURES.projects && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              opacity: tab === 'projects' ? 1 : 0,
+              transform: tab === 'projects' ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+              pointerEvents: tab === 'projects' ? 'auto' : 'none',
+            }}>
+              <ProjectsScreen
+                tasks={grouped}
+                onToggle={(_dk, id) => toggleDone(id)}
+                onDelete={(_dk, id) => deleteTask(id)}
+                onEdit={handleEdit}
+                onAddProject={handleAddProject}
+                onEditProject={handleEditProject}
+                onAddTask={(projectId) => handleAdd(undefined, undefined, projectId)}
+                onDetailChange={setProjectDetailOpen}
+              />
+            </div>
+          )}
+          {FEATURES.assistant && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              opacity: tab === 'assistant' ? 1 : 0,
+              transform: tab === 'assistant' ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 0.18s var(--ease-ios), transform 0.18s var(--ease-ios)',
+              pointerEvents: tab === 'assistant' ? 'auto' : 'none',
+            }}>
+              <AssistantScreen />
+            </div>
+          )}
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', flexDirection: 'column',
@@ -212,7 +217,7 @@ export default function MobileApp() {
         </div>
       </div>
 
-      {!calPopupOpen && tabBar}
+      {tabBar}
 
       {showFab && createPortal(
         <button className="fab-v2" onClick={() => tab === 'projects' ? handleAddProject() : handleAdd()}>

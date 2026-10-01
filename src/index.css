@@ -380,3 +380,133 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: none; cursor: po
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: var(--r-card);
 }
+
+/* ══ Календарь в стиле Apple Calendar ══════════════════════════════════════ */
+.ac-screen {
+  display: flex; flex-direction: column;
+  height: 100%; background: var(--bg); overflow: hidden;
+}
+
+/* ── Шапка: месяц, год, навигация ── */
+.ac-nav {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 10px 20px 12px; flex-shrink: 0;
+}
+.ac-title { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.ac-title-month {
+  font: 600 27px/1 var(--font-sans);
+  letter-spacing: -0.02em; color: var(--text);
+}
+.ac-title-year {
+  font: 400 27px/1 var(--font-sans);
+  letter-spacing: -0.02em; color: var(--text-faint);
+}
+.ac-nav-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.ac-today {
+  height: 28px; padding: 0 11px; margin-right: 4px;
+  border: none; border-radius: 999px; cursor: pointer;
+  background: var(--surface2); color: var(--text-2);
+  font: 600 12px/1 var(--font-sans);
+}
+.ac-today:active { opacity: 0.6; }
+.ac-icon-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-2); -webkit-tap-highlight-color: transparent;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.ac-icon-btn:active { background: var(--surface2); transform: scale(0.9); }
+.ac-icon-btn.accent { color: var(--accent); }
+
+/* ── Строка дней недели ── */
+.ac-head {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  padding: 0 8px 7px; flex-shrink: 0;
+}
+.ac-head span {
+  text-align: center; color: var(--text-faint);
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* ── Сетка месяца ── */
+.ac-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  padding: 4px 8px 10px; row-gap: 1px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ac-day {
+  height: 48px; padding-top: 3px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ac-day-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 16px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ac-day.other .ac-day-num { color: var(--text-faint); opacity: 0.4; }
+.ac-day.today .ac-day-num { color: var(--accent); font-weight: 700; }
+.ac-day.sel .ac-day-num { background: var(--text); color: var(--bg); font-weight: 600; }
+.ac-day.sel.today .ac-day-num { background: var(--accent); color: #fff; }
+.ac-day:active .ac-day-num { transform: scale(0.9); }
+.ac-dots { display: flex; gap: 3px; height: 4px; align-items: center; }
+.ac-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+/* ── Список задач выбранного дня ── */
+.ac-list {
+  flex: 1; overflow-y: auto;
+  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px) + 20px);
+  -webkit-overflow-scrolling: touch;
+}
+.ac-list-head {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--bg);
+  padding: 15px 20px 9px;
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ac-empty {
+  padding: 22px 20px 30px; text-align: center;
+  font: 400 13.5px/1.4 var(--font-sans); color: var(--text-faint);
+}
+.ac-row {
+  display: flex; align-items: stretch; gap: 12px; width: 100%;
+  padding: 11px 20px;
+  background: none; border: none; cursor: pointer; text-align: left;
+  border-top: 1px solid var(--hairline);
+  -webkit-tap-highlight-color: transparent;
+}
+.ac-row:active { background: var(--surface); }
+.ac-row-time {
+  width: 46px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  padding-top: 1px;
+}
+.ac-time-start {
+  font: 500 13px/1.2 var(--font-sans);
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.ac-time-end {
+  font: 400 11.5px/1.2 var(--font-sans);
+  font-variant-numeric: tabular-nums; color: var(--text-faint);
+}
+.ac-time-allday {
+  font: 500 11px/1.2 var(--font-sans); color: var(--text-faint);
+}
+.ac-bar { width: 3px; border-radius: 2px; flex-shrink: 0; min-height: 30px; }
+.ac-row-body { flex: 1; min-width: 0; display: flex; align-items: center; }
+.ac-row-title {
+  font: 450 15px/1.35 var(--font-sans);
+  letter-spacing: -0.01em; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ac-row-title.done { color: var(--text-faint); text-decoration: line-through; }
+.ac-row-check { flex-shrink: 0; align-self: center; }
